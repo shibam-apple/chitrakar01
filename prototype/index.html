@@ -1,7 +1,7 @@
 <title>Chitrakar</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
-/* Layout: full-bleed paper canvas; thin chrome floats at the edges (top bar, bottom tool dock, contextual bar beside the selection). */
+/* Layout: full-bleed paper canvas; thin chrome floats at the edges (top bar, bottom tool dock, selection bar beside the selection, Layers panel on the right). */
 :root {
   --chrome: #ffffff;
   --chrome-2: #f1f1f6;
@@ -48,6 +48,7 @@ body {
 button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 .bar {
   background: var(--chrome); border: 1px solid var(--line); border-radius: var(--radius);
@@ -64,9 +65,11 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 }
 #top > * { pointer-events: auto; }
 .group { display: flex; align-items: center; gap: 2px; padding: 4px; }
-.btn { min-width: 44px; height: 44px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; }
+.btn { min-width: 44px; height: 44px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; flex: none; }
 .btn:hover { background: var(--chrome-2); }
 .btn:disabled { opacity: 0.35; cursor: default; background: none; }
+.btn[aria-pressed="true"], .btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
+.btn.label { font-size: 13px; font-weight: 600; }
 .doc { display: flex; flex-direction: column; line-height: 1.15; padding: 0 10px 0 4px; }
 .doc b { font-size: 15px; font-weight: 600; }
 .doc span { font-size: 12px; color: var(--fg-2); }
@@ -90,9 +93,13 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--chrome); box-shadow: 0 0 0 1px var(--line); }
 
 /* Popovers */
-.pop { position: fixed; z-index: 8; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 220px; max-width: calc(100vw - 32px); }
+.pop { position: fixed; z-index: 8; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 220px; max-width: calc(100vw - 32px); max-height: calc(100% - 120px); overflow-y: auto; }
+.pop.wide { width: 324px; }
 .pop h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
-.pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 260px; }
+.pop h4 { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
+.pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 280px; }
+/* On narrow screens, popovers become bottom sheets with thumb-sized controls. */
+.pop.sheet { left: max(16px, env(safe-area-inset-left, 0px)) !important; right: max(16px, env(safe-area-inset-right, 0px)); top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); width: auto !important; max-height: 55%; transform: none !important; }
 .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
 .sw { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
 .sw i { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); }
@@ -106,27 +113,39 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .opt small { color: var(--fg-2); font-size: 12px; }
 .opt[aria-pressed="true"] { background: var(--accent-soft); }
 .opt:hover { background: var(--chrome-2); }
-
 .kinds { display: grid; grid-template-columns: repeat(4, 64px); gap: 4px; }
 .kind { height: 64px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--fg-2); }
 .kind:hover { background: var(--chrome-2); color: var(--fg); }
 .kind[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
 
-/* Effects */
-#fxPop { width: 324px; }
 .presets { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .preset { border: 1px solid var(--line); border-radius: 10px; padding: 8px 4px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 11px; font-weight: 600; min-height: 64px; }
 .preset:hover { border-color: var(--accent); }
 .preset i { width: 28px; height: 20px; border-radius: 5px; background: var(--tile); border: 1px solid var(--line); }
-.preset[data-preset="soft"] i { box-shadow: 0 2px 5px rgba(16,18,40,.25); border-color: transparent; }
-.preset[data-preset="lifted"] i { box-shadow: 0 6px 12px rgba(16,18,40,.35); border-color: transparent; }
-.preset[data-preset="glass"] i { background: linear-gradient(135deg, #8f97ff, #f2b45a); border-color: rgba(255,255,255,.8); }
+.preset.soft i { box-shadow: 0 2px 5px rgba(16,18,40,.25); border-color: transparent; }
+.preset.lifted i { box-shadow: 0 6px 12px rgba(16,18,40,.35); border-color: transparent; }
+.preset.glass i { background: linear-gradient(135deg, #8f97ff, #f2b45a); border-color: rgba(255,255,255,.8); }
 .fx-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) 40px; align-items: center; gap: 8px; min-height: 40px; font-size: 13px; }
 .fx-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-2); font-size: 12px; }
 .fx-row input[type="range"] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
-.seg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--chrome-2); border-radius: 9px; padding: 2px; gap: 2px; grid-column: 2 / 4; }
-.seg button { height: 30px; border-radius: 7px; font-size: 11.5px; padding: 0; font-weight: 600; color: var(--fg-2); }
+.seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); background: var(--chrome-2); border-radius: 9px; padding: 2px; gap: 2px; }
+.fx-row .seg { grid-column: 2 / 4; }
+.seg button { height: 32px; border-radius: 7px; font-size: 11.5px; font-weight: 600; color: var(--fg-2); padding: 0; }
 .seg button[aria-pressed="true"] { background: var(--chrome); color: var(--fg); box-shadow: 0 1px 2px var(--shadow); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipb { min-width: 40px; height: 34px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chipb[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+.icons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.icons.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.ib { height: 54px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--fg-2); }
+.ib:hover:not(:disabled) { background: var(--chrome-2); color: var(--fg); }
+.ib:disabled { opacity: 0.3; cursor: default; }
+.xywh { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.xywh label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--fg-2); }
+.xywh input { height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--chrome-2); color: var(--fg); font: inherit; font-size: 14px; padding: 0 6px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
+.stepper { display: flex; align-items: center; gap: 4px; }
+.stepper button { width: 40px; height: 36px; border-radius: 8px; background: var(--chrome-2); font-size: 18px; }
+.stepper output { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* Insert library */
 #insertPop {
@@ -138,22 +157,48 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 .search input { flex: 1; min-width: 0; border: 0; background: none; font: inherit; font-size: 15px; color: var(--fg); outline: none; -webkit-user-select: text; user-select: text; }
 .lib-body { overflow-y: auto; padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 4px; overscroll-behavior: contain; }
 .lib-body h3 { margin: 12px 0 6px; }
+.lib-body > p.hint { margin: 10px 0 0; }
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
-.tile { display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 12px; border: 1px solid transparent; text-align: left; }
+.tile { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 12px; border: 1px solid transparent; text-align: left; }
 .tile:hover { border-color: var(--line); background: var(--chrome-2); }
 .tile canvas { width: 100%; aspect-ratio: 3 / 2; border-radius: 8px; background: var(--tile); display: block; max-width: 100%; }
 .tile span { font-size: 12px; font-weight: 600; padding: 0 2px; }
+.tile .rm { position: absolute; top: 2px; right: 2px; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--chrome); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; color: var(--fg-2); }
 .empty { padding: 24px 0; text-align: center; color: var(--fg-2); font-size: 14px; }
 
-/* Context bar */
+/* Layers panel */
+#layers {
+  position: fixed; z-index: 6; display: flex; flex-direction: column; overflow: hidden;
+  right: max(16px, env(safe-area-inset-right, 0px));
+  top: calc(env(safe-area-inset-top, 0px) + 76px); bottom: calc(env(safe-area-inset-bottom, 0px) + 92px);
+  width: min(288px, calc(100vw - 32px));
+}
+.lay-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--line); }
+.lay-head b { font-size: 14px; }
+#layerList { overflow-y: auto; padding: 4px 6px 10px; display: flex; flex-direction: column; gap: 1px; overscroll-behavior: contain; }
+.layer { display: grid; grid-template-columns: 26px 20px minmax(0, 1fr) 34px 34px; align-items: center; gap: 4px; min-height: 40px; border-radius: 8px; font-size: 13px; cursor: default; }
+.layer:hover { background: var(--chrome-2); }
+.layer.on { background: var(--accent-soft); color: var(--accent); }
+.layer.off .name, .layer.off svg.s { opacity: 0.4; }
+.layer .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer .name input { width: 100%; font: inherit; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 4px; background: var(--chrome); color: var(--fg); -webkit-user-select: text; user-select: text; }
+.layer .grip { height: 40px; display: grid; place-items: center; color: var(--fg-2); cursor: grab; touch-action: none; }
+.layer .mini { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: var(--fg-2); opacity: 0.55; }
+.layer .mini[aria-pressed="true"] { opacity: 1; color: var(--accent); }
+.layer:hover .mini { opacity: 1; }
+.layer.frame { grid-template-columns: 20px minmax(0, 1fr); padding-left: 8px; font-weight: 600; margin-top: 8px; }
+.layer.drop-above { box-shadow: inset 0 2px 0 var(--accent); }
+.layer.drop-below { box-shadow: inset 0 -2px 0 var(--accent); }
+.lay-section { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); padding: 12px 8px 4px; font-weight: 600; }
+.lay-empty { color: var(--fg-2); font-size: 12px; padding: 12px 8px 0; margin: 0; }
+
+/* Selection bar */
 #ctx { position: fixed; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 4px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none; }
 #ctx::-webkit-scrollbar { display: none; }
 #ctx .swatches { flex-wrap: nowrap; gap: 0; }
 #ctx .sw { width: 34px; height: 34px; }
 #ctx .sw i { width: 20px; height: 20px; }
-#ctx .btn { min-width: 40px; height: 40px; padding: 0 8px; flex: none; }
-#ctx .btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
-#ctx .btn.label { font-size: 13px; font-weight: 600; }
+#ctx .btn { min-width: 40px; height: 40px; padding: 0 8px; }
 #ctx .danger { color: var(--danger); }
 
 /* Toast */
@@ -189,7 +234,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 
 @media (max-width: 560px) {
   .tool { width: 52px; font-size: 10px; }
-  .doc span { display: none; }
+  .doc span, #layersBtn span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .toggle::after { transition: none; } }
 </style>
@@ -214,6 +259,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   <div class="bar group">
     <button class="chip" id="pencilChip" hidden aria-label="Apple Pencil settings">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="m14 7 3 3"/></svg>Pencil
+    </button>
+    <button class="btn label" id="layersBtn" title="Layers" aria-expanded="false">
+      <svg class="i" viewBox="0 0 24 24"><path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/></svg><span>Layers</span>
     </button>
     <button class="btn" id="zoom" title="Zoom to fit (⌘0)" aria-label="Zoom to fit">100%</button>
   </div>
@@ -255,37 +303,21 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     <button class="toggle" id="autoShape" role="switch" aria-checked="true" aria-label="Turn rough drawings into clean shapes"></button>
   </div>
 </div>
-
 <div id="shapePop" class="bar pop" hidden>
   <h3>Shapes</h3>
   <div class="kinds" id="kinds"></div>
   <p class="hint">Drag on the canvas to draw. Tap to drop one. Hold Shift for a perfect square or circle.</p>
 </div>
-
 <div id="pencilPop" class="bar pop" hidden>
   <h3>Apple Pencil is active</h3>
-  <button class="opt" data-finger="move"><b>Fingers move and select</b><small>The Pencil draws. Drag a selected item with a finger to move it.</small></button>
+  <button class="opt" data-finger="move"><b>Fingers move and select</b><small>The Pencil draws. Drag or pinch a selected item with your fingers.</small></button>
   <button class="opt" data-finger="draw"><b>Fingers draw too</b><small>Use two fingers to move the canvas.</small></button>
 </div>
-
-<div id="fxPop" class="bar pop" hidden>
-  <h3>Effects</h3>
-  <div class="presets">
-    <button class="preset" data-preset="none"><i></i>None</button>
-    <button class="preset" data-preset="soft"><i></i>Soft shadow</button>
-    <button class="preset" data-preset="lifted"><i></i>Lifted</button>
-    <button class="preset" data-preset="glass" id="glassPreset"><i></i>Glass</button>
-  </div>
-  <div class="fx-row"><label for="fxOpacity">Opacity</label><input type="range" id="fxOpacity" min="0" max="100" step="1"><output id="fxOpacityV"></output></div>
-  <div class="fx-row"><span>Shadow</span>
-    <div class="seg" id="fxShadow" role="group" aria-label="Shadow">
-      <button data-s="0">None</button><button data-s="1">Soft</button><button data-s="2">Medium</button><button data-s="3">Strong</button>
-    </div>
-  </div>
-  <div class="fx-row"><label for="fxBlur">Blur</label><input type="range" id="fxBlur" min="0" max="40" step="1"><output id="fxBlurV"></output></div>
-  <div class="fx-row" id="fxBgRow"><label for="fxBg">Background blur</label><input type="range" id="fxBg" min="0" max="40" step="1"><output id="fxBgV"></output></div>
-  <div class="fx-row" id="fxFillRow"><label for="fxFill">Fill opacity</label><input type="range" id="fxFill" min="0" max="100" step="1"><output id="fxFillV"></output></div>
-</div>
+<!-- Selection popovers are filled by script -->
+<div id="stylePop" class="bar pop wide" hidden></div>
+<div id="textPop" class="bar pop wide" hidden></div>
+<div id="fxPop" class="bar pop wide" hidden></div>
+<div id="arrangePop" class="bar pop wide" hidden></div>
 
 <div id="insertPop" class="bar pop" hidden role="dialog" aria-label="Insert UI components">
   <div class="lib-head">
@@ -293,12 +325,23 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="libSearch" type="search" placeholder="Search buttons, cards, tab bar…" autocomplete="off" aria-label="Search components">
     </label>
+    <button class="btn label" id="imageBtn" title="Add an image from your files">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5"/><circle cx="15.5" cy="9.5" r="1.5"/></svg>Image
+    </button>
     <button class="btn" id="libClose" aria-label="Close">
       <svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
   <div class="lib-body" id="libBody"></div>
 </div>
+<input type="file" id="fileIn" accept="image/*" hidden>
+
+<aside id="layers" class="bar" hidden aria-label="Layers">
+  <div class="lay-head"><b>Layers</b>
+    <button class="btn" id="layersClose" aria-label="Close layers"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div id="layerList"></div>
+</aside>
 
 <div id="ctx" class="bar" hidden></div>
 <div id="toast" class="bar" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
@@ -318,7 +361,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   'use strict';
   // ---------- Constants ----------
   const INK = '#1f2233', MUT = '#6b6e80', LN = '#d5d7e2', SF = '#f3f4f8', AC = '#3d47c9', WH = '#ffffff',
-        RED = '#d6453d', GRN = '#2f9e6a', TINT = '#e6e8fb', PH = '#9a9db0', IMG = '#e3e5ef', SHAPE_FILL = '#d9dbe6';
+        RED = '#d6453d', GRN = '#2f9e6a', TINT = '#e6e8fb', PH = '#9a9db0', IMG = '#e3e5ef', SHAPE_FILL = '#d9dbe6', GUIDE = '#e5487d';
   const SWATCHES = [INK, AC, RED, '#e39a2d', GRN, SHAPE_FILL, WH];
   const PRESETS = [
     { name: 'iPhone', w: 393, h: 852 }, { name: 'iPad', w: 820, h: 1180 },
@@ -326,7 +369,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   ];
   const SHADOWS = [null, { y: 2, b: 10, a: 0.14 }, { y: 8, b: 24, a: 0.18 }, { y: 18, b: 48, a: 0.26 }];
   const SHAPE_TYPES = new Set(['rect', 'ellipse', 'triangle', 'polygon', 'star']);
-  const isShape = (n) => n && SHAPE_TYPES.has(n.type);
+  const isShape = (n) => !!n && SHAPE_TYPES.has(n.type);
+  const invisible = (n) => isShape(n) && !n.fill && !n.stroke && !(n.bgBlur > 0);
   const ICONS = {
     home: 'M3 11l9-8 9 8M5 10v10h14V10M10 20v-6h4v6',
     search: 'M11 4a7 7 0 1 0 0 14a7 7 0 1 0 0-14zM20 20l-4-4',
@@ -363,27 +407,35 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     star: 'Star', image: 'Image', alert: 'Warning', cart: 'Cart', share: 'Share', trash: 'Delete', camera: 'Camera', wifi: 'Wi-Fi',
     eye: 'Show', calendar: 'Calendar', lock: 'Lock', play: 'Play', download: 'Download', edit: 'Edit',
   };
+  const STAR_D = 'M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z';
   const SHAPE_KINDS = [
     { k: 'rect', label: 'Rectangle', key: 'r', svg: '<rect x="4" y="5" width="16" height="14" rx="1.5"/>' },
     { k: 'ellipse', label: 'Ellipse', key: 'o', svg: '<ellipse cx="12" cy="12" rx="8" ry="7"/>' },
     { k: 'line', label: 'Line', key: 'l', svg: '<path d="M5 19 19 5"/>' },
-    { k: 'arrow', label: 'Arrow', svg: '<path d="M5 19 19 5M10 5h9v9"/>' },
+    { k: 'arrow', label: 'Arrow', key: '⇧L', svg: '<path d="M5 19 19 5M10 5h9v9"/>' },
     { k: 'triangle', label: 'Triangle', svg: '<path d="M12 4.5 20 19H4z"/>' },
     { k: 'polygon', label: 'Polygon', svg: '<path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/>' },
-    { k: 'star', label: 'Star', svg: '<path d="' + 'M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z' + '"/>' },
+    { k: 'star', label: 'Star', svg: `<path d="${STAR_D}"/>` },
     { k: 'diamond', label: 'Diamond', svg: '<path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/>' },
   ];
+  const TYPE_ICON = {
+    frame: '<path d="M7 3v18M17 3v18M3 7h18M3 17h18"/>', rect: '<rect x="4" y="5" width="16" height="14" rx="1.5"/>',
+    ellipse: '<ellipse cx="12" cy="12" rx="8" ry="7"/>', line: '<path d="M5 19 19 5"/>', text: '<path d="M5 7V5h14v2M12 5v14M9 19h6"/>',
+    stroke: '<path d="M4 20l4-1 11-11-3-3L5 16z"/>', group: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M10.5 7H17v6.5"/>',
+    icon: `<path d="${STAR_D}"/>`, image: '<path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5"/>', triangle: '<path d="M12 4.5 20 19H4z"/>',
+    polygon: '<path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/>', star: `<path d="${STAR_D}"/>`,
+  };
 
   // ---------- State ----------
   const S = {
     nodes: [], sel: new Set(), cam: { x: 0, y: 0, z: 1 },
     tool: 'draw', shapeKind: 'rect', color: INK, autoShape: true,
-    pencil: false, finger: 'move', coachSeen: false, glassTipSeen: false, hover: null,
+    pencil: false, finger: 'move', tips: {}, hover: null, hoverId: null,
   };
-  const KEY = 'chitrakar.prototype.v2';
+  const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1';
   const store = {
-    get() { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; } },
-    set(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); } catch { /* storage unavailable */ } },
+    get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
+    set(v, k = KEY) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
   };
   const $ = (id) => document.getElementById(id);
   const cv = $('scene'), mainCtx = cv.getContext('2d');
@@ -392,14 +444,35 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   let uid = 1;
   const nid = () => 'n' + (uid++) + Math.random().toString(36).slice(2, 6);
   const clone = (o) => JSON.parse(JSON.stringify(o));
+  const reid = (n) => { n.id = nid(); if (n.children) n.children.forEach(reid); return n; };
+  const capture = (id) => { try { cv.setPointerCapture(id); } catch { /* synthetic or already released pointer */ } };
+  function tipOnce(key, msg, ms = 4500) { if (S.tips[key]) return; S.tips[key] = 1; save(); toast(msg, null, null, ms); }
+
+  // Tiny DOM helper for popovers
+  function h(tag, props = {}, ...kids) {
+    const el = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') el.className = v;
+      else if (k === 'html') el.innerHTML = v;
+      else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (const c of kids.flat()) if (c != null && c !== false) el.append(c);
+    return el;
+  }
+  const svg = (d, cls = 'i') => `<svg class="${cls}" viewBox="0 0 24 24">${d}</svg>`;
 
   // ---------- Persistence (debounced; flushed when hidden) ----------
-  let saveTimer = 0;
+  let saveTimer = 0, saveWarned = false;
   function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); }
   function flush() {
     clearTimeout(saveTimer); saveTimer = 0;
-    const { nodes, cam, color, autoShape, pencil, finger, coachSeen, glassTipSeen, shapeKind } = S;
-    store.set({ nodes, cam, color, autoShape, pencil, finger, coachSeen, glassTipSeen, shapeKind });
+    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind } = S;
+    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind }) && !saveWarned) {
+      saveWarned = true;
+      toast('Couldn’t save in this browser: its storage is full. Large images use the most space.', null, null, 7000);
+    }
   }
 
   // ---------- History ----------
@@ -409,6 +482,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   function undo() { if (!past.length) return; future.push(snap()); S.nodes = JSON.parse(past.pop()); S.sel.clear(); closePops(); changed(); }
   function redo() { if (!future.length) return; past.push(snap()); S.nodes = JSON.parse(future.pop()); S.sel.clear(); closePops(); changed(); }
   function changed() { save(); updateUI(); requestRender(); }
+  const byId = (id) => S.nodes.find((n) => n.id === id);
 
   // ---------- Rendering: only when something changed ----------
   let raf = 0;
@@ -428,7 +502,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   const toScreen = (wx, wy) => ({ x: wx * S.cam.z + S.cam.x, y: wy * S.cam.z + S.cam.y });
 
   let G = null;            // active single-pointer gesture
-  let editing = null;      // node id being text-edited
+  let editing = null;      // { n, g } text being edited (g = parent group, if any)
 
   function render() {
     raf = 0;
@@ -442,9 +516,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 
     ctx.setTransform(DPR * z, 0, 0, DPR * z, DPR * x, DPR * y);
     const vx0 = -x / z, vy0 = -y / z, vx1 = vx0 + W / z, vy1 = vy0 + H / z;
-    const visible = (n) => n.x - 80 < vx1 && n.x + n.w + 80 > vx0 && n.y - 80 < vy1 && n.y + n.h + 80 > vy0;
+    const visible = (n) => !n.hidden && n.x - 80 < vx1 && n.x + n.w + 80 > vx0 && n.y - 80 < vy1 && n.y + n.h + 80 > vy0;
     for (const n of S.nodes) if (n.type === 'frame' && visible(n)) drawNode(n);
-    for (const n of S.nodes) if (n.type !== 'frame' && n.id !== editing && visible(n)) drawItem(n);
+    for (const n of S.nodes) if (n.type !== 'frame' && (!editing || n !== editing.n) && visible(n)) drawItem(n);
 
     if (G && G.kind === 'draw') drawInk(G.pts, 0, 0, 1, 1, G.sw, S.color, G.pen);
     if (G && G.kind === 'frame') {
@@ -455,16 +529,32 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     // overlays
     const lw = 1.5 / z;
     ctx.lineWidth = lw; ctx.strokeStyle = T.accent;
+    if (S.hoverId && !S.sel.has(S.hoverId) && !G) {
+      const hn = byId(S.hoverId); if (hn) ctx.strokeRect(hn.x, hn.y, hn.w, hn.h);
+    }
     if (S.sel.size && !editing) {
-      for (const n of selected()) ctx.strokeRect(n.x, n.y, n.w, n.h);
-      if (S.sel.size === 1) {
-        const n = selected()[0], hs = 9 / z;
-        ctx.fillStyle = '#ffffff';
-        for (const [hx, hy] of corners(n)) { ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs); ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs); }
+      const ns = selected();
+      for (const n of ns) {
+        if (n.locked) { ctx.setLineDash([4 / z, 4 / z]); ctx.strokeRect(n.x, n.y, n.w, n.h); ctx.setLineDash([]); }
+        else if (n.type === 'line' && ns.length === 1) { /* endpoints drawn below */ }
+        else ctx.strokeRect(n.x, n.y, n.w, n.h);
       }
+      if (ns.length === 1 && !ns[0].locked && !pinch) {
+        const n = ns[0], hs = 9 / z;
+        ctx.fillStyle = '#ffffff';
+        if (n.type === 'line') {
+          for (const [hx, hy] of lineEnds(n)) { ctx.beginPath(); ctx.arc(hx, hy, hs * 0.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+        } else for (const [hx, hy] of corners(n)) { ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs); ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs); }
+      }
+    }
+    if (G && G.guides && G.guides.length) {
+      ctx.strokeStyle = GUIDE; ctx.lineWidth = 1 / z; ctx.beginPath();
+      for (const [a, b, c, d] of G.guides) { ctx.moveTo(a, b); ctx.lineTo(c, d); }
+      ctx.stroke();
     }
     if (G && G.kind === 'marquee') {
       const r = rectOf(G.x0, G.y0, G.x1, G.y1);
+      ctx.strokeStyle = T.accent; ctx.lineWidth = lw;
       ctx.fillStyle = 'rgba(61,71,201,0.08)'; ctx.fillRect(r.x, r.y, r.w, r.h); ctx.strokeRect(r.x, r.y, r.w, r.h);
     }
     if (S.hover && !G && (S.tool === 'draw' || S.tool === 'erase')) {
@@ -537,7 +627,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     ctx.drawImage(res.c, 0, 0, res.w, res.h, b.x, b.y, b.w, b.h); ctx.restore();
   }
   function drawItem(n) {
-    const op = n.opacity ?? 1; if (op <= 0.001) return;
+    const op = n.opacity ?? 1; if (op <= 0.001 || n.hidden) return;
     ctx.save();
     if (op < 1) ctx.globalAlpha *= op;
     if (n.bgBlur > 0 && isShape(n)) backdrop(n);
@@ -549,10 +639,16 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   const FONT = (n) => `${n.weight || 500} ${n.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif`;
   const paths = new Map();
   const iconPath = (name) => { let p = paths.get(name); if (!p) { p = new Path2D(ICONS[name] || ICONS.star); paths.set(name, p); } return p; };
+  const images = new Map();
+  function imageEl(src) {
+    let im = images.get(src);
+    if (!im) { im = new Image(); im.onload = () => requestRender(); im.src = src; images.set(src, im); }
+    return im;
+  }
   function shapePath(n) {
     ctx.beginPath();
     const { x, y, w, h } = n, cx = x + w / 2, cy = y + h / 2;
-    if (n.type === 'rect') { ctx.roundRect(x, y, w, h, Math.min(n.r || 0, w / 2, h / 2)); return; }
+    if (n.type === 'rect' || n.type === 'image') { ctx.roundRect(x, y, w, h, Math.min(n.r || 0, w / 2, h / 2)); return; }
     if (n.type === 'ellipse') { ctx.ellipse(cx, cy, w / 2, h / 2, 0, 0, Math.PI * 2); return; }
     let pts;
     if (n.type === 'triangle') pts = n.flip ? [[x, y], [x + w, y], [cx, y + h]] : [[cx, y], [x + w, y + h], [x, y + h]];
@@ -583,9 +679,16 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
         ctx.globalAlpha = a;
         break;
       }
+      case 'image': {
+        const im = imageEl(n.src);
+        shapePath(n);
+        ctx.fillStyle = IMG; ctx.fill();              // also casts the shadow, which a clip would cut off
+        ctx.shadowColor = 'transparent';
+        if (im.complete && im.naturalWidth) { ctx.save(); ctx.clip(); ctx.drawImage(im, n.x, n.y, n.w, n.h); ctx.restore(); }
+        break;
+      }
       case 'line': {
-        const sx = n.w / n.pw, sy = n.h / n.ph, p = n.pts;
-        const x1 = n.x + p[0] * sx, y1 = n.y + p[1] * sy, x2 = n.x + p[2] * sx, y2 = n.y + p[3] * sy;
+        const [[x1, y1], [x2, y2]] = lineEnds(n);
         ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
         if (n.head) {
           const a = Math.atan2(y2 - y1, x2 - x1), hl = Math.max(10, n.sw * 4.5);
@@ -609,7 +712,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       }
       case 'group': {
         ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / n.gw, n.h / n.gh);
-        for (const c of n.children) drawItem(c);
+        for (const c of n.children) if (!editing || c !== editing.n) drawItem(c);
         ctx.restore();
         break;
       }
@@ -636,6 +739,16 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   const rectOf = (x0, y0, x1, y1) => ({ x: Math.min(x0, x1), y: Math.min(y0, y1), w: Math.abs(x1 - x0), h: Math.abs(y1 - y0) });
   const corners = (n) => [[n.x, n.y], [n.x + n.w, n.y], [n.x, n.y + n.h], [n.x + n.w, n.y + n.h]];
   const selected = () => S.nodes.filter((n) => S.sel.has(n.id));
+  const union = (ns) => {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of ns) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h); }
+    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+  };
+  function lineEnds(n) { const sx = n.w / n.pw, sy = n.h / n.ph, p = n.pts; return [[n.x + p[0] * sx, n.y + p[1] * sy], [n.x + p[2] * sx, n.y + p[3] * sy]]; }
+  function setLineEnds(n, [a, b]) {
+    const x = Math.min(a[0], b[0]), y = Math.min(a[1], b[1]), w = Math.max(Math.abs(b[0] - a[0]), 1), h = Math.max(Math.abs(b[1] - a[1]), 1);
+    Object.assign(n, { x, y, w, h, pw: w, ph: h, pts: [a[0] - x, a[1] - y, b[0] - x, b[1] - y] });
+  }
   function segDist(px, py, ax, ay, bx, by) {
     const dx = bx - ax, dy = by - ay, l = dx * dx + dy * dy;
     const t = l ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / l)) : 0;
@@ -653,26 +766,47 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     }
     return true;
   }
-  function hit(x, y) {
-    const tol = 8 / S.cam.z;
-    for (let i = S.nodes.length - 1; i >= 0; i--) { const n = S.nodes[i]; if (n.type !== 'frame' && hitNode(n, x, y, tol)) return n; }
+  // Everything under a point, topmost first. Hidden, locked and invisible items are skipped.
+  function hitAll(x, y) {
+    const tol = 8 / S.cam.z, out = [];
+    for (let i = S.nodes.length - 1; i >= 0; i--) {
+      const n = S.nodes[i];
+      if (n.type !== 'frame' && !n.hidden && !n.locked && !invisible(n) && hitNode(n, x, y, tol)) out.push(n);
+    }
     // Frames are picked by their label or edge, so drawing or marquee inside an empty frame still works.
     ctx.font = `600 ${12 / S.cam.z}px -apple-system, system-ui, sans-serif`;
     for (let i = S.nodes.length - 1; i >= 0; i--) {
-      const n = S.nodes[i]; if (n.type !== 'frame') continue;
+      const n = S.nodes[i]; if (n.type !== 'frame' || n.hidden || n.locked) continue;
       const lw = ctx.measureText(n.name).width;
-      if (x >= n.x && x <= n.x + Math.max(lw, 40 / S.cam.z) && y >= n.y - 22 / S.cam.z && y <= n.y) return n;
+      const onLabel = x >= n.x && x <= n.x + Math.max(lw, 40 / S.cam.z) && y >= n.y - 22 / S.cam.z && y <= n.y;
       const inside = x >= n.x - tol && x <= n.x + n.w + tol && y >= n.y - tol && y <= n.y + n.h + tol;
       const nearEdge = Math.min(Math.abs(x - n.x), Math.abs(x - n.x - n.w), Math.abs(y - n.y), Math.abs(y - n.y - n.h)) <= tol;
-      if (inside && nearEdge) return n;
+      if (onLabel || (inside && nearEdge)) out.push(n);
+    }
+    return out;
+  }
+  const hit = (x, y) => hitAll(x, y)[0] || null;
+  function childAt(g, p) {
+    const sx = g.w / g.gw, sy = g.h / g.gh, lx = (p.x - g.x) / sx, ly = (p.y - g.y) / sy, tol = 8 / S.cam.z / Math.min(sx, sy);
+    for (let i = g.children.length - 1; i >= 0; i--) { const c = g.children[i]; if (!invisible(c) && !c.hidden && hitNode(c, lx, ly, tol)) return c; }
+    return null;
+  }
+  function frameOf(n) {
+    const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+    for (let i = S.nodes.length - 1; i >= 0; i--) {
+      const f = S.nodes[i];
+      if (f.type === 'frame' && f !== n && cx > f.x && cx < f.x + f.w && cy > f.y && cy < f.y + f.h) return f;
     }
     return null;
   }
+  // Measures text; centred labels (inside buttons, tabs…) stay centred when their words change.
   function measure(n) {
+    const c0 = n.x + (n.w || 0) / 2, hadWidth = n.w > 0;
     ctx.font = FONT(n);
     const lines = n.text.split('\n');
     n.w = Math.max(4, ...lines.map((l) => ctx.measureText(l).width));
     n.h = lines.length * n.size * 1.25;
+    if (n.align === 'center' && hadWidth) n.x = c0 - n.w / 2;
   }
 
   // ---------- Shape recognition: rough stroke → clean shape ----------
@@ -718,10 +852,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   }
   const lineColor = () => (S.color === WH || S.color === SHAPE_FILL ? INK : S.color);
   function lineNode(x0, y0, x1, y1, o = {}) {
-    const x = Math.min(x0, x1), y = Math.min(y0, y1), w = Math.max(Math.abs(x1 - x0), 1), h = Math.max(Math.abs(y1 - y0), 1);
-    return { id: nid(), type: 'line', x, y, w, h, pw: w, ph: h, pts: [x0 - x, y0 - y, x1 - x, y1 - y], color: lineColor(), sw: 2, head: false, ...o };
+    const n = { id: nid(), type: 'line', color: lineColor(), sw: 2, head: false, ...o };
+    setLineEnds(n, [[x0, y0], [x1, y1]]); return n;
   }
-  // kind: rect | ellipse | triangle | polygon | star | diamond | line | arrow
   function shapeNode(kind, r, o = {}) {
     if (kind === 'line' || kind === 'arrow') return lineNode(r.x0, r.y0, r.x1, r.y1, { head: kind === 'arrow', ...o });
     const fill = S.color === INK ? SHAPE_FILL : S.color;
@@ -733,7 +866,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   }
   function shapeFromDrag(g) {
     let { x0, y0, x1, y1 } = g;
-    if (g.kind === 'shape' && (g.k === 'line' || g.k === 'arrow')) {
+    if (g.k === 'line' || g.k === 'arrow') {
       if (g.shift) { const a = Math.round(Math.atan2(y1 - y0, x1 - x0) / (Math.PI / 4)) * (Math.PI / 4), d = Math.hypot(x1 - x0, y1 - y0); x1 = x0 + Math.cos(a) * d; y1 = y0 + Math.sin(a) * d; }
       return shapeNode(g.k, { x0, y0, x1, y1 });
     }
@@ -741,14 +874,18 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     const r = rectOf(x0, y0, x1, y1); r.w = Math.max(r.w, 1); r.h = Math.max(r.h, 1);
     return shapeNode(g.k, r);
   }
-  const colorOf = (n) => n.type === 'group' ? colorOf(n.children[0]) : isShape(n) ? (n.fill || n.stroke) : n.color;
-  function setColor(n, c) {
-    if (n.type === 'group') return setColor(n.children[0], c);
-    if (isShape(n)) { if (n.fill) n.fill = c; else n.stroke = c; }
-    else if (n.type !== 'frame') n.color = c;
+  // A component's "main" shape: its first visible shape (the button background, the card surface…).
+  const primary = (g) => g.children.find((c) => isShape(c) && !invisible(c)) || null;
+  function colorOf(n) {
+    if (n.type === 'group') { const p = primary(n); return p ? colorOf(p) : (n.children.find((c) => c.color) || {}).color; }
+    return isShape(n) ? (n.fill || n.stroke) : n.color;
   }
-  // Shape-specific effects (fill opacity, background blur, shadow) go on the shape itself, or on a component's container.
-  const fxTarget = (n) => isShape(n) ? n : (n.type === 'group' && isShape(n.children[0])) ? n.children[0] : null;
+  function setColor(n, c) {
+    if (n.type === 'group') { const p = primary(n); if (p) setColor(p, c); else n.children.forEach((k) => { if (k.color) k.color = c; }); return; }
+    if (isShape(n)) { if (n.fill) n.fill = c; else n.stroke = c; }
+    else if (n.type !== 'frame' && n.type !== 'image') n.color = c;
+  }
+  const fxTarget = (n) => isShape(n) ? n : n.type === 'group' ? primary(n) : null;
 
   // ---------- Component library ----------
   // Builders take coordinates relative to the component's top-left corner.
@@ -758,8 +895,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   const I = (icon, x, y, s, color, o = {}) => ({ id: nid(), type: 'icon', icon, x, y, w: s, h: s, color, sw: 1.8, ...o });
   const Ln = (x0, y0, x1, y1, color = LN, sw = 1) => lineNode(x0, y0, x1, y1, { color, sw });
   function Tx(text, size, weight, color, pos, o = {}) {
-    const n = { id: nid(), type: 'text', text, size, weight, color, x: 0, y: 0, ...o }; measure(n);
-    n.x = pos.cx != null ? pos.cx - n.w / 2 : pos.x || 0;
+    const n = { id: nid(), type: 'text', text, size, weight, color, x: 0, y: 0, w: 0, ...o }; measure(n);
+    if (pos.cx != null) { n.x = pos.cx - n.w / 2; n.align = 'center'; } else n.x = pos.x || 0;
     n.y = pos.cy != null ? pos.cy - n.h / 2 : pos.y || 0;
     return n;
   }
@@ -782,7 +919,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       ['Button', () => Grp('Button', 160, 48, [R(0, 0, 160, 48, { r: 12, fill: AC }), Tx('Button', 17, 600, WH, { cx: 80, cy: 24 })])],
       ['Secondary button', () => Grp('Secondary button', 160, 48, [R(0, 0, 160, 48, { r: 12, fill: WH, stroke: AC, sw: 1.5 }), Tx('Button', 17, 600, AC, { cx: 80, cy: 24 })])],
       ['Button with icon', () => { const t = Tx('New item', 17, 600, WH, { x: 50, cy: 24 }), w = Math.ceil(t.x + t.w + 22); return Grp('Button with icon', w, 48, [R(0, 0, w, 48, { r: 24, fill: INK }), I('plus', 18, 12, 24, WH, { sw: 2.2 }), t]); }],
-      ['Text button', () => { const t = Tx('Learn more', 17, 600, AC, { x: 0, cy: 14 }); return Grp('Text button', Math.ceil(t.w + 24), 28, [R(0, 0, t.w + 24, 28), t, I('chevronRight', t.w + 2, 4, 20, AC, { sw: 2.2 })]); }],
+      ['Text button', () => { const t = Tx('Learn more', 17, 600, AC, { x: 0, cy: 14 }); return Grp('Text button', Math.ceil(t.w + 24), 28, [t, I('chevronRight', t.w + 2, 4, 20, AC, { sw: 2.2 })]); }],
       ['Icon button', () => Grp('Icon button', 48, 48, [E(0, 0, 48, 48, { fill: SF }), I('heart', 12, 12, 24, INK)])],
       ['Floating action button', () => Grp('Floating action button', 56, 56, [E(0, 0, 56, 56, { fill: AC, shadow: 2 }), I('plus', 16, 16, 24, WH, { sw: 2.4 })])],
       ['Destructive button', () => Grp('Destructive button', 160, 48, [R(0, 0, 160, 48, { r: 12, fill: RED }), Tx('Delete', 17, 600, WH, { cx: 80, cy: 24 })])],
@@ -811,7 +948,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       ['Date field', () => Grp('Date field', 240, 48, [R(0, 0, 240, 48, { r: 12, fill: WH, stroke: LN }), I('calendar', 14, 12, 24, MUT), Tx('24 Oct 2026', 16, 400, INK, { x: 48, cy: 24 })])],
     ] },
     { cat: 'Navigation', items: [
-      ['Status bar', () => Grp('Status bar', 393, 54, [R(0, 0, 393, 54), Tx('9:41', 17, 600, INK, { cx: 64, cy: 30 }),
+      ['Status bar', () => Grp('Status bar', 393, 54, [Tx('9:41', 17, 600, INK, { cx: 64, cy: 30 }),
         R(290, 30, 3, 6, { r: 1, fill: INK }), R(295, 27, 3, 9, { r: 1, fill: INK }), R(300, 24, 3, 12, { r: 1, fill: INK }), R(305, 21, 3, 15, { r: 1, fill: INK }),
         I('wifi', 313, 18, 20, INK, { sw: 2.2 }), R(340, 21, 25, 13, { r: 4, stroke: INK, strokeAlpha: 0.4 }), R(342, 23, 19, 9, { r: 2, fill: INK }), R(366.5, 25, 1.8, 5, { r: 1, fill: INK, fillAlpha: 0.4 })])],
       ['Navigation bar', () => Grp('Navigation bar', 393, 52, [R(0, 0, 393, 52, { fill: WH }), I('chevronLeft', 8, 14, 24, AC, { sw: 2.2 }), Tx('Back', 17, 400, AC, { x: 32, cy: 26 }),
@@ -828,10 +965,10 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
         ...[['home', 'Dashboard'], ['mail', 'Messages'], ['bell', 'Notifications'], ['settings', 'Settings']].flatMap(([ic, label], i) => {
           const cy = 34 + i * 48, col = i === 0 ? AC : INK; return [I(ic, 22, cy - 12, 24, col), Tx(label, 15, i === 0 ? 600 : 500, col, { x: 58, cy })];
         })])],
-      ['Tabs', () => Grp('Tabs', 300, 40, [R(0, 0, 300, 40), Tx('Overview', 15, 600, AC, { cx: 50, cy: 18 }), Tx('Activity', 15, 500, MUT, { cx: 150, cy: 18 }),
+      ['Tabs', () => Grp('Tabs', 300, 40, [Tx('Overview', 15, 600, AC, { cx: 50, cy: 18 }), Tx('Activity', 15, 500, MUT, { cx: 150, cy: 18 }),
         Tx('Settings', 15, 500, MUT, { cx: 250, cy: 18 }), Ln(0, 39, 300, 39), R(10, 37, 80, 3, { r: 1.5, fill: AC })])],
       ['Breadcrumb', () => { let x = 0; const parts = ['Home', '/', 'Projects', '/', 'Chitrakar'].map((s, i, a) => { const t = Tx(s, 14, i === a.length - 1 ? 600 : 500, i === a.length - 1 ? INK : MUT, { x, cy: 10 }); x += t.w + 8; return t; });
-        return Grp('Breadcrumb', Math.ceil(x), 20, [R(0, 0, x, 20), ...parts]); }],
+        return Grp('Breadcrumb', Math.ceil(x), 20, parts); }],
     ] },
     { cat: 'Content', items: [
       ['Card', () => Grp('Card', 300, 268, [R(0, 0, 300, 268, { r: 16, fill: WH, shadow: 2 }), R(12, 12, 276, 148, { r: 10, fill: IMG }), I('image', 126, 62, 48, '#a3a7bd', { sw: 1.4 }),
@@ -844,7 +981,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       ['Avatar group', () => Grp('Avatar group', 128, 40, [E(0, 0, 40, 40, { fill: '#c9ccf5', stroke: WH, sw: 3 }), E(28, 0, 40, 40, { fill: '#f6d2a8', stroke: WH, sw: 3 }),
         E(56, 0, 40, 40, { fill: '#bfe6d3', stroke: WH, sw: 3 }), Tx('+5', 13, 600, MUT, { x: 104, cy: 20 })])],
       ['Badge', () => Grp('Badge', 24, 24, [R(0, 0, 24, 24, { r: 12, fill: RED }), Tx('3', 13, 700, WH, { cx: 12, cy: 12 })])],
-      ['Tag', () => { const t = Tx('Design', 14, 600, AC, { x: 14, cy: 16 }), w = Math.ceil(t.w + 28); return Grp('Tag', w, 32, [R(0, 0, w, 32, { r: 16, fill: TINT }), t]); }],
+      ['Tag', () => { const t = Tx('Design', 14, 600, AC, { x: 14, cy: 16 }), w = Math.ceil(t.w + 28); t.x = w / 2 - t.w / 2; t.align = 'center'; return Grp('Tag', w, 32, [R(0, 0, w, 32, { r: 16, fill: TINT }), t]); }],
       ['Image placeholder', () => Grp('Image placeholder', 240, 160, [R(0, 0, 240, 160, { r: 12, fill: IMG }), I('image', 96, 56, 48, '#a3a7bd', { sw: 1.4 })])],
       ['Divider', () => Ln(0, 0, 320, 0)],
       ['Stat card', () => Grp('Stat card', 200, 112, [R(0, 0, 200, 112, { r: 16, fill: WH, stroke: LN }), Tx('Weekly visitors', 13, 500, MUT, { x: 16, y: 16 }),
@@ -881,10 +1018,11 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     ] },
     { cat: 'Icons', items: Object.keys(ICONS).map((k) => [ICON_LABEL[k] || k, () => I(k, 0, 0, 32, INK)]) },
   ];
+  let myLib = store.get(LIBKEY) || [];
 
   // ---------- Input ----------
   const touches = new Map();
-  let pinch = null, spaceDown = false, lastTap = { id: null, t: 0 };
+  let pinch = null, spaceDown = false, lastTap = { id: null, t: 0, sx: -99, sy: -99 };
   const fingersNavigate = () => S.pencil && S.finger === 'move';
 
   function enablePencil() {
@@ -892,30 +1030,52 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     toast('Apple Pencil detected. Your fingers now move the canvas and select things.', null, null, 5500);
   }
 
+  function handleAt(p, touch) {
+    if (S.sel.size !== 1) return null;
+    const n = selected()[0]; if (!n || n.locked) return null;
+    // On small items the handles shrink, so a tap in the middle still picks or moves the item.
+    const base = (touch ? 24 : 14) / S.cam.z, hs = n.type === 'line' ? base : Math.max(6 / S.cam.z, Math.min(base, Math.min(n.w, n.h) / 3));
+    if (n.type === 'line') {
+      const i = lineEnds(n).findIndex(([hx, hy]) => Math.hypot(p.x - hx, p.y - hy) < hs);
+      return i >= 0 ? { n, end: i } : null;
+    }
+    const cs = corners(n), ci = cs.findIndex(([hx, hy]) => Math.abs(p.x - hx) < hs && Math.abs(p.y - hy) < hs);
+    return ci >= 0 ? { n, corner: ci, ax: cs[3 - ci][0], ay: cs[3 - ci][1] } : null;
+  }
+  function startHandle(id, hd) {
+    const n = hd.n;
+    G = hd.end != null ? { kind: 'lineEnd', id, n, end: hd.end, moved: false }
+      : { kind: 'resize', id, n, ax: hd.ax, ay: hd.ay, orig: { w: n.w, h: n.h, size: n.size }, moved: false };
+  }
+
   cv.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     closePops();
     if (editing) commitText();
     if (e.pointerType === 'pen' && !S.pencil) enablePencil();
+    const p = toWorld(e.clientX, e.clientY);
     if (e.pointerType === 'touch') {
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinch) { pinch.maxN = Math.max(pinch.maxN, touches.size); return; }
       if (touches.size >= 2) { cancelGesture(); startPinch(e.timeStamp); return; }
       if (fingersNavigate()) {
-        const p = toWorld(e.clientX, e.clientY), n = hit(p.x, p.y);
-        if (n && S.sel.has(n.id)) { cv.setPointerCapture(e.pointerId); startMove(e.pointerId, p); return; }   // a finger can drag what is already selected
+        // A finger can resize, drag or (with two fingers) scale what is already selected; otherwise it pans.
+        const hd = handleAt(p, true);
+        if (hd) { capture(e.pointerId); startHandle(e.pointerId, hd); return; }
+        const n = hitAll(p.x, p.y).find((m) => S.sel.has(m.id));
+        if (n) { capture(e.pointerId); startMove(e.pointerId, p, true, e.timeStamp); return; }
         G = { kind: 'touchpan', id: e.pointerId, sx: e.clientX, sy: e.clientY, cam0: { ...S.cam }, t0: e.timeStamp, moved: false }; return;
       }
     }
     if (e.pointerType === 'mouse' && (e.button === 1 || (e.button === 0 && spaceDown))) {
       G = { kind: 'pan', id: e.pointerId, sx: e.clientX, sy: e.clientY, cam0: { ...S.cam } };
-      cv.classList.add('panning'); cv.setPointerCapture(e.pointerId); return;
+      cv.classList.add('panning'); capture(e.pointerId); return;
     }
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     if (G) return;
-    cv.setPointerCapture(e.pointerId);
+    capture(e.pointerId);
     S.hover = null;
-    startTool(e, toWorld(e.clientX, e.clientY));
+    startTool(e, p);
   });
 
   function startTool(e, p) {
@@ -931,57 +1091,73 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       case 'frame': G = { kind: 'frame', id, x0: p.x, y0: p.y, x1: p.x, y1: p.y }; break;
       case 'text': G = { kind: 'text', id, p }; break;
       case 'select': {
-        if (S.sel.size === 1) {
-          const n = selected()[0], hs = 14 / z;
-          const ci = corners(n).findIndex(([hx, hy]) => Math.abs(p.x - hx) < hs && Math.abs(p.y - hy) < hs);
-          if (ci >= 0) {
-            const [ax, ay] = corners(n)[3 - ci];
-            G = { kind: 'resize', id, n, ax, ay, orig: { w: n.w, h: n.h, size: n.size }, moved: false };
-            break;
-          }
-        }
-        const n = hit(p.x, p.y);
-        if (n) {
-          if (n.type === 'text' && lastTap.id === n.id && e.timeStamp - lastTap.t < 400) { G = null; editText(n, false); return; }
-          lastTap = { id: n.id, t: e.timeStamp };
-          if (e.shiftKey) { S.sel.has(n.id) ? S.sel.delete(n.id) : S.sel.add(n.id); }
-          else if (!S.sel.has(n.id)) { S.sel = new Set([n.id]); }
-          startMove(id, p);
-        } else {
-          if (!e.shiftKey) S.sel.clear();
-          G = { kind: 'marquee', id, x0: p.x, y0: p.y, x1: p.x, y1: p.y };
-        }
+        const hd = handleAt(p, e.pointerType === 'touch');
+        if (hd) { startHandle(id, hd); break; }
+        const hits = hitAll(p.x, p.y);
+        if (!hits.length) { if (!e.shiftKey) S.sel.clear(); G = { kind: 'marquee', id, x0: p.x, y0: p.y, x1: p.x, y1: p.y }; break; }
+        if (e.shiftKey) { const n = hits[0]; S.sel.has(n.id) ? S.sel.delete(n.id) : S.sel.add(n.id); startMove(id, p, false, e.timeStamp); break; }
+        const wasSelected = hits.some((n) => S.sel.has(n.id));
+        if (!wasSelected) { S.sel = new Set([hits[0].id]); lastTap = { id: hits[0].id, t: e.timeStamp, sx: e.clientX, sy: e.clientY }; }
+        startMove(id, p, wasSelected, e.timeStamp);
         break;
       }
     }
     updateUI(); requestRender();
   }
 
-  function startMove(id, p) {
+  function movingSet() {
     const moving = new Map();
-    for (const n of selected()) moving.set(n.id, n);
+    for (const n of selected()) if (!n.locked) moving.set(n.id, n);
     for (const f of selected()) {                       // moving a frame carries what sits inside it
-      if (f.type !== 'frame') continue;
+      if (f.type !== 'frame' || f.locked) continue;
       for (const n of S.nodes) {
-        if (n.type === 'frame' || moving.has(n.id)) continue;
+        if (n.type === 'frame' || moving.has(n.id) || n.locked) continue;
         const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
         if (cx > f.x && cx < f.x + f.w && cy > f.y && cy < f.y + f.h) moving.set(n.id, n);
       }
     }
-    G = { kind: 'move', id, start: p, items: [...moving.values()].map((n) => ({ n, x: n.x, y: n.y })), moved: false };
+    return [...moving.values()];
+  }
+  function startMove(id, p, tapCandidate, t) {
+    const items = movingSet(), ids = new Set(items.map((n) => n.id));
+    const z = S.cam.z, vx0 = -S.cam.x / z, vy0 = -S.cam.y / z, vx1 = vx0 + W / z, vy1 = vy0 + H / z;
+    const targets = S.nodes.filter((n) => !ids.has(n.id) && !n.hidden && n.x < vx1 && n.x + n.w > vx0 && n.y < vy1 && n.y + n.h > vy0);
+    G = { kind: 'move', id, start: p, items: items.map((n) => ({ n, x: n.x, y: n.y })), bb0: items.length ? union(items) : null, targets, moved: false, tapCandidate, t0: t, guides: [] };
+  }
+  // Smart guides: snap the moving box's edges and centre to nearby items and frames.
+  function snapMove(g, dx, dy) {
+    const tol = 6 / S.cam.z, b = g.bb0, guides = [];
+    if (!b) return { dx, dy, guides };
+    const xs = [b.x + dx, b.x + dx + b.w / 2, b.x + dx + b.w], ys = [b.y + dy, b.y + dy + b.h / 2, b.y + dy + b.h];
+    let bx = null, by = null;
+    for (const t of g.targets) {
+      const tx = [t.x, t.x + t.w / 2, t.x + t.w], ty = [t.y, t.y + t.h / 2, t.y + t.h];
+      for (const a of xs) for (const v of tx) { const d = v - a; if (Math.abs(d) < tol && (!bx || Math.abs(d) < Math.abs(bx.d))) bx = { d, v, t }; }
+      for (const a of ys) for (const v of ty) { const d = v - a; if (Math.abs(d) < tol && (!by || Math.abs(d) < Math.abs(by.d))) by = { d, v, t }; }
+    }
+    if (bx) dx += bx.d;
+    if (by) dy += by.d;
+    if (bx) guides.push([bx.v, Math.min(b.y + dy, bx.t.y), bx.v, Math.max(b.y + dy + b.h, bx.t.y + bx.t.h)]);
+    if (by) guides.push([Math.min(b.x + dx, by.t.x), by.v, Math.max(b.x + dx + b.w, by.t.x + by.t.w), by.v]);
+    return { dx, dy, guides };
   }
 
-  const keepsAspect = (n) => n.type === 'group' || n.type === 'icon';
+  const keepsAspect = (n) => n.type === 'group' || n.type === 'icon' || n.type === 'image';
   cv.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'pen' && e.buttons === 0 && !G) {
-      if (!S.pencil) enablePencil();
-      S.hover = toWorld(e.clientX, e.clientY); requestRender(); return;
+    const p = toWorld(e.clientX, e.clientY);
+    if (!G && e.buttons === 0 && e.pointerType !== 'touch') {
+      if (e.pointerType === 'pen' && !S.pencil) enablePencil();
+      // Hover: Pencil (on supported iPads) and mouse preview what a tap will pick.
+      const hv = S.tool === 'select' || (e.pointerType === 'pen' && S.tool !== 'draw' && S.tool !== 'erase') ? hit(p.x, p.y) : null;
+      const hid = hv ? hv.id : null;
+      const brush = (S.tool === 'draw' && e.pointerType === 'pen') || S.tool === 'erase';
+      if (hid !== S.hoverId || brush) { S.hoverId = hid; S.hover = brush ? p : null; requestRender(); }
+      return;
     }
-    if (e.pointerType === 'mouse' && !G && S.tool === 'erase') { S.hover = toWorld(e.clientX, e.clientY); requestRender(); }
     if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
     if (pinch) { updatePinch(); return; }
     if (!G || G.id !== e.pointerId) return;
-    const z = S.cam.z, p = toWorld(e.clientX, e.clientY);
+    const z = S.cam.z;
     switch (G.kind) {
       case 'touchpan': case 'pan': {
         const dx = e.clientX - G.sx, dy = e.clientY - G.sy;
@@ -990,7 +1166,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
         break;
       }
       case 'draw': {
-        const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+        const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
         for (const ce of (evs.length ? evs : [e])) {
           const q = toWorld(ce.clientX, ce.clientY), a = G.pts, l = a.length;
           if (Math.hypot(q.x - a[l - 3], q.y - a[l - 2]) * z < 1.5) continue;
@@ -1002,16 +1178,26 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       case 'erase': eraseAt(p); break;
       case 'frame': case 'marquee': G.x1 = p.x; G.y1 = p.y; break;
       case 'move': {
-        const dx = p.x - G.start.x, dy = p.y - G.start.y;
-        if (!G.moved) { if (Math.hypot(dx, dy) * z < 3) return; G.moved = true; checkpoint(); }
-        for (const it of G.items) { it.n.x = it.x + dx; it.n.y = it.y + dy; }
+        let dx = p.x - G.start.x, dy = p.y - G.start.y;
+        if (!G.moved) { if (Math.hypot(dx, dy) * z < 4) return; G.moved = true; checkpoint(); }
+        const sn = e.metaKey || e.ctrlKey ? { dx, dy, guides: [] } : snapMove(G, dx, dy);
+        G.guides = sn.guides;
+        for (const it of G.items) { it.n.x = it.x + sn.dx; it.n.y = it.y + sn.dy; }
+        break;
+      }
+      case 'lineEnd': {
+        if (!G.moved) { G.moved = true; checkpoint(); }
+        const ends = lineEnds(G.n), o = ends[1 - G.end];
+        let q = [p.x, p.y];
+        if (e.shiftKey) { const a = Math.round(Math.atan2(q[1] - o[1], q[0] - o[0]) / (Math.PI / 4)) * (Math.PI / 4), d = Math.hypot(q[0] - o[0], q[1] - o[1]); q = [o[0] + Math.cos(a) * d, o[1] + Math.sin(a) * d]; }
+        ends[G.end] = q; setLineEnds(G.n, ends);
         break;
       }
       case 'resize': {
         if (!G.moved) { G.moved = true; checkpoint(); }
         const n = G.n, r = rectOf(G.ax, G.ay, p.x, p.y);
         if (n.type === 'text') {
-          n.size = Math.max(6, G.orig.size * Math.max(r.w, 4) / G.orig.w); measure(n);
+          n.size = Math.max(6, G.orig.size * Math.max(r.w, 4) / G.orig.w); n.w = 0; measure(n);
           n.x = p.x < G.ax ? G.ax - n.w : G.ax; n.y = p.y < G.ay ? G.ay - n.h : G.ay;
         } else if (keepsAspect(n) || e.shiftKey) {
           const s = Math.max(r.w / G.orig.w, r.h / G.orig.h, 4 / Math.min(G.orig.w, G.orig.h));
@@ -1035,10 +1221,10 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     const p = toWorld(e.clientX, e.clientY), z = S.cam.z;
     switch (g.kind) {
       case 'touchpan':
-        if (!g.moved && e.timeStamp - g.t0 < 350 && !cancelled) tapSelect(p, e.timeStamp);
+        if (!g.moved && e.timeStamp - g.t0 < 350 && !cancelled) tapPick(p, e.timeStamp, e.clientX, e.clientY);
         save(); break;
       case 'pan': save(); break;
-      case 'draw': if (!cancelled) finishStroke(g, p, e.timeStamp); break;
+      case 'draw': if (!cancelled) finishStroke(g, p, e); break;
       case 'shape': {
         if (cancelled) break;
         checkpoint();
@@ -1060,14 +1246,18 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
         break;
       }
       case 'text': {
-        const n = hit(p.x, p.y);
-        if (n && n.type === 'text') editText(n, false); else createText(p);
+        const n = hit(p.x, p.y), c = n && n.type === 'group' ? childAt(n, p) : null;
+        if (n && n.type === 'text') editText(n); else if (c && c.type === 'text') editText(c, n); else createText(p);
         break;
       }
-      case 'move': case 'resize': if (g.moved) save(); break;
+      case 'move':
+        if (g.moved) save();
+        else if (g.tapCandidate && !cancelled) tapPick(p, e.timeStamp, e.clientX, e.clientY);
+        break;
+      case 'resize': case 'lineEnd': if (g.moved) save(); break;
       case 'marquee': {
         const r = rectOf(g.x0, g.y0, g.x1, g.y1);
-        if (r.w * z > 4 || r.h * z > 4) for (const n of S.nodes) if (n.x >= r.x && n.y >= r.y && n.x + n.w <= r.x + r.w && n.y + n.h <= r.y + r.h) S.sel.add(n.id);
+        if (r.w * z > 4 || r.h * z > 4) for (const n of S.nodes) if (!n.hidden && !n.locked && n.x >= r.x && n.y >= r.y && n.x + n.w <= r.x + r.w && n.y + n.h <= r.y + r.h) S.sel.add(n.id);
         break;
       }
     }
@@ -1075,20 +1265,41 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   }
   cv.addEventListener('pointerup', (e) => endPointer(e, false));
   cv.addEventListener('pointercancel', (e) => endPointer(e, true));
-  cv.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch' && S.hover) { S.hover = null; requestRender(); } });
+  cv.addEventListener('pointerleave', (e) => { if (e.pointerType !== 'touch' && (S.hover || S.hoverId)) { S.hover = null; S.hoverId = null; requestRender(); } });
 
-  function tapSelect(p, t) {
-    const n = hit(p.x, p.y);
-    if (n && n.type === 'text' && (S.tool === 'text' || (lastTap.id === n.id && t - lastTap.t < 400))) { editText(n, false); return; }
-    if (n) { S.sel = new Set([n.id]); lastTap = { id: n.id, t }; }
-    else if (S.sel.size) S.sel.clear();
-    else if (S.tool === 'text') createText(p);
+  // Tap rules: tap picks the top item; tap a selected item again to pick what is underneath;
+  // double-tap text to edit it; double-tap a component to edit the part under your finger.
+  function tapPick(p, t, sx, sy) {
+    const hits = hitAll(p.x, p.y);
+    const quick = t - lastTap.t < 400, near = Math.hypot(sx - lastTap.sx, sy - lastTap.sy) < 24;
+    if (!hits.length) { if (S.sel.size) S.sel.clear(); else if (S.tool === 'text') createText(p); lastTap = { id: null, t, sx, sy }; return; }
+    const prev = lastTap.id && near && S.sel.has(lastTap.id) ? hits.find((n) => n.id === lastTap.id) : null;
+    if (prev && quick && (prev.type === 'text' || prev.type === 'group')) {
+      lastTap = { id: null, t: 0, sx: -99, sy: -99 };
+      if (prev.type === 'text') editText(prev); else enterGroup(prev, p);
+      return;
+    }
+    let pick = hits[0];
+    const i = S.sel.size === 1 ? hits.findIndex((n) => S.sel.has(n.id)) : -1;
+    if (i >= 0) pick = prev ? hits[(i + 1) % hits.length] : hits[i];     // a second tap on the same spot digs one level down
+    if (pick !== hits[i >= 0 ? i : 0] && prev) tipOnce('cycle', 'Picked the item underneath. Tap again to keep going down.');
+    S.sel = new Set([pick.id]); lastTap = { id: pick.id, t, sx, sy };
   }
 
-  function finishStroke(g, p, t) {
+  function enterGroup(g, p) {
+    const c = childAt(g, p);
+    if (c && c.type === 'text') { editText(c, g); return; }
+    const map = ungroupNodes([g]);
+    const picked = c && map.get(c);
+    S.sel = new Set(picked ? [picked.id] : [...map.values()].map((n) => n.id));
+    changed();
+    toast(`Opened “${g.name || 'Group'}” so you can edit its parts.`, 'Undo', undo, 4000);
+  }
+
+  function finishStroke(g, p, e) {
     const a = g.pts, z = S.cam.z;
     let L = 0; for (let i = 3; i < a.length; i += 3) L += Math.hypot(a[i] - a[i - 3], a[i + 1] - a[i - 2]);
-    if (L * z < 6) { tapSelect(p, t); return; }         // a tap selects; a drag draws
+    if (L * z < 6) { tapPick(p, e.timeStamp, e.clientX, e.clientY); return; }     // a tap selects; a drag draws
     S.sel.clear();
     checkpoint();
     const stroke = makeStroke(a, g.pen, g.sw);
@@ -1112,29 +1323,46 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
 
   function cancelGesture() {
     if (!G) return;
-    if ((G.kind === 'move' || G.kind === 'resize') && G.moved) S.nodes = JSON.parse(past.pop());
+    if (['move', 'resize', 'lineEnd'].includes(G.kind) && G.moved) S.nodes = JSON.parse(past.pop());
     if (G.kind === 'erase') { if (G.any) S.nodes = JSON.parse(past.pop()); else past.pop(); }
     G = null; requestRender();
   }
 
-  // Two fingers: pinch to zoom and pan. A quick two-finger tap undoes; three fingers redo.
+  // Two fingers: pinch to zoom the canvas, or pinch a selected item to resize it (like a sticker).
+  // A quick two-finger tap undoes; three fingers redo.
   function startPinch(t) {
     const [a, b] = [...touches.values()];
-    pinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, m0: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, cam0: { ...S.cam }, t0: t, maxN: touches.size, moved: false };
+    const m0 = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }, mw = toWorld(m0.x, m0.y), z = S.cam.z;
+    const n = S.sel.size === 1 ? selected()[0] : null, pad = 30 / z;
+    const onItem = n && n.type !== 'frame' && !n.locked && mw.x > n.x - pad && mw.x < n.x + n.w + pad && mw.y > n.y - pad && mw.y < n.y + n.h + pad;
+    pinch = {
+      d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, m0, cam0: { ...S.cam }, t0: t, maxN: touches.size, moved: false,
+      item: onItem ? { n, w: n.w, h: n.h, size: n.size, cx: n.x + n.w / 2, cy: n.y + n.h / 2, ends: n.type === 'line' ? lineEnds(n) : null } : null,
+    };
   }
   function updatePinch() {
     if (touches.size < 2) return;
     const [a, b] = [...touches.values()], c = pinch.cam0;
     const d = Math.hypot(a.x - b.x, a.y - b.y), m = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
-    if (Math.abs(d - pinch.d0) > 10 || Math.hypot(m.x - pinch.m0.x, m.y - pinch.m0.y) > 10) pinch.moved = true;
+    if (!pinch.moved && (Math.abs(d - pinch.d0) > 10 || Math.hypot(m.x - pinch.m0.x, m.y - pinch.m0.y) > 10)) {
+      pinch.moved = true; if (pinch.item) checkpoint();
+    }
     if (!pinch.moved) return;
+    if (pinch.item) {
+      const it = pinch.item, n = it.n, s = Math.max(0.05, d / pinch.d0), z = S.cam.z;
+      const cx = it.cx + (m.x - pinch.m0.x) / z, cy = it.cy + (m.y - pinch.m0.y) / z;
+      if (n.type === 'line') setLineEnds(n, it.ends.map(([x, y]) => [cx + (x - it.cx) * s, cy + (y - it.cy) * s]));
+      else if (n.type === 'text') { n.size = Math.max(4, it.size * s); n.w = 0; measure(n); n.x = cx - n.w / 2; n.y = cy - n.h / 2; }
+      else { n.w = it.w * s; n.h = it.h * s; n.x = cx - n.w / 2; n.y = cy - n.h / 2; }
+      requestRender(); return;
+    }
     const z = clampZ(c.z * d / pinch.d0), wx = (pinch.m0.x - c.x) / c.z, wy = (pinch.m0.y - c.y) / c.z;
     S.cam = { x: m.x - wx * z, y: m.y - wy * z, z };
     requestRender(); updateZoomLabel();
   }
   function endPinch(t) {
     if (!pinch.moved && t - pinch.t0 < 350) { if (pinch.maxN >= 3) redo(); else undo(); }
-    pinch = null; save(); requestRender();
+    pinch = null; save(); updateUI(); requestRender();
   }
   const clampZ = (z) => Math.min(32, Math.max(0.1, z));
   function zoomAt(sx, sy, f) {
@@ -1148,51 +1376,65 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     save();
   }, { passive: false });
   document.addEventListener('gesturestart', (e) => e.preventDefault());
-  document.addEventListener('dblclick', (e) => e.preventDefault());
+  document.addEventListener('dblclick', (e) => { if (e.target === cv) e.preventDefault(); });
 
+  const panelW = () => ($('layers').hidden ? 0 : 304);
   function fit(nodes) {
+    nodes = nodes.filter((n) => !n.hidden);
     if (!nodes.length) { S.cam = { x: W / 2, y: H / 2, z: 1 }; updateZoomLabel(); requestRender(); return; }
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const n of nodes) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y - 24); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h); }
-    const top = 84, bottom = 104, side = 32;
-    const z = clampZ(Math.min((W - side * 2) / (x1 - x0), (H - top - bottom) / (y1 - y0), 1.5));
-    S.cam = { z, x: (W - (x1 - x0) * z) / 2 - x0 * z, y: top + (H - top - bottom - (y1 - y0) * z) / 2 - y0 * z };
+    const b = union(nodes); b.y -= 24; b.h += 24;
+    const top = 84, bottom = 104, side = 32, right = side + panelW();
+    const z = clampZ(Math.min((W - side - right) / b.w, (H - top - bottom) / b.h, 1.5));
+    S.cam = { z, x: side + (W - side - right - b.w * z) / 2 - b.x * z, y: top + (H - top - bottom - b.h * z) / 2 - b.y * z };
     updateZoomLabel(); requestRender(); save();
+  }
+  function reveal(n) {
+    const a = toScreen(n.x, n.y), b = toScreen(n.x + n.w, n.y + n.h);
+    if (a.x > 0 && a.y > 70 && b.x < W - panelW() && b.y < H - 90) return;
+    const z = S.cam.z;
+    S.cam.x = (W - panelW()) / 2 - (n.x + n.w / 2) * z; S.cam.y = H / 2 - (n.y + n.h / 2) * z; requestRender();
   }
 
   // ---------- Text ----------
   const ed = $('editor');
+  function textPlace(n, g) {
+    if (!g) return { x: n.x, y: n.y, k: 1 };
+    const sx = g.w / g.gw, sy = g.h / g.gh; return { x: g.x + n.x * sx, y: g.y + n.y * sy, k: sy };
+  }
   function createText(p) {
     checkpoint();
-    const n = { id: nid(), type: 'text', x: p.x, y: p.y, size: Math.round(20 / S.cam.z), weight: 500, text: '', color: lineColor(), w: 4, h: 4 };
+    const n = { id: nid(), type: 'text', x: p.x, y: p.y, size: Math.round(20 / S.cam.z), weight: 500, text: '', color: lineColor(), w: 0, h: 4 };
     n.y -= n.size * 0.6;
-    S.nodes.push(n); editText(n, true);
+    S.nodes.push(n); editText(n, null, true);
   }
-  function editText(n, isNew) {
-    editing = n.id; ed.dataset.new = isNew ? '1' : '';
+  function editText(n, g = null, isNew = false) {
+    editing = { n, g, isNew };
     if (!isNew) checkpoint();
-    const s = toScreen(n.x, n.y);
-    Object.assign(ed.style, { left: s.x + 'px', top: s.y + 'px', fontSize: n.size * S.cam.z + 'px', fontWeight: n.weight || 500, color: n.color });
-    ed.value = n.text; ed.hidden = false; sizeEditor(); ed.focus();
+    const pl = textPlace(n, g), s = toScreen(pl.x, pl.y);
+    Object.assign(ed.style, { left: s.x + 'px', top: s.y + 'px', fontSize: n.size * pl.k * S.cam.z + 'px', fontWeight: n.weight || 500, color: n.color });
+    ed.value = n.text; ed.hidden = false; sizeEditor(); ed.focus(); ed.select();
     S.sel.clear(); updateUI(); requestRender();
   }
   function sizeEditor() {
-    const lines = ed.value.split('\n'), n = S.nodes.find((m) => m.id === editing); if (!n) return;
+    if (!editing) return;
+    const { n, g } = editing, k = textPlace(n, g).k, lines = ed.value.split('\n');
     ctx.font = FONT(n);
-    const w = Math.max(24, ...lines.map((l) => ctx.measureText(l).width)) * S.cam.z;
-    ed.style.width = w + 12 + 'px'; ed.style.height = lines.length * n.size * 1.25 * S.cam.z + 'px';
+    const w = Math.max(24, ...lines.map((l) => ctx.measureText(l).width)) * k * S.cam.z;
+    ed.style.width = w + 12 + 'px'; ed.style.height = lines.length * n.size * 1.25 * k * S.cam.z + 'px';
   }
   ed.addEventListener('input', sizeEditor);
   ed.addEventListener('keydown', (e) => { if (e.key === 'Escape' || (e.key === 'Enter' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); ed.blur(); } });
   ed.addEventListener('blur', () => commitText());
   function commitText() {
     if (!editing) return;
-    const n = S.nodes.find((m) => m.id === editing); editing = null; ed.hidden = true;
-    if (!n) return;
+    const { n, g, isNew } = editing; editing = null; ed.hidden = true;
     const v = ed.value.replace(/\s+$/, '');
-    if (!v) { S.nodes = S.nodes.filter((m) => m !== n); if (ed.dataset.new) past.pop(); }
-    else if (v === n.text && !ed.dataset.new) past.pop();
-    else { n.text = v; measure(n); S.sel = new Set([n.id]); }
+    if (!v) {
+      if (g) g.children = g.children.filter((c) => c !== n); else S.nodes = S.nodes.filter((m) => m !== n);
+      if (isNew) past.pop();
+    } else if (v === n.text && !isNew) past.pop();
+    else { n.text = v; measure(n); }
+    S.sel = new Set([(g || n).id].filter((id) => byId(id)));
     changed();
   }
 
@@ -1200,61 +1442,148 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   function del() { if (!S.sel.size) return; checkpoint(); S.nodes = S.nodes.filter((n) => !S.sel.has(n.id)); S.sel.clear(); closePops(); changed(); }
   function dup() {
     if (!S.sel.size) return; checkpoint();
-    const copies = selected().map((n) => ({ ...clone(n), id: nid(), x: n.x + 24, y: n.y + 24 }));
+    const copies = selected().map((n) => ({ ...reid(clone(n)), x: n.x + 24, y: n.y + 24 }));
     S.nodes.push(...copies); S.sel = new Set(copies.map((c) => c.id)); changed();
   }
-  function front() {
+  let clip = null, pasteN = 0;
+  function copySel(cut) {
+    const ns = selected(); if (!ns.length) return;
+    clip = clone(ns); pasteN = 0;
+    if (cut) del(); else toast(`Copied ${ns.length === 1 ? layerName(ns[0]) : ns.length + ' items'}.`, null, null, 2000);
+  }
+  function pasteClip() {
+    if (!clip) return;
+    checkpoint(); pasteN++;
+    const copies = clip.map((n) => ({ ...reid(clone(n)), x: n.x + 24 * pasteN, y: n.y + 24 * pasteN }));
+    S.nodes.push(...copies); setTool('select'); S.sel = new Set(copies.map((c) => c.id)); changed();
+  }
+  function reorder(dir) {
     if (!S.sel.size) return; checkpoint();
-    S.nodes = [...S.nodes.filter((n) => !S.sel.has(n.id)), ...selected()]; changed();
+    const sel = (n) => S.sel.has(n.id), a = S.nodes;
+    if (dir === 'front') S.nodes = [...a.filter((n) => !sel(n)), ...a.filter(sel)];
+    else if (dir === 'back') S.nodes = [...a.filter(sel), ...a.filter((n) => !sel(n))];
+    else if (dir === 'forward') { for (let i = a.length - 2; i >= 0; i--) if (sel(a[i]) && !sel(a[i + 1])) [a[i], a[i + 1]] = [a[i + 1], a[i]]; }
+    else for (let i = 1; i < a.length; i++) if (sel(a[i]) && !sel(a[i - 1])) [a[i], a[i - 1]] = [a[i - 1], a[i]];
+    changed();
+  }
+  function moveZ(id, targetId, above) {
+    const n = byId(id), t = byId(targetId); if (!n || !t || n === t) return;
+    checkpoint();
+    S.nodes = S.nodes.filter((m) => m !== n);
+    const i = S.nodes.indexOf(t); S.nodes.splice(above ? i + 1 : i, 0, n);
+    changed();
+  }
+  // Align to each other (2+ items) or to the frame they sit in (1 item).
+  function align(how) {
+    const ns = selected().filter((n) => !n.locked); if (!ns.length) return;
+    const b = ns.length > 1 ? union(ns) : frameOf(ns[0]); if (!b) return;
+    checkpoint();
+    for (const n of ns) {
+      const ox = n.x, oy = n.y;
+      if (how === 'left') n.x = b.x; if (how === 'hcenter') n.x = b.x + b.w / 2 - n.w / 2; if (how === 'right') n.x = b.x + b.w - n.w;
+      if (how === 'top') n.y = b.y; if (how === 'vcenter') n.y = b.y + b.h / 2 - n.h / 2; if (how === 'bottom') n.y = b.y + b.h - n.h;
+      if (n.type === 'frame') shiftContents(n, n.x - ox, n.y - oy, ox, oy);
+    }
+    changed();
+  }
+  function shiftContents(f, dx, dy, ox, oy) {
+    for (const m of S.nodes) {
+      if (m === f || m.type === 'frame') continue;
+      const cx = m.x + m.w / 2, cy = m.y + m.h / 2;
+      if (cx > ox && cx < ox + f.w && cy > oy && cy < oy + f.h) { m.x += dx; m.y += dy; }
+    }
+  }
+  function distribute(axis) {
+    const ns = selected().filter((n) => !n.locked); if (ns.length < 3) return;
+    checkpoint();
+    const k = axis === 'h' ? 'x' : 'y', d = axis === 'h' ? 'w' : 'h';
+    ns.sort((a, b) => a[k] - b[k]);
+    const first = ns[0][k], last = Math.max(...ns.map((n) => n[k] + n[d]));
+    const gap = (last - first - ns.reduce((s, n) => s + n[d], 0)) / (ns.length - 1);
+    let pos = first; for (const n of ns) { n[k] = pos; pos += n[d] + gap; }
+    changed();
+  }
+  function nudge(dx, dy) {
+    const items = movingSet(); if (!items.length) return;
+    checkpoint(); for (const n of items) { n.x += dx; n.y += dy; } changed();
   }
   function groupSel() {
     const ns = selected().filter((n) => n.type !== 'frame'); if (ns.length < 2) return;
     checkpoint();
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const n of ns) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h); }
-    const g = Grp('Group', x1 - x0, y1 - y0, ns.map((n) => ({ ...clone(n), x: n.x - x0, y: n.y - y0 })));
-    g.x = x0; g.y = y0;
+    const b = union(ns);
+    const g = Grp('Group', b.w, b.h, ns.map((n) => ({ ...clone(n), x: n.x - b.x, y: n.y - b.y })));
+    g.x = b.x; g.y = b.y;
     const ids = new Set(ns.map((n) => n.id)), top = Math.max(...ns.map((n) => S.nodes.indexOf(n))), out = [];
     S.nodes.forEach((n, i) => { if (!ids.has(n.id)) out.push(n); if (i === top) out.push(g); });
     S.nodes = out; S.sel = new Set([g.id]); changed();
   }
-  function ungroup() {
-    const gs = selected().filter((n) => n.type === 'group'); if (!gs.length) return;
-    checkpoint(); const ids = [];
+  // Splits groups into plain items. Invisible helper boxes are dropped so they never block taps.
+  // Returns a map from each original child to the new item.
+  function ungroupNodes(gs) {
+    checkpoint(); const map = new Map();
     for (const g of gs) {
-      const sx = g.w / g.gw, sy = g.h / g.gh;
-      const kids = g.children.map((c) => {
+      const sx = g.w / g.gw, sy = g.h / g.gh, kids = [];
+      for (const c of g.children) {
+        if (invisible(c)) continue;
         const k = { ...clone(c), id: nid(), x: g.x + c.x * sx, y: g.y + c.y * sy, w: c.w * sx, h: c.h * sy };
         if (k.type === 'text') k.size *= sy;
-        if (k.sw) k.sw *= sx; if (k.r) k.r *= sx;
+        if (k.sw) k.sw *= sx;
+        if (k.r) k.r *= sx;
         if ((g.opacity ?? 1) !== 1) k.opacity = (k.opacity ?? 1) * g.opacity;
         if (g.blur) k.blur = (k.blur || 0) + g.blur;
-        ids.push(k.id); return k;
-      });
+        if (k.children) reid(k);
+        kids.push(k); map.set(c, k);
+      }
       S.nodes.splice(S.nodes.indexOf(g), 1, ...kids);
     }
-    S.sel = new Set(ids); changed();
-    toast('Ungrouped. Double-tap a text to edit it.', null, null, 3000);
+    return map;
+  }
+  function ungroup() {
+    const gs = selected().filter((n) => n.type === 'group'); if (!gs.length) return;
+    const map = ungroupNodes(gs);
+    S.sel = new Set([...map.values()].map((n) => n.id)); changed();
+    tipOnce('ungroup', 'Ungrouped. Tap a part to pick it, tap again to reach what is underneath, or use Layers.', 6000);
+  }
+  function saveComponent() {
+    const g = selected().find((n) => n.type === 'group'); if (!g) return;
+    const name = g.name && g.name !== 'Group' ? g.name : `My component ${myLib.length + 1}`;
+    myLib.unshift({ name, node: { ...clone(g), x: 0, y: 0 } });
+    if (!store.set(myLib, LIBKEY)) { myLib.shift(); toast('Couldn’t save the component: this browser’s storage is full.'); return; }
+    libBuilt = false;
+    toast(`Saved “${name}” to Insert → My components.`, 'Open Insert', () => toggleInsert(true), 5000);
   }
   function setTool(t) {
-    S.tool = t; if (!['select', 'draw', 'shape'].includes(t)) S.sel.clear(); S.hover = null; updateUI(); requestRender();
+    S.tool = t; if (!['select', 'draw', 'shape'].includes(t)) S.sel.clear(); S.hover = null; S.hoverId = null; updateUI(); requestRender();
   }
 
   window.addEventListener('keydown', (e) => {
-    if (e.target === ed || e.target === $('libSearch')) { if (e.key === 'Escape') closePops(); return; }
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA') { if (e.key === 'Escape') { closePops(); e.target.blur(); } return; }
     const mod = e.metaKey || e.ctrlKey, k = e.key.toLowerCase();
     if (e.key === ' ' && !spaceDown) { spaceDown = true; cv.classList.add('space'); e.preventDefault(); return; }
     if (mod && k === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
     if (mod && k === 'y') { e.preventDefault(); redo(); return; }
     if (mod && k === 'd') { e.preventDefault(); dup(); return; }
+    if (mod && k === 'c') { copySel(false); return; }
+    if (mod && k === 'x') { copySel(true); return; }
     if (mod && k === 'g') { e.preventDefault(); e.shiftKey ? ungroup() : groupSel(); return; }
-    if (mod && k === 'a') { e.preventDefault(); S.sel = new Set(S.nodes.map((n) => n.id)); setTool('select'); return; }
+    if (mod && k === 'a') { e.preventDefault(); S.sel = new Set(S.nodes.filter((n) => !n.hidden && !n.locked).map((n) => n.id)); setTool('select'); return; }
     if (mod && k === '0') { e.preventDefault(); fit(S.nodes); return; }
     if (mod && (k === '=' || k === '+')) { e.preventDefault(); zoomAt(W / 2, H / 2, 1.25); return; }
     if (mod && k === '-') { e.preventDefault(); zoomAt(W / 2, H / 2, 0.8); return; }
+    if (mod && e.key === ']') { e.preventDefault(); reorder(e.shiftKey ? 'front' : 'forward'); return; }
+    if (mod && e.key === '[') { e.preventDefault(); reorder(e.shiftKey ? 'back' : 'backward'); return; }
     if (mod) return;
+    const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
+    if (arrows[k] && S.sel.size) { e.preventDefault(); const s = e.shiftKey ? 10 : 1; nudge(arrows[k][0] * s, arrows[k][1] * s); return; }
     if (k === 'backspace' || k === 'delete') { e.preventDefault(); del(); return; }
     if (k === 'escape') { S.sel.clear(); closePops(); $('sheetWrap').hidden = true; updateUI(); requestRender(); return; }
+    if (k === 'enter' && S.sel.size === 1) {
+      const n = selected()[0];
+      if (n.type === 'text') editText(n);
+      else if (n.type === 'group') { const map = ungroupNodes([n]); S.sel = new Set([...map.values()].map((m) => m.id)); changed(); }
+      return;
+    }
     if (k === 'i') { toggleInsert(); return; }
     if (k === 'l' && e.shiftKey) { pickShape('arrow'); return; }
     const shapeKey = { r: 'rect', o: 'ellipse', l: 'line' }[k];
@@ -1263,6 +1592,39 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     if (map[k]) setTool(map[k]);
   });
   window.addEventListener('keyup', (e) => { if (e.key === ' ') { spaceDown = false; cv.classList.remove('space'); } });
+  document.addEventListener('paste', (e) => {
+    const tag = e.target.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+    const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith('image/'));
+    if (file) { e.preventDefault(); addImageFile(file); return; }
+    if (clip) { e.preventDefault(); pasteClip(); }
+  });
+
+  // ---------- Images ----------
+  function addImageFile(file, at) {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+      c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+      const src = c.toDataURL(file.type === 'image/png' ? 'image/png' : 'image/jpeg', 0.85);
+      URL.revokeObjectURL(url);
+      const z = S.cam.z, s = Math.min(1, (W * 0.5 / z) / c.width, (H * 0.5 / z) / c.height), w = c.width * s, h = c.height * s;
+      const ctr = at || toWorld((W - panelW()) / 2, H / 2);
+      checkpoint();
+      const n = { id: nid(), type: 'image', src, x: ctr.x - w / 2, y: ctr.y - h / 2, w, h, r: 0, name: file.name ? file.name.replace(/\.[^.]+$/, '') : 'Image' };
+      S.nodes.push(n); closePops(); setTool('select'); S.sel = new Set([n.id]); changed();
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); toast('That file couldn’t be opened as an image. Try a PNG or JPEG.'); };
+    im.src = url;
+  }
+  $('imageBtn').addEventListener('click', () => $('fileIn').click());
+  $('fileIn').addEventListener('change', () => { const f = $('fileIn').files[0]; if (f) addImageFile(f); $('fileIn').value = ''; });
+  cv.addEventListener('dragover', (e) => e.preventDefault());
+  cv.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/'));
+    if (f) addImageFile(f, toWorld(e.clientX, e.clientY));
+  });
 
   // ---------- Chrome ----------
   const dock = $('dock');
@@ -1271,7 +1633,7 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       e.stopPropagation();
       const open = !$('shapePop').hidden;
       closePops(); setTool('shape');
-      if (!open) { buildKinds(); openPop($('shapePop'), b, 'above'); }
+      if (!open) { buildKinds(); $('shapePop').hidden = false; position($('shapePop'), b, 'above'); }
       return;
     }
     closePops(); setTool(b.dataset.tool);
@@ -1281,31 +1643,25 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   $('zoom').addEventListener('click', () => fit(S.nodes));
 
   function buildKinds() {
-    $('kinds').replaceChildren(...SHAPE_KINDS.map((s) => {
-      const b = document.createElement('button'); b.className = 'kind'; b.setAttribute('aria-pressed', String(S.shapeKind === s.k));
-      b.title = s.label + (s.key ? ` (${s.key.toUpperCase()})` : '');
-      b.innerHTML = `<svg class="i" viewBox="0 0 24 24">${s.svg}</svg>${s.label}`;
-      b.addEventListener('click', () => { pickShape(s.k); closePops(); });
-      return b;
-    }));
+    $('kinds').replaceChildren(...SHAPE_KINDS.map((s) => h('button', {
+      class: 'kind', 'aria-pressed': String(S.shapeKind === s.k), title: s.label + (s.key ? ` (${s.key.toUpperCase()})` : ''),
+      html: svg(s.svg) + s.label, onclick: () => { pickShape(s.k); closePops(); },
+    })));
   }
   function pickShape(k) {
     S.shapeKind = k; save();
     $('shapeIcon').innerHTML = SHAPE_KINDS.find((s) => s.k === k).svg;
     setTool('shape');
   }
-
-  function swatchButtons(container, current, onPick) {
-    container.replaceChildren(...SWATCHES.map((c) => {
-      const b = document.createElement('button');
-      b.className = 'sw'; b.setAttribute('aria-label', 'Color ' + c); b.setAttribute('aria-pressed', String(c === current));
-      const i = document.createElement('i'); i.style.background = c; b.append(i);
-      b.addEventListener('click', (ev) => { ev.stopPropagation(); onPick(c); });
-      return b;
-    }));
+  function swatchButtons(current, onPick) {
+    return SWATCHES.map((c) => {
+      const b = h('button', { class: 'sw', 'aria-label': 'Color ' + c, 'aria-pressed': String(c === current), onclick: (ev) => { ev.stopPropagation(); onPick(c); } });
+      const i = document.createElement('i'); i.style.background = c; b.append(i); return b;
+    });
   }
-  function openPop(pop, anchor, pref) {
-    pop.hidden = false;
+  function position(pop, anchor, pref) {
+    pop.classList.toggle('sheet', W < 600 && pop.classList.contains('wide'));
+    if (pop.classList.contains('sheet')) return;
     const a = anchor.getBoundingClientRect(), r = pop.getBoundingClientRect();
     const left = Math.min(Math.max(16, a.left + a.width / 2 - r.width / 2), W - r.width - 16);
     let top = pref === 'above' ? a.top - r.height - 10 : a.bottom + 10;
@@ -1313,25 +1669,179 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     top = Math.min(Math.max(70, top), H - r.height - 16);
     pop.style.left = left + 'px'; pop.style.top = top + 'px';
   }
+  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop'];
+  let openSel = null;               // { id, label, build }
   function closePops() {
-    for (const id of ['colorPop', 'pencilPop', 'shapePop', 'fxPop', 'insertPop']) $(id).hidden = true;
+    for (const id of ['colorPop', 'pencilPop', 'shapePop', 'insertPop', ...SEL_POPS]) $(id).hidden = true;
     $('insertBtn').setAttribute('aria-expanded', 'false');
+    ctxBar.querySelectorAll('[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+    openSel = null;
   }
-  function pickToolColor(c) { S.color = c; save(); updateUI(); swatchButtons($('toolSwatches'), S.color, pickToolColor); }
+  function openSelPop(id, anchor, build) {
+    const was = openSel && openSel.id === id; closePops(); if (was) return;
+    openSel = { id, label: anchor.getAttribute('aria-label'), build };
+    hideToast();
+    const pop = $(id); pop.replaceChildren(...build()); pop.hidden = false; position(pop, anchor, 'auto');
+    anchor.setAttribute('aria-expanded', 'true');
+  }
+  function refreshSelPop() {
+    if (!openSel) return;
+    if (!S.sel.size || (!fxNodes().length && openSel.id !== 'arrangePop')) { closePops(); return; }
+    const pop = $(openSel.id), st = pop.scrollTop; pop.replaceChildren(...openSel.build()); pop.scrollTop = st;
+    const b = [...ctxBar.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === openSel.label);
+    if (b) b.setAttribute('aria-expanded', 'true');
+  }
+  function pickToolColor(c) { S.color = c; save(); updateUI(); $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor)); }
   $('colorBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     const open = !$('colorPop').hidden; closePops(); if (open) return;
-    swatchButtons($('toolSwatches'), S.color, pickToolColor);
-    openPop($('colorPop'), $('colorBtn'), 'above');
+    $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor));
+    $('colorPop').hidden = false; position($('colorPop'), $('colorBtn'), 'above');
   });
   $('autoShape').addEventListener('click', () => { S.autoShape = !S.autoShape; save(); updateUI(); });
   $('pencilChip').addEventListener('click', (e) => {
-    e.stopPropagation(); const open = !$('pencilPop').hidden; closePops(); if (!open) openPop($('pencilPop'), $('pencilChip'), 'below');
+    e.stopPropagation(); const open = !$('pencilPop').hidden; closePops();
+    if (!open) { $('pencilPop').hidden = false; position($('pencilPop'), $('pencilChip'), 'below'); }
   });
   $('pencilPop').querySelectorAll('[data-finger]').forEach((b) => b.addEventListener('click', () => { S.finger = b.dataset.finger; save(); updateUI(); closePops(); }));
   document.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.pop') && !e.target.closest('#dock') && !e.target.closest('#pencilChip') && !e.target.closest('#ctx')) closePops();
+    if (!e.target.closest('.pop') && !e.target.closest('#dock') && !e.target.closest('#pencilChip') && !e.target.closest('#ctx') && !e.target.closest('#layers')) closePops();
   });
+
+  // ---------- Popover building blocks ----------
+  let sliding = false;
+  function editBegin() { if (!sliding) { checkpoint(); sliding = true; } }
+  function editEnd() { sliding = false; save(); updateUI(); }
+  function sliderRow(label, min, max, step, value, fmt, apply) {
+    const id = 'r' + (uid++), out = h('output', {}, fmt(value));
+    const inp = h('input', { type: 'range', id, min, max, step });
+    inp.value = value;
+    inp.addEventListener('input', () => { editBegin(); const v = +inp.value; apply(v); out.textContent = fmt(v); requestRender(); });
+    inp.addEventListener('change', editEnd);
+    return h('div', { class: 'fx-row' }, h('label', { for: id }, label), inp, out);
+  }
+  function segRow(label, options, current, apply) {
+    return h('div', { class: 'fx-row' }, h('span', {}, label), h('div', { class: 'seg', role: 'group', 'aria-label': label },
+      options.map(([v, l]) => h('button', { 'aria-pressed': String(v === current), onclick: () => { checkpoint(); apply(v); changed(); refreshSelPop(); } }, l))));
+  }
+  function toggleRow(label, on, apply) {
+    return h('div', { class: 'row' }, h('span', {}, label),
+      h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!on), 'aria-label': label, onclick: () => { checkpoint(); apply(!on); changed(); refreshSelPop(); } }));
+  }
+  const fxNodes = () => selected().filter((n) => n.type !== 'frame');
+
+  // Style: fill, border, corners, sides, line width, arrow heads
+  function buildStyle() {
+    const ns = fxNodes();
+    const shapes = ns.map(fxTarget).filter(Boolean);
+    const rects = [...shapes.filter((s) => s.type === 'rect'), ...ns.filter((n) => n.type === 'image')];
+    const lines = ns.filter((n) => ['line', 'stroke', 'icon'].includes(n.type));
+    const out = [h('h3', {}, 'Style')];
+    if (shapes.length) {
+      const s0 = shapes[0];
+      out.push(toggleRow('Fill', shapes.every((s) => s.fill), (on) => shapes.forEach((s) => { if (on) s.fill = s.fill || s.stroke || SHAPE_FILL; else { s.stroke = s.stroke || s.fill; s.fill = null; } })));
+      out.push(toggleRow('Border', shapes.every((s) => s.stroke), (on) => shapes.forEach((s) => { if (on) { s.stroke = s.stroke || INK; s.sw = s.sw || 2; } else if (s.fill) s.stroke = null; })));
+      if (shapes.some((s) => s.stroke)) {
+        out.push(sliderRow('Border width', 0.5, 16, 0.5, s0.sw || 1, String, (v) => shapes.forEach((s) => { s.sw = v; })));
+        out.push(h('h4', {}, 'Border color'), h('div', { class: 'swatches' }, swatchButtons(s0.stroke, (c) => { checkpoint(); shapes.forEach((s) => { if (s.stroke) s.stroke = c; }); changed(); refreshSelPop(); })));
+      }
+      const polys = shapes.filter((s) => s.type === 'polygon'), stars = shapes.filter((s) => s.type === 'star');
+      if (polys.length) out.push(sliderRow('Sides', 3, 12, 1, polys[0].sides || 6, String, (v) => polys.forEach((s) => { s.sides = v; })));
+      if (stars.length) out.push(sliderRow('Points', 3, 12, 1, stars[0].points || 5, String, (v) => stars.forEach((s) => { s.points = v; })));
+    }
+    if (rects.length) {
+      const r0 = rects[0], max = Math.max(1, Math.round(Math.min(r0.w, r0.h) / 2));
+      out.push(sliderRow('Corners', 0, max, 1, Math.min(Math.round(r0.r || 0), max), String, (v) => rects.forEach((r) => { r.r = v; })));
+      out.push(h('div', { class: 'chips' }, [['Square', 0], ['Small', 8], ['Medium', 16], ['Round', 9999]].map(([l, v]) =>
+        h('button', { class: 'chipb', onclick: () => { checkpoint(); rects.forEach((r) => { r.r = v === 9999 ? Math.min(r.w, r.h) / 2 : v; }); changed(); refreshSelPop(); } }, l))));
+    }
+    if (lines.length) {
+      out.push(sliderRow(lines.every((l) => l.type === 'icon') ? 'Line weight' : 'Width', 0.5, 24, 0.5, lines[0].sw || 2, String, (v) => lines.forEach((l) => { l.sw = v; })));
+      const ls = lines.filter((l) => l.type === 'line');
+      if (ls.length) out.push(toggleRow('Arrow head', ls.every((l) => l.head), (on) => ls.forEach((l) => { l.head = on; })));
+    }
+    if (out.length === 1) out.push(h('p', { class: 'hint' }, 'Nothing to style here. Try Effects.'));
+    return out;
+  }
+  function buildText() {
+    const ts = fxNodes().filter((n) => n.type === 'text'), n = ts[0];
+    const setAll = (f) => { checkpoint(); for (const t of ts) { f(t); measure(t); } changed(); refreshSelPop(); };
+    return [
+      h('h3', {}, 'Text'),
+      h('div', { class: 'row' }, h('span', {}, 'Size'), h('div', { class: 'stepper' },
+        h('button', { 'aria-label': 'Smaller', onclick: () => setAll((t) => { t.size = Math.max(6, Math.round(t.size) - 1); }) }, '−'),
+        h('output', {}, String(Math.round(n.size))),
+        h('button', { 'aria-label': 'Bigger', onclick: () => setAll((t) => { t.size = Math.round(t.size) + 1; }) }, '+'))),
+      h('div', { class: 'chips' }, [12, 14, 16, 20, 24, 32, 48, 64].map((s) => h('button', { class: 'chipb', 'aria-pressed': String(Math.round(n.size) === s), onclick: () => setAll((t) => { t.size = s; }) }, String(s)))),
+      h('h4', {}, 'Weight'),
+      h('div', { class: 'seg' }, [[400, 'Regular'], [500, 'Medium'], [600, 'Semibold'], [700, 'Bold']].map(([w, l]) =>
+        h('button', { 'aria-pressed': String((n.weight || 500) === w), onclick: () => setAll((t) => { t.weight = w; }) }, l))),
+      h('p', { class: 'hint' }, 'Double-tap text to change what it says. Inside a component, double-tap its label.'),
+    ];
+  }
+  function buildFx() {
+    const ns = fxNodes(), n = ns[0], t = fxTarget(n) || n, shapes = ns.map(fxTarget).filter(Boolean);
+    const preset = (key, label, cls) => h('button', { class: 'preset ' + cls, onclick: () => {
+      checkpoint();
+      for (const m of fxNodes()) {
+        const tg = fxTarget(m) || m;
+        if (key === 'none') { m.opacity = 1; m.blur = 0; tg.shadow = 0; if (isShape(tg)) { tg.bgBlur = 0; tg.fillAlpha = 1; tg.strokeAlpha = 1; } }
+        if (key === 'soft') tg.shadow = 1;
+        if (key === 'lifted') tg.shadow = 3;
+        if (key === 'glass' && isShape(tg)) Object.assign(tg, glass(), { fill: WH, stroke: WH });
+      }
+      changed(); refreshSelPop();
+      if (key === 'glass') tipOnce('glass', 'Glass blurs whatever is behind it. Place it over a photo or colorful shapes to see it.', 6000);
+    } }, h('i'), label);
+    const out = [h('h3', {}, 'Effects'),
+      h('div', { class: 'presets' }, preset('none', 'None', ''), preset('soft', 'Soft shadow', 'soft'), preset('lifted', 'Lifted', 'lifted'), shapes.length ? preset('glass', 'Glass', 'glass') : null),
+      sliderRow('Opacity', 0, 100, 1, Math.round((n.opacity ?? 1) * 100), (v) => v + '%', (v) => fxNodes().forEach((m) => { m.opacity = v / 100; })),
+      segRow('Shadow', [[0, 'None'], [1, 'Soft'], [2, 'Medium'], [3, 'Strong']], t.shadow || 0, (v) => fxNodes().forEach((m) => { (fxTarget(m) || m).shadow = v; })),
+      sliderRow('Blur', 0, 40, 1, n.blur || 0, String, (v) => fxNodes().forEach((m) => { m.blur = v; })),
+    ];
+    if (shapes.length) {
+      out.push(sliderRow('Background blur', 0, 40, 1, shapes[0].bgBlur || 0, String, (v) => shapes.forEach((s) => { s.bgBlur = v; })));
+      const filled = shapes.filter((s) => s.fill);
+      if (filled.length) out.push(sliderRow('Fill opacity', 0, 100, 1, Math.round((filled[0].fillAlpha ?? 1) * 100), (v) => v + '%', (v) => filled.forEach((s) => { s.fillAlpha = v / 100; })));
+    }
+    return out;
+  }
+  function buildArrange() {
+    const ns = selected(), one = ns.length === 1 ? ns[0] : null, multi = ns.length > 1;
+    const canAlign = multi || (one && frameOf(one));
+    const ib = (label, d, fn, disabled) => h('button', { class: 'ib', title: label, disabled: !!disabled, onclick: () => { fn(); refreshSelPop(); }, html: svg(d) + `<span>${label}</span>` });
+    const out = [h('h3', {}, 'Arrange'),
+      h('div', { class: 'icons' },
+        ib('To front', '<rect x="8" y="8" width="12" height="12" rx="2" fill="currentColor" stroke="none"/><path d="M16 5H6a2 2 0 0 0-2 2v9"/>', () => reorder('front')),
+        ib('Forward', '<path d="M12 19V5M6 11l6-6 6 6"/>', () => reorder('forward')),
+        ib('Backward', '<path d="M12 5v14M6 13l6 6 6-6"/>', () => reorder('backward')),
+        ib('To back', '<rect x="4" y="4" width="12" height="12" rx="2"/><path d="M20 9v9a2 2 0 0 1-2 2H9"/>', () => reorder('back'))),
+      h('h4', {}, multi ? 'Align to each other' : 'Align in frame'),
+      h('div', { class: 'icons six' },
+        ib('Left', '<path d="M4 3v18M8 7h10v4H8zM8 14h6v4H8z"/>', () => align('left'), !canAlign),
+        ib('Center', '<path d="M12 3v18M6 7h12v4H6zM8 14h8v4H8z"/>', () => align('hcenter'), !canAlign),
+        ib('Right', '<path d="M20 3v18M6 7h10v4H6zM10 14h6v4h-6z"/>', () => align('right'), !canAlign),
+        ib('Top', '<path d="M3 4h18M7 8v10h4V8zM14 8v6h4V8z"/>', () => align('top'), !canAlign),
+        ib('Middle', '<path d="M3 12h18M7 6v12h4V6zM14 8v8h4V8z"/>', () => align('vcenter'), !canAlign),
+        ib('Bottom', '<path d="M3 20h18M7 6v10h4V6zM14 10v6h4v-6z"/>', () => align('bottom'), !canAlign)),
+    ];
+    if (ns.length >= 3) out.push(h('div', { class: 'chips' },
+      h('button', { class: 'chipb', onclick: () => { distribute('h'); refreshSelPop(); } }, 'Space evenly ↔'), h('button', { class: 'chipb', onclick: () => { distribute('v'); refreshSelPop(); } }, 'Space evenly ↕')));
+    if (one) {
+      const f = frameOf(one), ox = f ? f.x : 0, oy = f ? f.y : 0;
+      const field = (k, v, apply, disabled) => h('label', {}, k, h('input', { type: 'number', inputmode: 'decimal', value: String(Math.round(v * 10) / 10), disabled: !!disabled,
+        onchange: (e) => { const val = parseFloat(e.target.value); if (!isFinite(val)) return; checkpoint(); apply(val); changed(); refreshSelPop(); } }));
+      const sizeLocked = one.type === 'text';
+      out.push(h('h4', {}, f ? `Position in “${f.name}” and size` : 'Position and size'),
+        h('div', { class: 'xywh' },
+          field('X', one.x - ox, (v) => { const dx = v + ox - one.x; if (one.type === 'frame') shiftContents(one, dx, 0, one.x, one.y); one.x += dx; }),
+          field('Y', one.y - oy, (v) => { const dy = v + oy - one.y; if (one.type === 'frame') shiftContents(one, 0, dy, one.x, one.y); one.y += dy; }),
+          field('W', one.w, (v) => { v = Math.max(1, v); if (keepsAspect(one)) one.h *= v / one.w; one.w = v; }, sizeLocked),
+          field('H', one.h, (v) => { v = Math.max(1, v); if (keepsAspect(one)) one.w *= v / one.h; one.h = v; }, sizeLocked)));
+    }
+    out.push(toggleRow('Lock (can’t be moved or picked by tapping)', ns.every((n) => n.locked), (on) => ns.forEach((n) => { n.locked = on; })));
+    return out;
+  }
 
   // ---------- Insert library ----------
   let libBuilt = false, lastInsert = null;
@@ -1353,26 +1863,27 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   }
   function buildLibrary() {
     const body = $('libBody'); body.replaceChildren();
-    for (const sec of LIB) {
-      const h = document.createElement('h3'); h.textContent = sec.cat;
-      const grid = document.createElement('div'); grid.className = 'tiles';
-      for (const [name, make] of sec.items) {
-        const b = document.createElement('button'); b.className = 'tile'; b.dataset.q = (name + ' ' + sec.cat).toLowerCase();
-        const c = document.createElement('canvas'); c.setAttribute('aria-hidden', 'true');
-        const label = document.createElement('span'); label.textContent = name;
-        b.append(c, label); grid.append(b);
-        const glassBg = sec.glass && name !== 'Soft glow';
-        thumb(c, make(), glassBg);
-        b.addEventListener('click', () => insertNode(make(), name));
-      }
-      const sect = document.createElement('section'); sect.append(h, grid); body.append(sect);
+    const sections = [
+      ...(myLib.length ? [{ cat: 'My components', mine: true, items: myLib.map((c) => [c.name, () => reid(clone(c.node))]) }] : []),
+      ...LIB,
+    ];
+    if (!myLib.length) body.append(h('p', { class: 'hint' }, 'Tip: group anything you build and tap Save in the selection bar to reuse it here.'));
+    for (const sec of sections) {
+      const grid = h('div', { class: 'tiles' });
+      sec.items.forEach(([name, make], idx) => {
+        const c = h('canvas', { 'aria-hidden': 'true' });
+        const b = h('button', { class: 'tile', 'data-q': (name + ' ' + sec.cat).toLowerCase(), onclick: () => insertNode(make(), name) }, c, h('span', {}, name));
+        if (sec.mine) b.append(h('span', { class: 'rm', role: 'button', 'aria-label': `Remove ${name}`, html: svg('<path d="M6 6l12 12M18 6 6 18"/>', 's'),
+          onclick: (e) => { e.stopPropagation(); myLib.splice(idx, 1); store.set(myLib, LIBKEY); buildLibrary(); } }));
+        grid.append(b);
+        thumb(c, make(), sec.glass && name !== 'Soft glow');
+      });
+      body.append(h('section', {}, h('h3', {}, sec.cat), grid));
     }
-    const empty = document.createElement('p'); empty.className = 'empty'; empty.id = 'libEmpty'; empty.hidden = true;
-    empty.textContent = 'Nothing matches. Try “button”, “card” or “bar”.';
-    body.append(empty);
-    libBuilt = true;
+    body.append(h('p', { class: 'empty', id: 'libEmpty', hidden: true }, 'Nothing matches. Try “button”, “card” or “bar”.'));
+    libBuilt = true; filterLib();
   }
-  $('libSearch').addEventListener('input', () => {
+  function filterLib() {
     const q = $('libSearch').value.trim().toLowerCase(); let any = false;
     $('libBody').querySelectorAll('section').forEach((sec) => {
       let shown = 0;
@@ -1380,9 +1891,10 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
       sec.hidden = !shown; if (shown) any = true;
     });
     $('libEmpty').hidden = any;
-  });
-  function toggleInsert() {
-    const open = !$('insertPop').hidden; closePops(); if (open) return;
+  }
+  $('libSearch').addEventListener('input', filterLib);
+  function toggleInsert(forceOpen) {
+    const open = !$('insertPop').hidden; closePops(); if (open && !forceOpen) return;
     if (!libBuilt) buildLibrary();
     hideToast();
     $('insertPop').hidden = false; $('insertBtn').setAttribute('aria-expanded', 'true');
@@ -1391,124 +1903,129 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   $('libClose').addEventListener('click', closePops);
   function insertNode(n, name) {
     checkpoint();
-    const c = toWorld(W / 2, (H - 20) / 2);
+    const c = toWorld((W - panelW()) / 2, (H - 20) / 2);
     let x = Math.round(c.x - n.w / 2), y = Math.round(c.y - n.h / 2);
     if (lastInsert && Math.abs(lastInsert.x - x) < 2 && Math.abs(lastInsert.y - y) < 2) { x = lastInsert.nx + 24; y = lastInsert.ny + 24; }
-    n.x = x; n.y = y; lastInsert = { x: Math.round(c.x - n.w / 2), y: Math.round(c.y - n.h / 2), nx: x, ny: y };
+    lastInsert = { x: Math.round(c.x - n.w / 2), y: Math.round(c.y - n.h / 2), nx: x, ny: y };
+    if (n.type === 'line') setLineEnds(n, lineEnds(n).map(([px, py]) => [px - n.x + x, py - n.y + y])); else { n.x = x; n.y = y; }
     S.nodes.push(n); closePops(); setTool('select'); S.sel = new Set([n.id]); changed();
-    toast(`Added ${name}. Drag to move it${n.type === 'group' ? ', or tap Ungroup to edit its parts' : ''}.`, null, null, 3500);
+    toast(n.type === 'group' ? `Added ${name}. Drag to move it. Double-tap a part to edit it.` : `Added ${name}.`, null, null, 3500);
   }
 
-  // ---------- Effects popover ----------
-  let fxSliding = false;
-  const fxNodes = () => selected().filter((n) => n.type !== 'frame');
-  function fxBegin() { if (!fxSliding) { checkpoint(); fxSliding = true; } }
-  function fxEnd() { fxSliding = false; save(); updateUI(); }
-  function syncFx() {
-    const ns = fxNodes(); if (!ns.length) { $('fxPop').hidden = true; return; }
-    const n = ns[0], t = fxTarget(n) || n, shapes = ns.map(fxTarget).filter(Boolean);
-    const op = Math.round((n.opacity ?? 1) * 100), bl = n.blur || 0, sh = t.shadow || 0;
-    $('fxOpacity').value = op; $('fxOpacityV').textContent = op + '%';
-    $('fxBlur').value = bl; $('fxBlurV').textContent = bl;
-    $('fxShadow').querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(+b.dataset.s === sh)));
-    $('fxBgRow').hidden = !shapes.length; $('fxFillRow').hidden = !shapes.some((s) => s.fill); $('glassPreset').hidden = !shapes.length;
-    if (shapes.length) {
-      const s = shapes[0], bg = s.bgBlur || 0, fa = Math.round((s.fillAlpha ?? 1) * 100);
-      $('fxBg').value = bg; $('fxBgV').textContent = bg;
-      $('fxFill').value = fa; $('fxFillV').textContent = fa + '%';
-    }
+  // ---------- Layers panel ----------
+  function layerName(n) {
+    if (n.name) return n.name;
+    if (n.type === 'text') return n.text.split('\n')[0].slice(0, 32) || 'Text';
+    if (n.type === 'icon') return (ICON_LABEL[n.icon] || 'Icon') + ' icon';
+    if (n.type === 'polygon') return n.sides === 4 ? 'Diamond' : 'Polygon';
+    if (n.type === 'line') return n.head ? 'Arrow' : 'Line';
+    return { rect: 'Rectangle', ellipse: 'Ellipse', stroke: 'Drawing', triangle: 'Triangle', star: 'Star', image: 'Image', group: 'Group', frame: 'Frame' }[n.type] || n.type;
   }
-  const fxInput = (id, apply) => {
-    $(id).addEventListener('input', () => { fxBegin(); const v = +$(id).value; for (const n of fxNodes()) apply(n, v); syncFx(); requestRender(); });
-    $(id).addEventListener('change', fxEnd);
-  };
-  fxInput('fxOpacity', (n, v) => { n.opacity = v / 100; });
-  fxInput('fxBlur', (n, v) => { n.blur = v; });
-  fxInput('fxBg', (n, v) => { const t = fxTarget(n); if (t) t.bgBlur = v; });
-  fxInput('fxFill', (n, v) => { const t = fxTarget(n); if (t && t.fill) t.fillAlpha = v / 100; });
-  $('fxShadow').querySelectorAll('button').forEach((b) => b.addEventListener('click', () => {
-    checkpoint(); for (const n of fxNodes()) (fxTarget(n) || n).shadow = +b.dataset.s; syncFx(); changed();
-  }));
-  $('fxPop').querySelectorAll('[data-preset]').forEach((b) => b.addEventListener('click', () => {
-    checkpoint();
-    for (const n of fxNodes()) {
-      const t = fxTarget(n) || n;
-      switch (b.dataset.preset) {
-        case 'none': n.opacity = 1; n.blur = 0; t.shadow = 0; if (isShape(t)) { t.bgBlur = 0; t.fillAlpha = 1; t.strokeAlpha = 1; } break;
-        case 'soft': t.shadow = 1; break;
-        case 'lifted': t.shadow = 3; break;
-        case 'glass': if (isShape(t)) Object.assign(t, glass(), { fill: WH, stroke: WH }); break;
+  let drag = null;
+  function buildLayers() {
+    const list = $('layerList'); if ($('layers').hidden) return;
+    const st = list.scrollTop;
+    const frames = S.nodes.filter((n) => n.type === 'frame');
+    const groups = new Map(frames.map((f) => [f, []])), loose = [];
+    for (let i = S.nodes.length - 1; i >= 0; i--) { const n = S.nodes[i]; if (n.type === 'frame') continue; const f = frameOf(n); (f ? groups.get(f) : loose).push(n); }
+    const row = (n, child) => {
+      const name = h('span', { class: 'name' }, layerName(n));
+      name.addEventListener('dblclick', (e) => { e.stopPropagation(); renameRow(n, name); });
+      const el = h('div', { class: 'layer' + (S.sel.has(n.id) ? ' on' : '') + (n.hidden ? ' off' : '') + (child ? '' : ' frame'), 'data-id': n.id,
+        onclick: (e) => { if (e.target.closest('button,.grip,input')) return; S.sel = new Set([n.id]); if (S.tool !== 'select' && S.tool !== 'draw') setTool('select'); reveal(n); updateUI(); requestRender(); } });
+      if (child) {
+        const grip = h('span', { class: 'grip', 'aria-label': 'Drag to reorder', html: svg('<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/>', 's') });
+        grip.addEventListener('pointerdown', (e) => { e.preventDefault(); drag = { id: n.id }; try { layerList.setPointerCapture(e.pointerId); } catch { /* ignore */ } });
+        el.append(grip);
       }
-    }
-    syncFx(); changed();
-    if (b.dataset.preset === 'glass' && !S.glassTipSeen) {
-      S.glassTipSeen = true; save();
-      toast('Glass blurs whatever is behind it. Place it over a photo or colorful shapes to see it.', null, null, 6000);
-    }
-  }));
-  function openFx(anchor) {
-    const open = !$('fxPop').hidden; closePops(); if (open) return;
-    $('fxPop').hidden = false; syncFx(); openPop($('fxPop'), anchor, 'auto');
-  }
-
-  // ---------- Context bar beside the selection ----------
-  const ctxBar = $('ctx');
-  const icon = (d) => `<svg class="i" viewBox="0 0 24 24">${d}</svg>`;
-  function buildContextBar() {
-    const nodes = selected();
-    const shapes = nodes.filter(isShape);
-    const frag = document.createDocumentFragment();
-    if (nodes.some((n) => n.type !== 'frame')) {
-      const sw = document.createElement('div'); sw.className = 'swatches';
-      swatchButtons(sw, colorOf(nodes[0]), (c) => { checkpoint(); for (const n of selected()) setColor(n, c); changed(); });
-      frag.append(sw, Object.assign(document.createElement('span'), { className: 'sep' }));
-    }
-    const btn = (label, svg, fn, extra = '') => {
-      const b = document.createElement('button'); b.className = 'btn ' + extra; b.title = label; b.setAttribute('aria-label', label);
-      b.innerHTML = svg.startsWith('<svg') ? svg : icon(svg); b.addEventListener('click', fn); frag.append(b); return b;
+      el.append(h('span', { html: svg(TYPE_ICON[n.type] || TYPE_ICON.rect, 's') }), name);
+      if (child) {
+        el.append(
+          h('button', { class: 'mini', 'aria-label': n.hidden ? 'Show' : 'Hide', 'aria-pressed': String(!!n.hidden), title: n.hidden ? 'Show' : 'Hide',
+            html: svg(n.hidden ? '<path d="M3 3l18 18M10.6 6.2A9.6 9.6 0 0 1 12 6c6 0 9.5 6 9.5 6a16 16 0 0 1-3 3.6M6.4 7.6A16 16 0 0 0 2.5 12S6 18 12 18a9 9 0 0 0 4-.9"/>' : '<path d="M2.5 12S6 6 12 6s9.5 6 9.5 6-3.5 6-9.5 6S2.5 12 2.5 12z"/><circle cx="12" cy="12" r="2.5"/>', 's'),
+            onclick: () => { checkpoint(); n.hidden = !n.hidden; if (n.hidden) S.sel.delete(n.id); changed(); } }),
+          h('button', { class: 'mini', 'aria-label': n.locked ? 'Unlock' : 'Lock', 'aria-pressed': String(!!n.locked), title: n.locked ? 'Unlock' : 'Lock',
+            html: svg(n.locked ? '<path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3"/>' : '<path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 6.8-1.2"/>', 's'),
+            onclick: () => { checkpoint(); n.locked = !n.locked; changed(); } }));
+      }
+      return el;
     };
-    if (shapes.length) {
-      const filled = shapes.every((n) => n.fill);
-      btn(filled ? 'Outline only' : 'Fill', '<rect x="4" y="4" width="16" height="16" rx="3"/>' + (filled ? '<rect x="7.5" y="7.5" width="9" height="9" rx="1.5" fill="currentColor"/>' : ''), () => {
-        checkpoint(); for (const n of shapes) { if (n.fill) { n.stroke = n.stroke || n.fill; n.fill = null; } else { n.fill = n.stroke || S.color; } } changed();
-      }).setAttribute('aria-pressed', String(filled));
-      const rects = shapes.filter((n) => n.type === 'rect');
-      if (rects.length) {
-        const round = rects.every((n) => n.r > 0);
-        btn(round ? 'Square corners' : 'Round corners', '<path d="M4 20V11a7 7 0 0 1 7-7h9"/>', () => {
-          checkpoint(); for (const n of rects) n.r = n.r > 0 ? 0 : Math.round(Math.min(n.w, n.h) * 0.18); changed();
-        }).setAttribute('aria-pressed', String(round));
-      }
+    const out = [];
+    for (let i = frames.length - 1; i >= 0; i--) { const f = frames[i]; out.push(row(f, false)); for (const n of groups.get(f)) out.push(row(n, true)); }
+    if (loose.length) { out.push(h('div', { class: 'lay-section' }, frames.length ? 'Not in a frame' : 'Canvas')); for (const n of loose) out.push(row(n, true)); }
+    if (!S.nodes.length) out.push(h('p', { class: 'lay-empty' }, 'Nothing here yet. Draw something or tap Insert.'));
+    out.push(h('p', { class: 'lay-empty' }, 'Top of the list is in front. Drag ⋮⋮ to reorder. Double-click a name to rename.'));
+    list.replaceChildren(...out); list.scrollTop = st;
+  }
+  function renameRow(n, span) {
+    const inp = h('input', { value: layerName(n), 'aria-label': 'Layer name' });
+    span.replaceChildren(inp); inp.focus(); inp.select();
+    const done = () => { const v = inp.value.trim(); if (v && v !== layerName(n)) { checkpoint(); n.name = v; changed(); } else buildLayers(); };
+    inp.addEventListener('blur', done);
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') inp.blur(); if (e.key === 'Escape') { inp.value = layerName(n); inp.blur(); } });
+  }
+  const layerList = $('layerList');
+  layerList.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    layerList.querySelectorAll('.drop-above,.drop-below').forEach((r) => r.classList.remove('drop-above', 'drop-below'));
+    const r = document.elementFromPoint(e.clientX, e.clientY)?.closest('.layer[data-id]');
+    if (!r || r.dataset.id === drag.id || r.classList.contains('frame')) { drag.target = null; return; }
+    const b = r.getBoundingClientRect(), above = e.clientY < b.top + b.height / 2;
+    r.classList.add(above ? 'drop-above' : 'drop-below'); drag.target = { id: r.dataset.id, above };
+  });
+  const endDrag = () => {
+    if (!drag) return;
+    const d = drag; drag = null;
+    if (d.target) moveZ(d.id, d.target.id, d.target.above); else buildLayers();   // higher in the list = further in front
+  };
+  layerList.addEventListener('pointerup', endDrag); layerList.addEventListener('pointercancel', endDrag);
+  function toggleLayers() {
+    const p = $('layers'); p.hidden = !p.hidden; $('layersBtn').setAttribute('aria-expanded', String(!p.hidden)); buildLayers(); requestRender();
+  }
+  $('layersBtn').addEventListener('click', toggleLayers);
+  $('layersClose').addEventListener('click', toggleLayers);
+
+  // ---------- Selection bar ----------
+  const ctxBar = $('ctx');
+  function buildContextBar() {
+    const nodes = selected(), items = nodes.filter((n) => n.type !== 'frame');
+    const frag = document.createDocumentFragment();
+    const btn = (label, d, fn, extra = '', text) => {
+      const b = h('button', { class: 'btn ' + (text ? 'label ' : '') + extra, title: label, 'aria-label': label, html: svg(d) + (text ? `<span>${text}</span>` : '') });
+      b.addEventListener('click', (e) => { e.stopPropagation(); fn(b); }); frag.append(b); return b;
+    };
+    if (items.length) {
+      frag.append(h('div', { class: 'swatches' }, swatchButtons(colorOf(items[0]), (c) => { checkpoint(); for (const n of fxNodes()) setColor(n, c); changed(); refreshSelPop(); })),
+        h('span', { class: 'sep' }));
+      if (items.some((n) => fxTarget(n) || ['line', 'stroke', 'icon', 'image'].includes(n.type)))
+        btn('Style: fill, border, corners', '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>', (b) => openSelPop('stylePop', b, buildStyle), '', 'Style');
+      if (items.some((n) => n.type === 'text'))
+        btn('Text size and weight', '<path d="M4 18 9 6l5 12M5.8 14h6.4M16 12h5M18.5 9.5v5"/>', (b) => openSelPop('textPop', b, buildText), '', 'Text');
+      btn('Effects: shadow, blur, opacity', '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>', (b) => openSelPop('fxPop', b, buildFx), '', 'Effects');
     }
-    if (nodes.some((n) => n.type !== 'frame')) {
-      const fx = btn('Effects: shadow, blur, opacity', '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>', (e) => { e.stopPropagation(); openFx(fx); });
-      const lbl = document.createElement('span'); lbl.textContent = 'Effects'; fx.classList.add('label'); fx.append(lbl);
+    btn('Arrange: order, align, position', '<rect x="4" y="4" width="9" height="9" rx="1.5"/><rect x="11" y="11" width="9" height="9" rx="1.5" fill="currentColor" stroke="none" opacity=".35"/>', (b) => openSelPop('arrangePop', b, buildArrange), '', 'Arrange');
+    if (items.some((n) => n.type === 'group')) {
+      btn('Ungroup (⇧⌘G)', '<rect x="3.5" y="3.5" width="8" height="8" rx="1.5"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', ungroup, '', 'Ungroup');
+      if (items.length === 1) btn('Save to Insert → My components', '<path d="M6 4h12v16l-6-4-6 4z"/>', saveComponent, '', 'Save');
+    } else if (items.length > 1) {
+      btn('Group (⌘G)', '<rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke-dasharray="3 3"/><rect x="7" y="7" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/>', groupSel, '', 'Group');
     }
-    if (nodes.some((n) => n.type === 'group')) {
-      const ug = btn('Ungroup (⇧⌘G)', '<rect x="3.5" y="3.5" width="8" height="8" rx="1.5"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', ungroup);
-      ug.classList.add('label'); ug.append(Object.assign(document.createElement('span'), { textContent: 'Ungroup' }));
-    } else if (nodes.filter((n) => n.type !== 'frame').length > 1) {
-      const gb = btn('Group (⌘G)', '<rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke-dasharray="3 3"/><rect x="7" y="7" width="5" height="5" rx="1"/><rect x="12" y="12" width="5" height="5" rx="1"/>', groupSel);
-      gb.classList.add('label'); gb.append(Object.assign(document.createElement('span'), { textContent: 'Group' }));
-    }
-    btn('Bring to front', '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>', front);
     btn('Duplicate (⌘D)', '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>', dup);
     btn('Delete', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', del, 'danger');
     ctxBar.replaceChildren(frag);
+    if (openSel) { const b = [...ctxBar.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === openSel.label); if (b) b.setAttribute('aria-expanded', 'true'); }
   }
   function placeContextBar() {
     const show = S.sel.size && !G && !editing && !pinch;
     if (!show) { ctxBar.hidden = true; return; }
     const ns = selected(); if (!ns.length) { ctxBar.hidden = true; return; }
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const n of ns) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x + n.w); y1 = Math.max(y1, n.y + n.h); }
-    const a = toScreen(x0, y0), b = toScreen(x1, y1);
+    const u = union(ns), a = toScreen(u.x, u.y), b = toScreen(u.x + u.w, u.y + u.h);
     ctxBar.hidden = false;
-    const r = ctxBar.getBoundingClientRect();
+    const r = ctxBar.getBoundingClientRect(), right = W - panelW();
     let left = (a.x + b.x) / 2 - r.width / 2, top = a.y - r.height - 18;
     if (top < 76) top = b.y + 18;
     if (top + r.height > H - 96) top = Math.max(76, H - 96 - r.height);
-    left = Math.min(Math.max(16, left), W - r.width - 16);
+    left = Math.min(Math.max(16, left), Math.max(16, right - r.width - 16));
     ctxBar.style.left = left + 'px'; ctxBar.style.top = top + 'px';
   }
 
@@ -1525,35 +2042,33 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   function updateZoomLabel() { $('zoom').textContent = Math.round(S.cam.z * 100) + '%'; }
   let lastSelKey = '';
   function updateUI() {
+    for (const id of [...S.sel]) { const n = byId(id); if (!n || n.hidden) S.sel.delete(id); }
     dock.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === S.tool)));
     $('colorDot').style.background = S.color;
     $('autoShape').setAttribute('aria-checked', String(S.autoShape));
     $('undoBtn').disabled = !past.length; $('redoBtn').disabled = !future.length;
     $('pencilChip').hidden = !S.pencil;
     $('pencilPop').querySelectorAll('[data-finger]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.finger === S.finger)));
-    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.fill}${n.r}`).join(',');
+    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.locked}`).join(',');
     if (key !== lastSelKey) { lastSelKey = key; if (S.sel.size) buildContextBar(); }
-    if (!S.sel.size) $('fxPop').hidden = true;
-    updateZoomLabel();
+    if (!S.sel.size && openSel) closePops();
+    updateZoomLabel(); buildLayers();
   }
 
   // New design sheet
   const cards = $('cards');
   cards.replaceChildren(...PRESETS.map((p) => {
-    const b = document.createElement('button'); b.className = 'card';
-    const s = document.createElement('span'); s.className = 'shape';
+    const s = h('span', { class: 'shape' });
     const k = p.w ? 70 / Math.max(p.w, p.h) : 0;
     Object.assign(s.style, p.w ? { width: p.w * k + 'px', height: p.h * k + 'px' } : { width: '60px', height: '44px', borderStyle: 'dashed' });
-    b.append(s, Object.assign(document.createElement('b'), { textContent: p.name }), Object.assign(document.createElement('small'), { textContent: p.w ? `${p.w} × ${p.h}` : 'Infinite canvas' }));
-    b.addEventListener('click', () => {
+    return h('button', { class: 'card', onclick: () => {
       checkpoint();
       S.nodes = []; S.sel.clear();
       if (p.w) S.nodes.push({ id: nid(), type: 'frame', x: 0, y: 0, w: p.w, h: p.h, name: p.name });
       $('docName').textContent = p.name + ' design';
       $('sheetWrap').hidden = true; setTool('draw'); fit(S.nodes); changed();
       toast(`New ${p.name === 'Blank' ? 'blank canvas' : p.name + ' design'}. Undo brings back the previous one.`, 'Undo', undo);
-    });
-    return b;
+    } }, s, h('b', {}, p.name), h('small', {}, p.w ? `${p.w} × ${p.h}` : 'Infinite canvas'));
   }));
   $('newBtn').addEventListener('click', () => { closePops(); $('sheetWrap').hidden = false; cards.firstChild.focus(); });
   $('sheetCancel').addEventListener('click', () => { $('sheetWrap').hidden = true; });
@@ -1571,10 +2086,9 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     text(24, 158, 'Sign in to keep designing.', 16, 400, '#5e6174');
     const email = place(N, 'Text field', 24, 196); email.w = 345; email.h = 70 * 345 / 320;
     const pass = place(N, 'Password field', 24, 292); pass.w = 345; pass.h = 48 * 345 / 320;
-    N.push(R(24, 370, 345, 56, { r: 14, fill: AC, shadow: 1 }));
-    const t = text(0, 388, 'Sign in', 17, 600, WH); t.x = 24 + (345 - t.w) / 2;
-    const f = text(0, 450, 'Forgot password?', 15, 500, AC); f.x = 24 + (345 - f.w) / 2;
-    // Hand-drawn note, made with simulated Pencil pressure
+    N.push(R(24, 370, 345, 56, { r: 14, fill: AC, shadow: 1, name: 'Sign in button' }));
+    const t = text(0, 388, 'Sign in', 17, 600, WH); t.x = 24 + (345 - t.w) / 2; t.align = 'center';
+    const f = text(0, 450, 'Forgot password?', 15, 500, AC); f.x = 24 + (345 - f.w) / 2; f.align = 'center';
     const ink = (fn, steps, color, sw) => {
       const pts = []; for (let i = 0; i <= steps; i++) { const u = i / steps, [x, y] = fn(u); pts.push(x, y, 0.35 + 0.45 * Math.sin(Math.PI * u)); }
       N.push(makeStroke(pts, true, sw, color));
@@ -1583,7 +2097,6 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     ink((u) => [382 + 18 * u, 398 - 16 * u], 6, RED, 2.6);
     ink((u) => [382 + 20 * u, 398 + 10 * u], 6, RED, 2.6);
     text(470, 260, 'Taller button?', 22, 500, RED);
-    // A second screen, still a rough sketch
     N.push({ id: nid(), type: 'frame', x: 720, y: 0, w: 393, h: 852, name: 'Home (sketch)' });
     const jag = (x, y, w, h) => ink((u) => {
       const s = u * 4, k = Math.floor(s) % 4, f2 = s - Math.floor(s), j = Math.sin(u * 40) * 1.4;
@@ -1593,13 +2106,12 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     ink((u) => [744 + 220 * u, 312 + Math.sin(u * 22) * 3], 40, INK, 2.4);
     ink((u) => [744 + 150 * u, 340 + Math.sin(u * 18) * 3], 30, INK, 2.4);
     jag(744, 380, 165, 120); jag(924, 380, 165, 120);
-    // A third screen built from library components, with shadows, blur and glass
     const X = 1440;
     N.push({ id: nid(), type: 'frame', x: X, y: 0, w: 393, h: 852, name: 'Components' });
     place(N, 'Status bar', X, 0);
     text(X + 20, 64, 'Discover', 34, 700, INK);
-    N.push(E(X + 40, 140, 190, 190, { fill: '#8f97ff', blur: 22 }));
-    N.push(E(X + 170, 210, 180, 180, { fill: '#f2b45a', blur: 22 }));
+    N.push({ ...E(X + 40, 140, 190, 190, { fill: '#8f97ff', blur: 22 }), name: 'Blue glow' });
+    N.push({ ...E(X + 170, 210, 180, 180, { fill: '#f2b45a', blur: 22 }), name: 'Amber glow' });
     place(N, 'Glass card', X + 46, 196);
     place(N, 'Segmented control', X + 46, 420);
     place(N, 'List item', X + 16, 480);
@@ -1623,7 +2135,8 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
   if (saved && Array.isArray(saved.nodes)) {
     Object.assign(S, {
       nodes: saved.nodes, cam: saved.cam || S.cam, color: saved.color || S.color, autoShape: saved.autoShape !== false,
-      pencil: !!saved.pencil, finger: saved.finger || 'move', coachSeen: !!saved.coachSeen, glassTipSeen: !!saved.glassTipSeen,
+      pencil: !!saved.pencil, finger: saved.finger || 'move',
+      tips: saved.tips || { coach: saved.coachSeen ? 1 : 0, glass: saved.glassTipSeen ? 1 : 0 },
     });
     if (saved.shapeKind) pickShape(saved.shapeKind);
     $('docName').textContent = saved.nodes.length ? 'Your design' : 'Blank canvas';
@@ -1634,9 +2147,10 @@ svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-widt
     fit(S.nodes);
   }
   updateUI(); requestRender();
-  if (!S.coachSeen) {
+  if (!S.tips.coach) {
     setTimeout(() => toast('Draw with your finger, mouse or Apple Pencil. Tap Insert for ready-made buttons, cards and bars.', 'Got it', null, 9000), 500);
-    S.coachSeen = true; save();
+    S.tips.coach = 1; save();
   }
+  window.chitrakar = { state: S };        // for automated tests
 })();
 </script>

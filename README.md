@@ -8,7 +8,7 @@ Priorities: **ease of use**, then **efficiency** (low power, tiny bundle), then
 
 - Specification: [docs/SPEC.md](docs/SPEC.md)
 
-Status: specification and UI prototype.
+Status: specification and interactive UI prototype.
 
 ## Try the UI prototype
 
