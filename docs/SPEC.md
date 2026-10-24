@@ -112,6 +112,11 @@ The interactive prototype (`prototype/index.html`) tests these ease-of-use choic
 | **Pencil Scribble works in text boxes** | Handwrite text straight into a text layer |
 | **One-time tip** on first launch, and a one-time notice when the Pencil is detected | Teaches the two key ideas without a tutorial |
 | **UI chrome follows light/dark; the canvas stays paper-light** | Designs keep their real colors in both themes |
+| **Shapes tool** with a picker (rectangle, ellipse, line, arrow, triangle, polygon, star, diamond); drag to draw, tap to drop one; returns to Select afterwards | Figma-style shapes without hunting through menus |
+| **Insert library**: about 90 ready-made pieces in 9 groups (basic shapes, buttons, controls, inputs, navigation, content, feedback and overlays, glass, icons), each with a live preview and a search box | Most UI screens are assembled from the same few dozen parts |
+| **Components insert as groups**; tap **Ungroup** to edit their parts; ⌘G / ⇧⌘G to group and ungroup | One tap to place a whole tab bar, full control when needed |
+| **Effects panel** from the selection bar: presets (None, Soft shadow, Lifted, Glass) plus opacity, shadow, blur, background blur and fill opacity | Presets cover the common case in one tap; sliders for fine control |
+| **A finger can drag an item that is already selected** in Pencil mode | Moving things should not require the Pencil |
 
 ### 3.5 Later (post-MVP)
 
@@ -219,7 +224,12 @@ Efficiency is a feature, enforced by budgets in CI (§10).
     off the input path; flush on `visibilitychange` → hidden.
 11. **Suspend when hidden.** On `visibilitychange`, cancel pending frames and
     timers.
-12. **Rendering backend.** Canvas 2D first (GPU-accelerated in Safari).
+12. **Blur without `ctx.filter`.** Layer and background blur use a
+    downsample/upsample pyramid on small scratch canvases. It works in every
+    browser, including Safari versions without canvas filters, and costs a few
+    small image copies per blurred item. Blurred items are the first
+    candidates for the tile cache.
+13. **Rendering backend.** Canvas 2D first (GPU-accelerated in Safari).
     WebGPU is the upgrade path only if profiling shows Canvas 2D is the
     bottleneck.
 
