@@ -318,10 +318,9 @@ more valuable than iteration speed.
 
 ## 12. Open questions
 
-1. **Name.** "Chitrakar" (from the repo name) is the working title; confirm or change.
-2. **Hosting for previews.** Vercel vs Cloudflare Pages (both free for this).
-3. **Verify on device:** Safari support for `getCoalescedEvents()` /
+1. **Hosting for previews.** Vercel vs Cloudflare Pages (both free for this).
+2. **Verify on device:** Safari support for `getCoalescedEvents()` /
    `getPredictedEvents()`, exact Pencil hover reporting, and whether
    `requestAnimationFrame` runs at 60 or 120 Hz on ProMotion iPads in Safari.
-4. **Ink → shape trigger:** hold-to-snap vs automatic with undo.
-5. **Default fonts:** system fonts only (zero download) vs bundled font.
+3. **Ink → shape trigger:** hold-to-snap vs automatic with undo.
+4. **Default fonts:** system fonts only (zero download) vs bundled font.
