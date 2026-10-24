@@ -8,4 +8,10 @@ Priorities: **ease of use**, then **efficiency** (low power, tiny bundle), then
 
 - Specification: [docs/SPEC.md](docs/SPEC.md)
 
-Status: specification phase. No code yet.
+Status: specification and UI prototype.
+
+## Try the UI prototype
+
+`prototype/index.html` is a single-file interactive prototype of the interface.
+Open it in Safari on an iPad (with an Apple Pencil if you have one) or in any
+desktop browser. No build step.

@@ -93,7 +93,27 @@ Air with Pencil Pro), one older iPad with 1st-gen/USB-C Pencil, one Mac.
 | Export | PNG, SVG, PDF of a frame or selection |
 | Import/export file | `.chitrakar` file (see §6) |
 
-### 3.4 Later (post-MVP)
+### 3.4 UI decisions from the prototype
+
+The interactive prototype (`prototype/index.html`) tests these ease-of-use choices:
+
+| Decision | Why |
+|---|---|
+| **Start sheet** asks "What are you designing?" (iPhone, iPad, Desktop, Blank) and places a frame zoomed to fit | Removes blank-canvas paralysis; one tap to start |
+| **Draw is the default tool** | The first thing most people do is sketch |
+| **Tap selects, drag draws**, with any tool | No need to switch to Select just to pick something |
+| **Rough shapes snap automatically** (box → rectangle, loop → ellipse, straight stroke → line, snapped to horizontal/vertical), with a **"Keep my drawing"** button in the toast and a switch in the Color popover | Clean shapes without a shape tool; easy to back out |
+| **Labelled tools** in a bottom dock (Select, Draw, Text, Frame, Erase, Color) | Icons alone are guesswork for new users; bottom is thumb reach on iPad |
+| **Context bar next to the selection** (colors, fill, round corners, front, duplicate, delete) instead of a permanent properties panel | Options appear where the eye already is, and only when relevant |
+| **Pencil chip** appears in the top bar once a Pencil is seen; opens the "Fingers move and select / Fingers draw too" choice | Auto-detection is visible and reversible |
+| **Undo and redo always visible** at top center, plus two-finger tap (undo) and three-finger tap (redo) | Undo is the safety net that makes experimenting feel safe |
+| **Moving a frame carries its contents** | Matches how people think about screens |
+| **Frames are picked by their name label or edge** | Drawing or marquee-selecting inside an empty frame still works |
+| **Pencil Scribble works in text boxes** | Handwrite text straight into a text layer |
+| **One-time tip** on first launch, and a one-time notice when the Pencil is detected | Teaches the two key ideas without a tutorial |
+| **UI chrome follows light/dark; the canvas stays paper-light** | Designs keep their real colors in both themes |
+
+### 3.5 Later (post-MVP)
 
 Components & instances, auto layout, prototyping links, design tokens / shared
 styles, handwriting → text, version history, sharing via link.
