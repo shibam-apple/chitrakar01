@@ -205,6 +205,24 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .lay-section { font-size: 11px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); padding: 12px 8px 4px; font-weight: 600; }
 .lay-empty { color: var(--fg-2); font-size: 12px; padding: 12px 8px 0; margin: 0; }
 
+/* Workspace tabs and the Logo tab */
+.tabs { display: flex; background: var(--chrome-2); border-radius: 10px; padding: 3px; gap: 2px; margin-left: 2px; }
+.tabs button { height: 38px; padding: 0 14px; border-radius: 8px; font-size: 14px; font-weight: 600; color: var(--fg-2); }
+.tabs button[aria-selected="true"] { background: var(--chrome); color: var(--fg); box-shadow: 0 1px 2px var(--shadow); }
+body:not(.tab-logo) .logo-only { display: none !important; }
+body.tab-logo .design-only { display: none !important; }
+.tool.on { background: var(--accent-soft); color: var(--accent); }
+#preview { position: fixed; z-index: 6; display: flex; flex-direction: column; overflow: hidden; right: max(16px, env(safe-area-inset-right, 0px));
+  top: calc(env(safe-area-inset-top, 0px) + 76px); bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); width: min(288px, calc(100vw - 32px)); }
+#previewBody { overflow-y: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 12px; }
+#previewBody h4 { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--fg-2); }
+.pv-row { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; }
+.pv-row figure { margin: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.pv-row figcaption { font-size: 11px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.pv-row canvas { border-radius: 6px; box-shadow: 0 0 0 1px var(--line); display: block; }
+.pv-actions { display: flex; flex-direction: column; gap: 8px; }
+.pv-actions .chipb { width: 100%; height: 44px; }
+
 /* Selection bar */
 #ctx { position: fixed; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 4px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none; }
 #ctx::-webkit-scrollbar { display: none; }
@@ -241,8 +259,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 #sheet { width: min(640px, 100%); padding: 24px; display: flex; flex-direction: column; gap: 18px; }
 #sheet h2 { margin: 0; font-size: 22px; text-wrap: balance; }
 #sheet p { margin: 0; color: var(--fg-2); font-size: 14px; }
-.cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.cards { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 560px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 561px) and (max-width: 760px) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .card { border: 1px solid var(--line); border-radius: 12px; padding: 14px 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 150px; justify-content: flex-end; }
 .card:hover { border-color: var(--accent); background: var(--accent-soft); }
 .card .shape { background: var(--chrome-2); border: 1.5px solid var(--fg-2); border-radius: 6px; max-width: 100%; }
@@ -265,6 +284,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .mini2:hover { background: var(--chrome-2); }
 
 @media (max-width: 560px) {
+  .doc { display: none; }
+  .tabs button { padding: 0 10px; }
   .tool { width: 56px; font-size: 10px; }
   .doc span, #layersBtn span { display: none; }
 }
@@ -279,6 +300,10 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       <svg class="i" viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z"/><path d="M16.5 13.5v6M13.5 16.5h6"/></svg>
     </button>
     <div class="doc"><b>Chitrakar</b><span id="docName">Example</span></div>
+    <div class="tabs" role="tablist" aria-label="Workspace">
+      <button role="tab" data-tab="design" aria-selected="true">Design</button>
+      <button role="tab" data-tab="logo" aria-selected="false">Logo</button>
+    </div>
   </div>
   <div class="bar group">
     <button class="btn" id="undoBtn" title="Undo (⌘Z · two-finger tap)" aria-label="Undo">
@@ -291,6 +316,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   <div class="bar group">
     <button class="chip" id="pencilChip" hidden aria-label="Apple Pencil settings">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="m14 7 3 3"/></svg>Pencil
+    </button>
+    <button class="btn label logo-only" id="previewBtn" title="Preview the logo at real sizes" aria-expanded="false">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="11" height="11" rx="2.5"/><rect x="16" y="5" width="5" height="5" rx="1.2"/><rect x="16" y="13" width="3" height="3" rx="0.8"/></svg><span>Preview</span>
     </button>
     <button class="btn label" id="layersBtn" title="Layers" aria-expanded="false">
       <svg class="i" viewBox="0 0 24 24"><path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/></svg><span>Layers</span>
@@ -315,11 +343,21 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   <button class="tool" data-tool="text" title="Text (T)">
     <svg class="i" viewBox="0 0 24 24"><path d="M5 7V5h14v2M12 5v14M9 19h6"/></svg>Text
   </button>
-  <button class="tool" data-tool="frame" title="Frame (F)">
+  <button class="tool design-only" data-tool="frame" title="Frame (F)">
     <svg class="i" viewBox="0 0 24 24"><path d="M7 3v18M17 3v18M3 7h18M3 17h18"/></svg>Frame
   </button>
   <button class="tool" data-tool="erase" title="Erase (E)">
     <svg class="i" viewBox="0 0 24 24"><path d="M9 20h11"/><path d="m4.5 14.5 9-9a2 2 0 0 1 2.8 0l2.2 2.2a2 2 0 0 1 0 2.8L12 17H7z"/></svg>Erase
+  </button>
+  <span class="sep logo-only"></span>
+  <button class="tool logo-only" id="mirrorBtn" title="Mirror drawing: off, left/right, 4-way">
+    <svg class="i" viewBox="0 0 24 24"><path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 12l5 5zM15 7l5 5-5 5z"/></svg><span id="mirrorLabel">Mirror</span>
+  </button>
+  <button class="tool logo-only" id="gridBtn" title="Construction grid">
+    <svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="17" height="17" rx="1.5"/><circle cx="12" cy="12" r="5"/><path d="M12 3.5v17M3.5 12h17"/></svg>Grid
+  </button>
+  <button class="tool logo-only" id="artboardBtn" title="Add an artboard to try a variation">
+    <svg class="i" viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="11" height="11" rx="1.5"/><path d="M18.5 8v6M15.5 11h6"/></svg>Artboard
   </button>
   <span class="sep"></span>
   <button class="tool" id="colorBtn" title="Color and drawing options" aria-label="Color and drawing options">
@@ -375,6 +413,12 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 </div>
 <input type="file" id="fileIn" accept="image/*" hidden>
 
+<aside id="preview" class="bar" hidden aria-label="Logo preview">
+  <div class="lay-head"><b>Preview</b>
+    <button class="btn" id="previewClose" aria-label="Close preview"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div id="previewBody"></div>
+</aside>
 <aside id="layers" class="bar" hidden aria-label="Layers">
   <div class="lay-head"><b>Layers</b>
     <button class="btn" id="layersClose" aria-label="Close layers"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
@@ -407,7 +451,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   const SWATCHES = [INK, AC, RED, '#e39a2d', GRN, SHAPE_FILL, WH];
   const PRESETS = [
     { name: 'iPhone', w: 393, h: 852 }, { name: 'iPad', w: 820, h: 1180 },
-    { name: 'Desktop', w: 1440, h: 900 }, { name: 'Blank', w: 0, h: 0 },
+    { name: 'Desktop', w: 1440, h: 900 }, { name: 'Blank', w: 0, h: 0 }, { name: 'Logo', w: 512, h: 512, logo: true },
   ];
   const SHADOWS = [null, { y: 2, b: 10, a: 0.14 }, { y: 8, b: 24, a: 0.18 }, { y: 18, b: 48, a: 0.26 }];
   const SHAPE_TYPES = new Set(['rect', 'ellipse', 'triangle', 'polygon', 'star']);
@@ -476,8 +520,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     tool: 'draw', shapeKind: 'rect', color: INK, autoShape: true,
     pencil: false, finger: 'move', tips: {}, hover: null, hoverId: null,
     wheel: 'auto', autoVector: false, peHover: null,
+    tab: 'design', mirror: 0, logoGrid: true,
   };
-  const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1';
+  const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1', LOGOKEY = 'chitrakar.logo.v1';
   const store = {
     get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
     set(v, k = KEY) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -510,11 +555,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 
   // ---------- Persistence (debounced; flushed when hidden) ----------
   let saveTimer = 0, saveWarned = false;
-  function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); }
+  function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); if (typeof schedulePreview === 'function') schedulePreview(); }
   function flush() {
     clearTimeout(saveTimer); saveTimer = 0;
-    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector } = S;
-    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector }) && !saveWarned) {
+    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid } = S;
+    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid }, tab === 'logo' ? LOGOKEY : KEY) && !saveWarned) {
       saveWarned = true;
       toast('Couldn’t save in this browser: its storage is full. Large images use the most space.', null, null, 7000);
     }
@@ -565,7 +610,18 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     for (const n of S.nodes) if (n.type === 'frame' && visible(n)) drawNode(n);
     for (const n of S.nodes) if (n.type !== 'frame' && (!editing || n !== editing.n) && visible(n)) drawItem(n);
 
-    if (G && G.kind === 'draw') drawInk(G.pts, 0, 0, 1, 1, G.sw, S.color, G.pen);
+    if (G && G.kind === 'draw') {
+      drawInk(G.pts, 0, 0, 1, 1, G.sw, S.color, G.pen);
+      if (G.axis) for (const q of mirrorSets(G.pts, G.axis[0], G.axis[1])) drawInk(q, 0, 0, 1, 1, G.sw, S.color, G.pen);
+    }
+    if (S.tab === 'logo' && S.mirror && S.tool === 'draw') {        // mirror axes on logo artboards
+      ctx.save(); ctx.strokeStyle = T.accent; ctx.globalAlpha = 0.5; ctx.lineWidth = 1.5 / z; ctx.setLineDash([6 / z, 5 / z]); ctx.beginPath();
+      for (const f of S.nodes) if (f.type === 'frame' && f.logo && visible(f)) {
+        ctx.moveTo(f.x + f.w / 2, f.y); ctx.lineTo(f.x + f.w / 2, f.y + f.h);
+        if (S.mirror === 2) { ctx.moveTo(f.x, f.y + f.h / 2); ctx.lineTo(f.x + f.w, f.y + f.h / 2); }
+      }
+      ctx.stroke(); ctx.restore();
+    }
     if (G && G.kind === 'frame') {
       const r = rectOf(G.x0, G.y0, G.x1, G.y1);
       drawNode({ type: 'frame', ...r, name: `${Math.round(r.w)} × ${Math.round(r.h)}` });
@@ -628,14 +684,14 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     if (n.type === 'vec') { ctx.globalAlpha = 0.45; n.layers.forEach((L, li) => L.rings.forEach((_, ri) => { tracePath(vecRingWorld(n, li, ri), true); ctx.stroke(); })); ctx.globalAlpha = 1; ctx.lineWidth = 1.5 / z; }
     tracePath(A, pd.closed); ctx.stroke();
     const a = PE.i != null ? A[PE.i] : null;
-    if (a && !a[6]) {
+    if (a && a[6] !== 1) {
       ctx.beginPath(); ctx.moveTo(a[2], a[3]); ctx.lineTo(a[0], a[1]); ctx.lineTo(a[4], a[5]); ctx.stroke();
       ctx.fillStyle = T.accent;
       for (const [hx, hy] of [[a[2], a[3]], [a[4], a[5]]]) { ctx.beginPath(); ctx.arc(hx, hy, r * 0.75, 0, Math.PI * 2); ctx.fill(); }
     }
     A.forEach((q, i) => {
       ctx.beginPath();
-      if (q[6]) ctx.rect(q[0] - r, q[1] - r, r * 2, r * 2); else ctx.arc(q[0], q[1], r, 0, Math.PI * 2);
+      if (q[6] === 1) ctx.rect(q[0] - r, q[1] - r, r * 2, r * 2); else if (q[6] === 3) { ctx.moveTo(q[0], q[1] - r * 1.2); ctx.lineTo(q[0] + r * 1.2, q[1]); ctx.lineTo(q[0], q[1] + r * 1.2); ctx.lineTo(q[0] - r * 1.2, q[1]); ctx.closePath(); } else ctx.arc(q[0], q[1], r, 0, Math.PI * 2);
       ctx.fillStyle = i === PE.i ? T.accent : '#ffffff'; ctx.fill();
       ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke();
       if (S.peHover === i && i !== PE.i) { ctx.beginPath(); ctx.arc(q[0], q[1], r * 1.8, 0, Math.PI * 2); ctx.lineWidth = 1 / z; ctx.stroke(); }
@@ -743,6 +799,15 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     switch (n.type) {
       case 'frame': {
         ctx.fillStyle = '#ffffff'; ctx.fillRect(n.x, n.y, n.w, n.h);
+        if (n.logo && S.logoGrid && ctx === mainCtx) {       // construction grid: centre lines, diagonals, two circles, safe margin
+          const cx = n.x + n.w / 2, cy = n.y + n.h / 2, m = n.w * 0.08;
+          ctx.save(); ctx.strokeStyle = 'rgba(61,71,201,0.16)'; ctx.lineWidth = 1 / z; ctx.beginPath();
+          ctx.moveTo(cx, n.y); ctx.lineTo(cx, n.y + n.h); ctx.moveTo(n.x, cy); ctx.lineTo(n.x + n.w, cy);
+          ctx.moveTo(n.x, n.y); ctx.lineTo(n.x + n.w, n.y + n.h); ctx.moveTo(n.x + n.w, n.y); ctx.lineTo(n.x, n.y + n.h);
+          ctx.moveTo(cx + n.w * 0.42, cy); ctx.arc(cx, cy, n.w * 0.42, 0, Math.PI * 2);
+          ctx.moveTo(cx + n.w * 0.25, cy); ctx.arc(cx, cy, n.w * 0.25, 0, Math.PI * 2); ctx.stroke();
+          ctx.setLineDash([4 / z, 4 / z]); ctx.strokeRect(n.x + m, n.y + m, n.w - 2 * m, n.h - 2 * m); ctx.restore();
+        }
         ctx.strokeStyle = 'rgba(20,22,40,0.12)'; ctx.lineWidth = 1 / z; ctx.strokeRect(n.x, n.y, n.w, n.h);
         ctx.fillStyle = T.fg2; ctx.font = `600 ${12 / z}px -apple-system, system-ui, sans-serif`; ctx.textBaseline = 'bottom';
         ctx.fillText(n.name, n.x, n.y - 6 / z);
@@ -891,7 +956,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     for (const [x, y] of samplePath(A, n.closed)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
     const w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1), r2 = (v) => Math.round(v * 100) / 100;
-    Object.assign(n, { x: x0, y: y0, w, h, pw: w, ph: h, a: A.map(([x, y, ix, iy, ox, oy, c]) => [r2(x - x0), r2(y - y0), r2(ix - x0), r2(iy - y0), r2(ox - x0), r2(oy - y0), c ? 1 : 0]) });
+    Object.assign(n, { x: x0, y: y0, w, h, pw: w, ph: h, a: A.map(([x, y, ix, iy, ox, oy, c]) => [r2(x - x0), r2(y - y0), r2(ix - x0), r2(iy - y0), r2(ox - x0), r2(oy - y0), c || 0]) });
   }
   function tracePath(A, closed) {
     ctx.beginPath(); ctx.moveTo(A[0][0], A[0][1]);
@@ -904,7 +969,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     for (let i = 0; i < n; i++) {
       if (only != null && !only.includes(i)) continue;
       const a = A[i];
-      if (a[6]) { a[2] = a[0]; a[3] = a[1]; a[4] = a[0]; a[5] = a[1]; continue; }
+      if (a[6] === 1) { a[2] = a[0]; a[3] = a[1]; a[4] = a[0]; a[5] = a[1]; continue; }
       const p = A[closed ? (i - 1 + n) % n : Math.max(0, i - 1)], q = A[closed ? (i + 1) % n : Math.min(n - 1, i + 1)];
       const tx = (q[0] - p[0]) / 6, ty = (q[1] - p[1]) / 6;
       a[2] = a[0] - tx; a[3] = a[1] - ty; a[4] = a[0] + tx; a[5] = a[1] + ty;
@@ -1383,8 +1448,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       let rings = traceMask(m, w, h, o.noise, eps, corner, o.presmooth || 0);
       if (o.holeFrac && rings.length > 1) {     // fill slivers between overlapping strokes; real holes (the inside of an O) stay
         const area = (A) => { let a = 0; for (let i = 0; i < A.length; i++) { const p = A[i], q = A[(i + 1) % A.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
-        const areas = rings.map(area), big = areas.reduce((b, a) => (Math.abs(a) > Math.abs(b) ? a : b), 0);
-        rings = rings.filter((_, i) => Math.sign(areas[i]) === Math.sign(big) || Math.abs(areas[i]) > o.holeFrac * Math.abs(big));
+        // A ring is a hole when it sits inside an odd number of bigger rings (winding direction is unreliable on thin strokes).
+        const inside = (x, y, A) => { let c = false; for (let i = 0, j = A.length - 1; i < A.length; j = i++) { const p = A[i], q = A[j]; if ((p[1] > y) !== (q[1] > y) && x < (q[0] - p[0]) * (y - p[1]) / (q[1] - p[1]) + p[0]) c = !c; } return c; };
+        const areas = rings.map((A) => Math.abs(area(A)));
+        const hole = rings.map((A, i) => rings.reduce((d, B, j) => d + (j !== i && areas[j] > areas[i] && inside(A[0][0], A[0][1], B) ? 1 : 0), 0) % 2 === 1);
+        rings = rings.filter((A, i) => !hole[i] || areas[i] > o.holeFrac * Math.max(...rings.map((B, j) => (j !== i && inside(A[0][0], A[0][1], B) ? areas[j] : 0))));
       }
       if (rings.length) layers.push({ fill, rings });
     }
@@ -1448,8 +1516,10 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         let area = 0; for (let i = 0; i < P0.length; i++) { const a = P0[i], b = P0[(i + 1) % P0.length]; area += a[0] * b[1] - b[0] * a[1]; }
         if (Math.abs(area) / 2 < Math.max(1, minArea)) continue;
         let P = P0.map((a, i) => { const b = P0[(i + 1) % P0.length]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; });   // soften the pixel staircase
-        if (smoothR >= 1 && P.length > 4 * smoothR) P = smoothRing(smoothRing(P, smoothR), smoothR);   // iron out hand wobble
-        const Q = rdpClosed(P, eps); if (Q.length < 3) continue;
+        const thick = Math.abs(area) / P0.length * 2;   // thin strokes get gentler smoothing, so a straight line never collapses to nothing
+        const sR = Math.min(smoothR, thick * 0.5), e = Math.min(eps, Math.max(0.5, thick * 0.3));
+        if (sR >= 1 && P.length > 4 * sR) P = smoothRing(smoothRing(P, sR), sR);   // iron out hand wobble
+        const Q = rdpClosed(P, e); if (Q.length < 3) continue;
         const An = Q.map(([x, y]) => [x, y, x, y, x, y, 0]), n = An.length;
         for (let i = 0; i < n; i++) {
           const p = An[(i - 1 + n) % n], q = An[(i + 1) % n], a = An[i];
@@ -1501,7 +1571,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const ras = rasterize(TR.src, logo ? 1400 : TR.preset === 'detailed' ? 900 : 700);
     // Logo shapes: Smoothness is measured on the drawing (in points), not on the high-resolution raster.
     const sm = logo ? TR.opts.smooth / 100 : 0;
-    const o = logo ? { ...TR.opts, threshold: Math.max(20, Math.min(250, 128 + TR.opts.thick * 9)), blur: Math.max(2, Math.round(1.5 * ras.k)),
+    // Fuse strokes with a blur sized to the strokes themselves, so thin lines survive and touching strokes merge.
+    const sws = TR.src.filter((n) => n.sw).map((n) => n.sw * (n.pen ? 1.1 : 1)), swPx = (sws.length ? sws.reduce((a, b) => a + b, 0) / sws.length : 3) * ras.k;
+    const o = logo ? { ...TR.opts, threshold: Math.max(20, Math.min(250, 150 + TR.opts.thick * 9)), blur: Math.max(1, Math.min(8, Math.round(swPx * 0.3))),
       holeFrac: 0.04, presmooth: (0.5 + 3.5 * sm) * ras.k, eps: (0.6 + 4.4 * sm) * ras.k, corner: 0.85 + 0.75 * sm, noise: TR.opts.noise * ras.k * ras.k / 4 } : TR.opts;
     const layers = traceCanvas(ras.c, o);
     if (logo) layers.forEach((L) => { L.fill = TR.fill; });
@@ -1663,7 +1735,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const A = pd.A, tol = (e.pointerType === 'touch' ? 24 : 12) / S.cam.z, id = e.pointerId;
     const near = (x, y) => Math.hypot(p.x - x, p.y - y) < tol;
     const a = PE.i != null ? A[PE.i] : null;
-    if (a && !a[6]) {
+    if (a && a[6] !== 1) {
       if ((a[4] !== a[0] || a[5] !== a[1]) && near(a[4], a[5])) { G = { kind: 'peHandle', id, which: 'out', moved: false }; return; }
       if ((a[2] !== a[0] || a[3] !== a[1]) && near(a[2], a[3])) { G = { kind: 'peHandle', id, which: 'in', moved: false }; return; }
     }
@@ -1690,7 +1762,20 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   }
   function toggleCorner() {
     const n = byId(PE && PE.id); if (!n || PE.i == null) return;
-    checkpoint(); const pd = peData(n), A = pd.A; A[PE.i][6] = A[PE.i][6] ? 0 : 1; smoothHandles(A, pd.closed, [PE.i]); peStore(n, A); changed();
+    setPointType(peData(n).A[PE.i][6] === 1 ? 0 : 1);
+  }
+  // 0 smooth · 1 corner · 2 symmetric · 3 free
+  function setPointType(t) {
+    const n = byId(PE && PE.id); if (!n || PE.i == null) return;
+    checkpoint();
+    const pd = peData(n), A = pd.A, a = A[PE.i], was = a[6] || 0;
+    a[6] = t;
+    if (t === 1 || was === 1) smoothHandles(A, pd.closed, [PE.i]);
+    if (t === 2) {        // equal handle lengths, opposite directions
+      let dx = a[4] - a[2], dy = a[5] - a[3]; const L = Math.hypot(dx, dy) / 2 || 1, d = Math.hypot(dx, dy) || 1; dx /= d; dy /= d;
+      a[2] = a[0] - dx * L; a[3] = a[1] - dy * L; a[4] = a[0] + dx * L; a[5] = a[1] + dy * L;
+    }
+    peStore(n, A); changed();
   }
   function deletePoint() {
     const n = byId(PE && PE.id); if (!n || PE.i == null) return;
@@ -1723,7 +1808,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     switch (S.tool) {
       case 'draw': {
         const pen = e.pointerType === 'pen';
-        G = { kind: 'draw', id, pen, sw: 3 / Math.sqrt(z), pts: [p.x, p.y, pen ? e.pressure : 0.5] };
+        const f = S.tab === 'logo' && S.mirror ? frameAtPoint(p) : null;
+        G = { kind: 'draw', id, pen, sw: 3 / Math.sqrt(z), pts: [p.x, p.y, pen ? e.pressure : 0.5], axis: f ? [f.x + f.w / 2, f.y + f.h / 2] : null };
         break;
       }
       case 'shape': S.sel.clear(); G = { kind: 'shape', id, k: S.shapeKind, x0: p.x, y0: p.y, x1: p.x, y1: p.y, shift: e.shiftKey, dragged: false }; break;
@@ -1850,8 +1936,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         if (!G.moved) { G.moved = true; checkpoint(); }
         const A = peData(n).A, a = A[PE.i], [hk, ok] = G.which === 'out' ? [4, 2] : [2, 4];
         a[hk] = p.x; a[hk + 1] = p.y;
-        if (!a[6]) {   // smooth point: the opposite handle mirrors, keeping its length
-          const lo = Math.hypot(a[ok] - a[0], a[ok + 1] - a[1]), lh = Math.hypot(p.x - a[0], p.y - a[1]) || 1;
+        if (a[6] === 0 || a[6] === 2) {   // smooth: opposite handle stays in line (keeps its length); symmetric: mirrors length too; free: untouched
+          const lh = Math.hypot(p.x - a[0], p.y - a[1]) || 1, lo = a[6] === 2 ? lh : Math.hypot(a[ok] - a[0], a[ok + 1] - a[1]);
           a[ok] = a[0] - (p.x - a[0]) * lo / lh; a[ok + 1] = a[1] - (p.y - a[1]) * lo / lh;
         }
         peStore(n, A); break;
@@ -1967,24 +2053,37 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     toast(`Opened “${g.name || 'Group'}” so you can edit its parts.`, 'Undo', undo, 4000);
   }
 
+  function frameAtPoint(p) {
+    for (let i = S.nodes.length - 1; i >= 0; i--) { const f = S.nodes[i]; if (f.type === 'frame' && p.x >= f.x && p.x <= f.x + f.w && p.y >= f.y && p.y <= f.y + f.h) return f; }
+    return null;
+  }
+  function mirrorSets(pts, ax, ay) {
+    const mk = (fx, fy) => { const q = pts.slice(); for (let i = 0; i < q.length; i += 3) { if (fx) q[i] = 2 * ax - q[i]; if (fy) q[i + 1] = 2 * ay - q[i + 1]; } return q; };
+    return S.mirror === 2 ? [mk(1, 0), mk(0, 1), mk(1, 1)] : [mk(1, 0)];
+  }
   function finishStroke(g, p, e) {
     const a = g.pts, z = S.cam.z;
     let L = 0; for (let i = 3; i < a.length; i += 3) L += Math.hypot(a[i] - a[i - 3], a[i + 1] - a[i - 2]);
     if (L * z < 6) { tapPick(p, e.timeStamp, e.clientX, e.clientY); return; }     // a tap selects; a drag draws
     S.sel.clear();
     checkpoint();
-    const stroke = makeStroke(a, g.pen, g.sw);
-    const r = S.autoShape ? recognize(a) : null;
-    if (r) {
-      const shape = r.kind === 'line' ? lineNode(r.x0, r.y0, r.x1, r.y1, { color: S.color, sw: Math.max(2, g.sw * 0.8) })
-        : { id: nid(), type: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, r: 0, stroke: S.color, fill: null, sw: Math.max(2, g.sw * 0.8) };
-      S.nodes.push(shape);
-      toast(`Turned into ${r.label}.`, 'Keep my drawing', () => {
-        const i = S.nodes.findIndex((n) => n.id === shape.id);
-        if (i >= 0) { checkpoint(); S.nodes[i] = stroke; changed(); }
-      });
-    } else S.nodes.push(S.autoVector ? vectorize(stroke).n : stroke);
-    noteDrawn(S.nodes[S.nodes.length - 1]);
+    const made = []; let label = null;
+    for (const pts of [a, ...(g.axis ? mirrorSets(a, g.axis[0], g.axis[1]) : [])]) {   // the stroke, plus its mirror images
+      const stroke = makeStroke(pts, g.pen, g.sw);
+      const r = S.autoShape ? recognize(pts) : null;
+      let node;
+      if (r) {
+        node = r.kind === 'line' ? lineNode(r.x0, r.y0, r.x1, r.y1, { color: S.color, sw: Math.max(2, g.sw * 0.8) })
+          : { id: nid(), type: r.kind, x: r.x, y: r.y, w: r.w, h: r.h, r: 0, stroke: S.color, fill: null, sw: Math.max(2, g.sw * 0.8) };
+        label = r.label;
+      } else node = S.autoVector ? vectorize(stroke).n : stroke;
+      S.nodes.push(node); made.push([node, stroke, !!r]); noteDrawn(node);
+    }
+    if (label) toast(`Turned into ${label}.`, 'Keep my drawing', () => {
+      checkpoint();
+      for (const [node, stroke, rec] of made) { if (!rec) continue; const i = S.nodes.findIndex((n) => n.id === node.id); if (i >= 0) S.nodes[i] = stroke; }
+      changed();
+    });
     save();
   }
 
@@ -2057,7 +2156,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   document.addEventListener('gesturestart', (e) => e.preventDefault());
   document.addEventListener('dblclick', (e) => { if (e.target === cv) e.preventDefault(); });
 
-  const panelW = () => ($('layers').hidden ? 0 : 304);
+  const panelW = () => ($('layers').hidden && $('preview').hidden ? 0 : 304);
   function fit(nodes) {
     nodes = nodes.filter((n) => !n.hidden);
     if (!nodes.length) { S.cam = { x: W / 2, y: H / 2, z: 1 }; updateZoomLabel(); requestRender(); return; }
@@ -2758,7 +2857,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   };
   layerList.addEventListener('pointerup', endDrag); layerList.addEventListener('pointercancel', endDrag);
   function toggleLayers() {
-    const p = $('layers'); p.hidden = !p.hidden; $('layersBtn').setAttribute('aria-expanded', String(!p.hidden)); buildLayers(); requestRender();
+    const p = $('layers'); p.hidden = !p.hidden;
+    if (!p.hidden && !$('preview').hidden) { $('preview').hidden = true; $('previewBtn').setAttribute('aria-expanded', 'false'); } $('layersBtn').setAttribute('aria-expanded', String(!p.hidden)); buildLayers(); requestRender();
   }
   $('layersBtn').addEventListener('click', toggleLayers);
   $('layersClose').addEventListener('click', toggleLayers);
@@ -2776,7 +2876,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       const n = byId(PE.id), pd = n && peData(n), A = pd ? pd.A : [], a = PE.i != null ? A[PE.i] : null;
       frag.append(h('span', { class: 'btn label', style: 'cursor:default' }, 'Editing points'), h('span', { class: 'sep' }));
       if (a) {
-        btn(a[6] ? 'Make the point smooth' : 'Make the point a corner', a[6] ? '<path d="M4 18c4-12 12-12 16 0"/>' : '<path d="M4 18 12 6l8 12"/>', toggleCorner, '', a[6] ? 'Smooth' : 'Corner');
+        const types = [[1, 'Corner', 'Sharp corner, no handles', '<path d="M4 18 12 6l8 12"/>'], [0, 'Smooth', 'Smooth: handles stay in line', '<path d="M4 18c4-12 12-12 16 0"/>'],
+          [2, 'Symmetric', 'Symmetric: handles mirror in angle and length', '<path d="M3 12h18"/><circle cx="3" cy="12" r="1.8"/><circle cx="21" cy="12" r="1.8"/><circle cx="12" cy="12" r="2.2"/>'],
+          [3, 'Free', 'Free: each handle moves on its own', '<path d="M12 12 4 6M12 12l8 3"/><path d="M12 9l3 3-3 3-3-3z"/>']];
+        for (const [t, label, title, d] of types) btn(title, d, () => setPointType(t), '', label).setAttribute('aria-pressed', String((a[6] || 0) === t));
+        frag.append(h('span', { class: 'sep' }));
         btn('Delete point', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', deletePoint, 'danger', 'Delete point').disabled = A.length <= (n.type === 'vec' ? 3 : 2);
       }
       if (n && n.type === 'path') btn(n.closed ? 'Open path' : 'Close path', n.closed ? '<path d="M5 17a7 7 0 1 1 14 0"/>' : '<circle cx="12" cy="12" r="7"/>', toggleClosed, '', n.closed ? 'Open path' : 'Close path');
@@ -2874,13 +2978,14 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const k = p.w ? 70 / Math.max(p.w, p.h) : 0;
     Object.assign(s.style, p.w ? { width: p.w * k + 'px', height: p.h * k + 'px' } : { width: '60px', height: '44px', borderStyle: 'dashed' });
     return h('button', { class: 'card', onclick: () => {
+      if (p.logo) { $('sheetWrap').hidden = true; switchTab('logo'); return; }
       checkpoint();
       S.nodes = []; S.sel.clear();
       if (p.w) S.nodes.push({ id: nid(), type: 'frame', x: 0, y: 0, w: p.w, h: p.h, name: p.name });
       $('docName').textContent = p.name + ' design';
       $('sheetWrap').hidden = true; setTool('draw'); fit(S.nodes); changed();
       toast(`New ${p.name === 'Blank' ? 'blank canvas' : p.name + ' design'}. Undo brings back the previous one.`, 'Undo', undo);
-    } }, s, h('b', {}, p.name), h('small', {}, p.w ? `${p.w} × ${p.h}` : 'Infinite canvas'));
+    } }, s, h('b', {}, p.name), h('small', {}, p.logo ? 'Logo tab' : p.w ? `${p.w} × ${p.h}` : 'Infinite canvas'));
   }));
   $('newBtn').addEventListener('click', () => { closePops(); $('sheetWrap').hidden = false; cards.firstChild.focus(); });
   $('sheetCancel').addEventListener('click', () => { $('sheetWrap').hidden = true; });
@@ -2890,6 +2995,133 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     toast('Opened the example. Undo brings back your design.', 'Undo', undo, 5000);
   });
   $('sheetWrap').addEventListener('pointerdown', (e) => { if (e.target === $('sheetWrap')) $('sheetWrap').hidden = true; });
+
+  // ---------- Workspaces: Design and Logo tabs, each with its own document and history ----------
+  const docs = {};
+  const logoBoard = (x, y, name) => ({ id: nid(), type: 'frame', x, y, w: 512, h: 512, name, logo: true });
+  function switchTab(t) {
+    if (t === S.tab) return;
+    if (editing) commitText();
+    PE = null; closePops(); hideSuggest(); recent = [];
+    flush();
+    docs[S.tab] = { nodes: S.nodes, cam: { ...S.cam }, past: past.splice(0), future: future.splice(0), name: $('docName').textContent };
+    S.tab = t; store.set(t, 'chitrakar.tab');
+    let d = docs[t];
+    if (!d) {
+      const sv = store.get(t === 'logo' ? LOGOKEY : KEY);
+      if (sv && Array.isArray(sv.nodes)) d = { nodes: sv.nodes, cam: sv.cam, past: [], future: [], name: t === 'logo' ? 'Logo' : 'Your design' };
+      else d = t === 'logo' ? { nodes: [logoBoard(0, 0, 'Logo')], cam: null, past: [], future: [], name: 'Logo' } : { nodes: sample(), cam: null, past: [], future: [], name: 'Example' };
+    }
+    S.nodes = d.nodes; past.push(...d.past); future.push(...d.future); S.sel.clear();
+    document.body.classList.toggle('tab-logo', t === 'logo');
+    document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
+    $('docName').textContent = d.name;
+    if (t !== 'logo') { $('preview').hidden = true; $('previewBtn').setAttribute('aria-expanded', 'false'); }
+    if (d.cam) S.cam = d.cam; else fit(S.nodes);
+    setTool(t === 'logo' ? 'draw' : S.tool === 'frame' ? 'select' : S.tool);
+    updateLogoDock(); changed();
+    if (t === 'logo') tipOnce('logotab', 'Your logo workspace. Turn on Mirror for symmetric marks, draw with the Pencil, then tap Make it a vector.', 7000);
+  }
+  document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  function updateLogoDock() {
+    $('mirrorLabel').textContent = ['Mirror', 'Mirror ↔', '4-way'][S.mirror];
+    $('mirrorBtn').classList.toggle('on', !!S.mirror);
+    $('gridBtn').classList.toggle('on', S.logoGrid);
+  }
+  $('mirrorBtn').addEventListener('click', () => {
+    S.mirror = (S.mirror + 1) % 3; save(); updateLogoDock(); if (S.tool !== 'draw') setTool('draw'); requestRender();
+    toast(['Mirror off.', 'Mirror on: strokes are mirrored left and right around the artboard centre.', '4-way mirror: strokes are mirrored into all four quarters.'][S.mirror], null, null, 3000);
+  });
+  $('gridBtn').addEventListener('click', () => { S.logoGrid = !S.logoGrid; save(); updateLogoDock(); requestRender(); });
+  function boardInView() {
+    const sel = selected().find((n) => n.type === 'frame' && n.logo); if (sel) return sel;
+    const boards = S.nodes.filter((n) => n.type === 'frame' && n.logo); if (!boards.length) return null;
+    const c = toWorld((W - panelW()) / 2, H / 2);
+    return boards.reduce((b, f) => (Math.hypot(f.x + f.w / 2 - c.x, f.y + f.h / 2 - c.y) < Math.hypot(b.x + b.w / 2 - c.x, b.y + b.h / 2 - c.y) ? f : b));
+  }
+  const inBoard = (F) => S.nodes.filter((n) => n.type !== 'frame' && !n.hidden && frameOf(n) === F);
+  $('artboardBtn').addEventListener('click', () => {
+    const base = boardInView();
+    checkpoint();
+    const right = Math.max(...S.nodes.filter((n) => n.type === 'frame').map((f) => f.x + f.w), 0);
+    const count = S.nodes.filter((n) => n.type === 'frame' && n.logo).length;
+    const F = logoBoard(base ? right + 80 : 0, base ? base.y : 0, `Logo ${count + 1}`);
+    S.nodes.push(F);
+    if (base) for (const n of inBoard(base)) S.nodes.push({ ...reid(clone(n)), x: n.x - base.x + F.x, y: n.y - base.y + F.y, ...(n.type === 'line' ? {} : {}) });
+    S.sel = new Set([F.id]); setTool('select'); reveal(F); changed();
+    toast(base ? 'Added a copy beside it, to try a variation.' : 'Added an artboard.', 'Undo', undo, 3500);
+  });
+
+  // Logo preview at real sizes, light and dark, and as an app icon
+  let previewTimer = 0;
+  function schedulePreview() { if ($('preview').hidden) return; clearTimeout(previewTimer); previewTimer = setTimeout(buildPreview, 250); }
+  // Draws an artboard's contents at a given pixel size; on dark, the logo is shown reversed (white), as brand guides do.
+  function renderBoard(canvas, F, px, bg, radius, reversed) {
+    const d = 2, S2 = px * d; canvas.width = S2; canvas.height = S2; canvas.style.width = px + 'px'; canvas.style.height = px + 'px';
+    const prev = ctx; ctx = canvas.getContext('2d');
+    ctx.save();
+    const k = S2 / F.w; ctx.setTransform(k, 0, 0, k, -F.x * k, -F.y * k);
+    for (const n of inBoard(F)) drawItem(n);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    if (reversed) { ctx.globalCompositeOperation = 'source-in'; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, S2, S2); }
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.fillStyle = bg;
+    if (radius) { ctx.beginPath(); ctx.roundRect(0, 0, S2, S2, radius * d); ctx.fill(); } else ctx.fillRect(0, 0, S2, S2);
+    if (radius) { ctx.globalCompositeOperation = 'destination-in'; ctx.beginPath(); ctx.roundRect(0, 0, S2, S2, radius * d); ctx.fill(); }
+    ctx.restore(); ctx = prev;
+  }
+  function buildPreview() {
+    const body = $('previewBody'); if ($('preview').hidden) return;
+    const F = boardInView();
+    if (!F) { body.replaceChildren(h('p', { class: 'hint' }, 'Add an artboard to preview your logo.')); return; }
+    const fig = (px, bg, label, radius, rev) => { const c = h('canvas', { 'aria-label': label }); renderBoard(c, F, px, bg, radius, rev); return h('figure', {}, c, h('figcaption', {}, label)); };
+    body.replaceChildren(
+      h('p', { class: 'hint' }, `Showing “${F.name}”. Check that it still reads at 16 px.`),
+      h('h4', {}, 'On light'), h('div', { class: 'pv-row' }, fig(96, '#ffffff', '96'), fig(48, '#ffffff', '48'), fig(32, '#ffffff', '32'), fig(16, '#ffffff', '16')),
+      h('h4', {}, 'On dark (reversed)'), h('div', { class: 'pv-row' }, fig(96, '#1b1c26', '96', 0, true), fig(48, '#1b1c26', '48', 0, true), fig(32, '#1b1c26', '32', 0, true), fig(16, '#1b1c26', '16', 0, true)),
+      h('h4', {}, 'As an app icon'), h('div', { class: 'pv-row' }, fig(72, '#ffffff', 'Home screen', 16), fig(40, '#ffffff', 'Settings', 9)),
+      h('div', { class: 'pv-actions' },
+        h('button', { class: 'chipb primary', onclick: () => copyBoardSVG(F) }, 'Copy SVG'),
+        h('button', { class: 'chipb', onclick: () => saveBoardComponent(F) }, 'Save to My components')));
+  }
+  function togglePreview() {
+    const pv = $('preview'); pv.hidden = !pv.hidden;
+    if (!pv.hidden && !$('layers').hidden) { $('layers').hidden = true; $('layersBtn').setAttribute('aria-expanded', 'false'); }
+    $('previewBtn').setAttribute('aria-expanded', String(!pv.hidden)); buildPreview(); requestRender();
+  }
+  $('previewBtn').addEventListener('click', togglePreview);
+  $('previewClose').addEventListener('click', togglePreview);
+  function svgOf(n, ox, oy) {
+    const f = (v) => Math.round(v * 100) / 100, x = f(n.x - ox), y = f(n.y - oy), op = (n.opacity ?? 1) < 1 ? ` opacity="${f(n.opacity)}"` : '';
+    const paint = (fill, stroke, sw, fa = 1, sa = 1) => `fill="${fill || 'none'}"${fill && fa < 1 ? ` fill-opacity="${f(fa)}"` : ''}${stroke ? ` stroke="${stroke}" stroke-width="${f(sw)}"${sa < 1 ? ` stroke-opacity="${f(sa)}"` : ''} stroke-linejoin="round" stroke-linecap="round"` : ''}`;
+    const poly = (n) => { const pts = []; const save = ctx; ctx = { beginPath() {}, moveTo(a, b) { pts.push([a, b]); }, lineTo(a, b) { pts.push([a, b]); }, closePath() {}, roundRect() {}, ellipse() {} }; shapePath(n); ctx = save; return pts; };
+    switch (n.type) {
+      case 'rect': return `<rect x="${x}" y="${y}" width="${f(n.w)}" height="${f(n.h)}" rx="${f(Math.min(n.r || 0, n.w / 2, n.h / 2))}" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${op}/>`;
+      case 'ellipse': return `<ellipse cx="${f(x + n.w / 2)}" cy="${f(y + n.h / 2)}" rx="${f(n.w / 2)}" ry="${f(n.h / 2)}" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${op}/>`;
+      case 'triangle': case 'polygon': case 'star': return `<polygon points="${poly(n).map(([a, b]) => `${f(a - ox)},${f(b - oy)}`).join(' ')}" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${op}/>`;
+      case 'line': { const [[a, b], [c, d]] = lineEnds(n); return `<line x1="${f(a - ox)}" y1="${f(b - oy)}" x2="${f(c - ox)}" y2="${f(d - oy)}" ${paint(null, n.color, n.sw)}${op}/>`; }
+      case 'stroke': { const sx = n.w / n.pw, sy = n.h / n.ph; let d = ''; for (let i = 0; i < n.pts.length; i += 3) d += (i ? 'L' : 'M') + f(n.x + n.pts[i] * sx - ox) + ' ' + f(n.y + n.pts[i + 1] * sy - oy); return `<path d="${d}" ${paint(null, n.color, n.sw)}${op}/>`; }
+      case 'path': { const A = pathWorld(n); let d = `M${f(A[0][0] - ox)} ${f(A[0][1] - oy)}`; for (const [a, b] of segments(A, n.closed)) d += `C${f(a[4] - ox)} ${f(a[5] - oy)} ${f(b[2] - ox)} ${f(b[3] - oy)} ${f(b[0] - ox)} ${f(b[1] - oy)}`; if (n.closed) d += 'Z'; return `<path d="${d}" ${paint(n.fill && n.closed ? n.fill : null, n.color, n.sw)}${op}/>`; }
+      case 'vec': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.pw)} ${f(n.h / n.ph)})"${op}>` + n.layers.map((L) => { let d = ''; for (const A of L.rings) { d += `M${f(A[0][0])} ${f(A[0][1])}`; for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; d += `C${f(a[4])} ${f(a[5])} ${f(b[2])} ${f(b[3])} ${f(b[0])} ${f(b[1])}`; } d += 'Z'; } return `<path d="${d}" fill="${L.fill}" fill-rule="evenodd"/>`; }).join('') + '</g>';
+      case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * 1.25 + n.size * 0.95)}" font-family="-apple-system, system-ui, sans-serif" font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
+      case 'icon': return `<path d="${ICONS[n.icon]}" transform="translate(${x} ${y}) scale(${f(n.w / 24)})" ${paint(null, n.color, n.sw || 1.8)}${op}/>`;
+      case 'image': return `<image href="${n.src}" x="${x}" y="${y}" width="${f(n.w)}" height="${f(n.h)}"${op}/>`;
+      case 'group': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.gw)} ${f(n.h / n.gh)})"${op}>${n.children.map((c) => svgOf(c, 0, 0)).join('')}</g>`;
+    }
+    return '';
+  }
+  function copyBoardSVG(F) {
+    const text = `<svg xmlns="http://www.w3.org/2000/svg" width="${F.w}" height="${F.h}" viewBox="0 0 ${F.w} ${F.h}">${inBoard(F).map((n) => svgOf(n, F.x, F.y)).join('')}</svg>`;
+    if (!navigator.clipboard) { toast('The clipboard isn’t available here.'); return; }
+    navigator.clipboard.writeText(text).then(() => toast(`Copied “${F.name}” as SVG.`, null, null, 2500), () => toast('Couldn’t copy here. Open the prototype in its own browser tab and try again.'));
+  }
+  function saveBoardComponent(F) {
+    const ns = inBoard(F); if (!ns.length) { toast('The artboard is empty.'); return; }
+    const g = Grp(F.name, F.w, F.h, ns.map((n) => ({ ...clone(n), x: n.x - F.x, y: n.y - F.y })));
+    myLib.unshift({ name: F.name, node: g });
+    if (!store.set(myLib, LIBKEY)) { myLib.shift(); toast('Couldn’t save: this browser’s storage is full.'); return; }
+    libBuilt = false; toast(`Saved “${F.name}” to Insert → My components.`, null, null, 3500);
+  }
 
   // ---------- Example document (marked as an example in the doc name) ----------
   const make = (name) => { for (const s of LIB) for (const [n, f] of s.items) if (n === name) return f(); return null; };
@@ -2976,7 +3208,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     $('docName').textContent = 'Example';
     fit(S.nodes);
   }
-  updateUI(); requestRender();
+  updateUI(); requestRender(); updateLogoDock();
+  if (store.get('chitrakar.tab') === 'logo') switchTab('logo');
   if (!S.tips.coach) {
     setTimeout(() => toast('Draw with your finger, mouse or Apple Pencil. Tap Insert for ready-made buttons, cards and bars.', 'Got it', null, 9000), 500);
     S.tips.coach = 1; save();
