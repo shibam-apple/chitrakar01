@@ -12,8 +12,9 @@ Status: specification and interactive UI prototype.
 
 ## Website
 
-The app is published as a website from the `main` branch by
-`.github/workflows/pages.yml` (GitHub Pages):
+The app is live as a website, published from `main` by
+`.github/workflows/pages.yml`, which builds the site and pushes it to the
+`gh-pages` branch that GitHub Pages serves:
 **https://shibam-apple.github.io/chitrakar01/**
 
 The build (`scripts/build-site.mjs`) minifies the prototype into one file

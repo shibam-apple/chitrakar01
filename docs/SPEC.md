@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.12** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.13** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -726,6 +726,53 @@ landscape).
 select, checkbox, radio, toggle, segmented control, tabs, chips, top bar,
 signage directory, breadcrumb, pagination, rule table, stat block, bar chart,
 segmented progress, notice and critical banners, dialog, sample screen.
+
+### 3.29 Fonts and text, as in Figma
+
+The Text panel works like Figma's: **Font** (a searchable list showing each
+font in its own face), **Weight**, **Size**, **Line height**, **Letter
+spacing** and **Align** (left, centre, right).
+
+| Source | How |
+|---|---|
+| Built in | System, Helvetica, Georgia, Menlo: no download |
+| Google Fonts | 30 curated families (sans, serif, display, mono, handwriting), loaded only when first used; previews in the list download a few letters each, only while the list is open |
+| Any Google font | Type its name in the font search and choose **Use "<name>"** |
+| Your own | **Upload font** (.ttf, .otf, .woff, .woff2); kept in this browser for later sessions |
+
+Text keeps its font when shared or exported to SVG (`font-family`). A font that
+has not loaded yet is drawn in the fallback, then redrawn once, when it arrives;
+nothing polls.
+
+### 3.30 Layout grid and automatic spacing
+
+- **Layout grid** (View menu, per frame from the selection bar): columns over a
+  frame: 4 columns on phones, 8 on tablets, 12 on desktop widths; with 16 / 24 /
+  48 pt margins and gutters to match. Shown as a light red tint; never exported.
+- **Snap to grid** (View menu): moving and resizing snap to column edges and to
+  an 8 pt grid, with smart guides as before.
+- **Auto layout** (selection bar on a frame): the items in the frame are placed
+  in a stack, top to bottom or left to right, with an even **gap** and
+  **padding**. Dragging an item reorders it; adding or resizing an item
+  re-spaces the rest. Off by default; turning it off leaves items where they are.
+
+### 3.31 Components mode
+
+A third workspace tab, **Components**, for designing many components at once,
+like Figma's main components and instances.
+
+| Action | Result |
+|---|---|
+| **Make component** (selection bar, any group or selection) | It becomes a *main component*: purple outline and a ◆ name label |
+| **Add variant** | A copy beside it named "Name / Variant 2" for states such as Hover or Pressed |
+| Insert → **Components** | Every main component, from any tab; inserting places an *instance* |
+| Edit a main component | Every instance in every tab updates |
+| **Detach** (on an instance) | Turns it into an ordinary group |
+| **Go to main component** | Opens its tab and selects it |
+
+The Components tab opens with a sheet set up for components: a layout grid and
+auto layout frames ("Buttons", "Inputs", "Cards") to drop them into. Instances
+draw straight from the main component (no copies, nothing recomputed while idle).
 
 ---
 
