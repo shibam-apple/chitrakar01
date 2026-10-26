@@ -71,6 +71,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .group { display: flex; align-items: center; gap: 2px; padding: 5px; }
 .btn { min-width: 44px; height: 44px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 10px; flex: none; }
 .btn:hover { background: var(--chrome-2); }
+.btn.on { background: var(--accent-soft); }
 .btn:disabled { opacity: 0.35; cursor: default; background: none; }
 .btn[aria-pressed="true"], .btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
 .btn.label { font-size: 13px; font-weight: 700; padding: 0 14px; }
@@ -179,6 +180,15 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .tile { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 16px; border: 1px solid transparent; text-align: left; }
 .tile:hover { border-color: var(--line); background: var(--chrome-2); }
 .import-box { padding: 4px 14px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.fontpick { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: 48px; padding: 0 16px; border-radius: 999px; background: var(--chrome-2); text-align: left; }
+.fontpick span { font-size: 17px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fontpick small { font-size: 12px; color: var(--fg-2); flex: none; }
+.fontlist { display: flex; flex-direction: column; gap: 2px; max-height: 320px; overflow-y: auto; margin: 0 -6px; overscroll-behavior: contain; }
+.fontrow { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; padding: 0 12px; border-radius: 14px; text-align: left; }
+.fontrow:hover { background: var(--chrome-2); }
+.fontrow[aria-pressed="true"] { background: var(--accent-soft); }
+.fontrow span { font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fontrow small { font-size: 11px; color: var(--fg-2); flex: none; }
 .import-box h3 { margin: 10px 0 0; }
 .import-box textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 64px; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--chrome-2); color: var(--fg); -webkit-user-select: text; user-select: text; }
 .import-box .row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -316,6 +326,7 @@ body.tab-logo .design-only { display: none !important; }
     <div class="tabs" role="tablist" aria-label="Workspace">
       <button role="tab" data-tab="design" aria-selected="true">Design</button>
       <button role="tab" data-tab="logo" aria-selected="false">Logo</button>
+      <button role="tab" data-tab="comp" aria-selected="false">Components</button>
     </div>
   </div>
   <div class="bar group">
@@ -411,6 +422,7 @@ body.tab-logo .design-only { display: none !important; }
 <div id="fxPop" class="bar pop wide" hidden></div>
 <div id="arrangePop" class="bar pop wide" hidden></div>
 <div id="cornersPop" class="bar pop wide" hidden></div>
+<div id="autoPop" class="bar pop wide" hidden></div>
 <div id="vectorPop" class="bar pop wide" hidden></div>
 <div id="viewPop" class="bar pop" hidden></div>
 
@@ -566,9 +578,10 @@ body.tab-logo .design-only { display: none !important; }
     tool: 'draw', shapeKind: 'rect', color: INK, autoShape: true,
     pencil: false, finger: 'move', tips: {}, hover: null, hoverId: null,
     wheel: 'auto', autoVector: false, peHover: null,
-    tab: 'design', mirror: 0, logoGrid: true,
+    tab: 'design', mirror: 0, logoGrid: true, layoutGrid: false, snapGrid: false,
   };
-  const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1', LOGOKEY = 'chitrakar.logo.v1';
+  const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1', LOGOKEY = 'chitrakar.logo.v1', COMPKEY = 'chitrakar.components.v1';
+  const DOCKEY = { design: KEY, logo: LOGOKEY, comp: COMPKEY };
   const store = {
     get(k = KEY) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } },
     set(v, k = KEY) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
@@ -580,7 +593,7 @@ body.tab-logo .design-only { display: none !important; }
   let uid = 1;
   const nid = () => 'n' + (uid++) + Math.random().toString(36).slice(2, 6);
   const clone = (o) => JSON.parse(JSON.stringify(o));
-  const reid = (n) => { n.id = nid(); if (n.children) n.children.forEach(reid); return n; };
+  const reid = (n) => { n.id = nid(); if (n.master) n.mid = n.id; if (n.children) n.children.forEach(reid); return n; };
   const capture = (id) => { try { cv.setPointerCapture(id); } catch { /* synthetic or already released pointer */ } };
   function tipOnce(key, msg, ms = 4500) { if (S.tips[key]) return; S.tips[key] = 1; save(); toast(msg, null, null, ms); }
 
@@ -601,11 +614,12 @@ body.tab-logo .design-only { display: none !important; }
 
   // ---------- Persistence (debounced; flushed when hidden) ----------
   let saveTimer = 0, saveWarned = false;
-  function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); if (typeof schedulePreview === 'function') schedulePreview(); }
+  function save() { applyAllAuto(); clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); if (typeof schedulePreview === 'function') schedulePreview(); }
   function flush() {
     clearTimeout(saveTimer); saveTimer = 0;
-    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid } = S;
-    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid }, tab === 'logo' ? LOGOKEY : KEY) && !saveWarned) {
+    if (typeof syncLib === 'function') syncLib();
+    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid, layoutGrid, snapGrid } = S;
+    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector, tab, mirror, logoGrid, layoutGrid, snapGrid }, DOCKEY[tab] || KEY) && !saveWarned) {
       saveWarned = true;
       toast('Couldn’t save in this browser: its storage is full. Large images use the most space.', null, null, 7000);
     }
@@ -647,6 +661,7 @@ body.tab-logo .design-only { display: none !important; }
     raf = 0;
     const { x, y, z } = S.cam, camKey = x + ',' + y + ',' + z;
     draft = (lastCam !== '' && camKey !== lastCam) || !!pinch || !!(G && (G.kind === 'pan' || G.kind === 'touchpan'));
+    masterIdx = null;
     lastCam = camKey;
     if (draft) { clearTimeout(settleTimer); settleTimer = setTimeout(() => { settleTimer = 0; draft = false; requestRender(); }, 140); }
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
@@ -669,6 +684,10 @@ body.tab-logo .design-only { display: none !important; }
     const visible = (n) => !n.hidden && n.x - 80 < vx1 && n.x + n.w + 80 > vx0 && n.y - 80 < vy1 && n.y + n.h + 80 > vy0;
     for (const n of S.nodes) if (n.type === 'frame' && visible(n)) drawNode(n);
     for (const n of S.nodes) if (n.type !== 'frame' && (!editing || n !== editing.n) && visible(n)) drawItem(n);
+    if (S.layoutGrid) {          // layout grid: columns tinted over each frame
+      ctx.fillStyle = 'rgba(224, 60, 49, 0.08)';
+      for (const f of S.nodes) if (f.type === 'frame' && !f.logo && visible(f) && f.w >= 120) { const g = gridSpec(f), cw = colWidth(f, g); for (let i = 0; i < g.cols; i++) ctx.fillRect(f.x + g.m + i * (cw + g.g), f.y, cw, f.h); }
+    }
 
     if (G && G.kind === 'draw') {
       drawInk(G.pts, 0, 0, 1, 1, G.sw, S.color, G.pen);
@@ -693,6 +712,10 @@ body.tab-logo .design-only { display: none !important; }
     if (S.hoverId && !S.sel.has(S.hoverId) && !G) {
       const hn = byId(S.hoverId); if (hn) ctx.strokeRect(hn.x, hn.y, hn.w, hn.h);
     }
+    // Main components: a purple outline and a ◆ name label.
+    ctx.save(); ctx.strokeStyle = MASTER; ctx.fillStyle = MASTER; ctx.lineWidth = 1.5 / z; ctx.font = `600 ${11 / z}px ${SANS}`; ctx.textBaseline = 'bottom';
+    for (const n of S.nodes) if (n.master && !n.hidden && visible(n)) { ctx.strokeRect(n.x, n.y, n.w, n.h); ctx.fillText('◆ ' + (n.name || 'Component'), n.x, n.y - 4 / z); }
+    ctx.restore();
     if (PE) drawPointEditor(z);
     else if (S.tool === 'pen') drawPen(z);
     else if (S.sel.size && !editing) {
@@ -849,8 +872,8 @@ body.tab-logo .design-only { display: none !important; }
     const s = SHADOWS[n.shadow || 0], pad = r * 2 + (s ? (s.b + s.y) * k : 0);
     const main = ctx === mainCtx, key = main && [m.a, m.b, m.c, m.d].map((v) => v.toFixed(5)).join() + JSON.stringify(n);
     if (main) {
-      const hit = blurCache.get(n.id);
-      if (hit && hit.key === key) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(hit.c, Math.round(m.e + hit.dx), Math.round(m.f + hit.dy)); ctx.restore(); return; }
+      const hit = blurCache.get(key);
+      if (hit) { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(hit.c, Math.round(m.e + hit.dx), Math.round(m.f + hit.dy)); ctx.restore(); return; }
       const ub = deviceBox(n, m, pad, true);
       if (ub && ub.w * ub.h <= 2.5e6) {
         const off = document.createElement('canvas'); off.width = ub.w; off.height = ub.h;
@@ -859,7 +882,7 @@ body.tab-logo .design-only { display: none !important; }
         const res = pyramid(off, 0, 0, ub.w, ub.h, r), g = off.getContext('2d');
         g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, ub.w, ub.h); g.drawImage(res.c, 0, 0, res.w, res.h, 0, 0, ub.w, ub.h);
         if (blurCache.size > 64) blurCache.clear();
-        blurCache.set(n.id, { key, c: off, dx: ub.x - m.e, dy: ub.y - m.f });
+        blurCache.set(key, { c: off, dx: ub.x - m.e, dy: ub.y - m.f });
         ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.drawImage(off, ub.x, ub.y); ctx.restore(); return;
       }
     }
@@ -883,9 +906,62 @@ body.tab-logo .design-only { display: none !important; }
     ctx.restore();
   }
 
-  const FAMILY = { system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif', helvetica: '"Helvetica Neue", Helvetica, Arial, sans-serif' };
-  const FONT = (n) => `${n.weight || 500} ${n.size}px ${FAMILY[n.font] || FAMILY.system}`;
+  // ---------- Fonts (§3.29): built-in stacks, Google Fonts loaded on first use, and your own uploads ----------
+  const SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif';
+  const FAMILY = { system: SANS, helvetica: '"Helvetica Neue", Helvetica, Arial, sans-serif', georgia: 'Georgia, "Times New Roman", serif', menlo: 'Menlo, Consolas, "Courier New", monospace' };
+  const BUILTIN_FONTS = [['system', 'System', 'Sans'], ['helvetica', 'Helvetica', 'Sans'], ['georgia', 'Georgia', 'Serif'], ['menlo', 'Menlo', 'Mono']];
+  // [family, category, weights]
+  const GFONTS = [
+    ['Inter', 'Sans', [400, 500, 600, 700, 800]], ['Roboto', 'Sans', [400, 500, 700]], ['Open Sans', 'Sans', [400, 600, 700]], ['Montserrat', 'Sans', [400, 500, 600, 700, 800]],
+    ['Poppins', 'Sans', [400, 500, 600, 700]], ['Lato', 'Sans', [400, 700]], ['Work Sans', 'Sans', [400, 500, 600, 700]], ['DM Sans', 'Sans', [400, 500, 700]],
+    ['Manrope', 'Sans', [400, 500, 600, 700, 800]], ['Space Grotesk', 'Sans', [400, 500, 600, 700]], ['IBM Plex Sans', 'Sans', [400, 500, 600, 700]], ['Archivo', 'Sans', [400, 500, 600, 700, 800]],
+    ['Outfit', 'Sans', [400, 500, 600, 700]], ['Plus Jakarta Sans', 'Sans', [400, 500, 600, 700, 800]], ['Sora', 'Sans', [400, 600, 700]],
+    ['Playfair Display', 'Serif', [400, 600, 700, 800]], ['Lora', 'Serif', [400, 500, 600, 700]], ['Merriweather', 'Serif', [400, 700]], ['Source Serif 4', 'Serif', [400, 600, 700]],
+    ['DM Serif Display', 'Serif', [400]], ['Fraunces', 'Serif', [400, 600, 700]], ['Libre Baskerville', 'Serif', [400, 700]],
+    ['Bebas Neue', 'Display', [400]], ['Oswald', 'Display', [400, 500, 600, 700]], ['Anton', 'Display', [400]], ['Archivo Black', 'Display', [400]],
+    ['JetBrains Mono', 'Mono', [400, 500, 700]], ['IBM Plex Mono', 'Mono', [400, 500, 600, 700]], ['Space Mono', 'Mono', [400, 700]],
+    ['Caveat', 'Handwriting', [400, 500, 600, 700]], ['Pacifico', 'Handwriting', [400]],
+  ];
+  const FONTKEY = 'chitrakar.fonts.v1';
+  let textPane = 'main', fontQuery = '';   // Text panel: main page or the font list
+  const fontReq = new Map();         // family → 'loading' | 'ready' | 'failed'
+  const userFonts = new Map();       // family → data URL (uploaded)
+  const gfont = (f) => GFONTS.find((g) => g[0] === f);
+  const fontWeights = (f) => (!f || FAMILY[f] ? [400, 500, 600, 700] : gfont(f) ? gfont(f)[2] : userFonts.has(f) ? [400] : [400, 700]);
+  const fontLabel = (f) => (!f ? 'System' : FAMILY[f] ? BUILTIN_FONTS.find((b) => b[0] === f)[1] : f);
+  const FONT = (n) => `${n.weight || 500} ${n.size}px ${!n.font ? SANS : FAMILY[n.font] || `"${n.font}", ${SANS}`}`;
+  // lite: only the regular weight, for previews in the font list.
+  function loadFont(f, lite) {
+    if (!f || FAMILY[f] || userFonts.has(f)) return;
+    const key = lite ? f + ':lite' : f;
+    if (fontReq.has(key) || (lite && fontReq.has(f))) return;
+    fontReq.set(key, 'loading');
+    const g = gfont(f), q = encodeURIComponent(f).replace(/%20/g, '+'), ws = !lite && g && g[2].length > 1 ? ':wght@' + g[2].join(';') : '';
+    const link = h('link', { rel: 'stylesheet', href: `https://fonts.googleapis.com/css2?family=${q}${ws}&display=swap` });
+    link.addEventListener('load', () => { fontReq.set(key, 'ready'); if (!lite) fontsChanged(f); });
+    link.addEventListener('error', () => { fontReq.set(key, 'failed'); link.remove(); if (!lite && !g) toast(`Google Fonts has no font called “${f}”. Check the spelling, or upload the font file.`); });
+    document.head.append(link);
+  }
+  // A font arrived: re-measure text that uses it and draw once (no polling).
+  function fontsChanged(f) {
+    Promise.all(fontWeights(f).map((w) => document.fonts.load(`${w} 16px "${f}"`).catch(() => {}))).then(() => {
+      const walk = (n) => { if (n.type === 'text' && n.font === f) measure(n); (n.children || []).forEach(walk); };
+      S.nodes.forEach(walk); libBuilt = false; requestRender();
+    });
+  }
+  function loadDocFonts() { const walk = (n) => { if (n.type === 'text' && n.font) loadFont(n.font); (n.children || []).forEach(walk); }; S.nodes.forEach(walk); }
+  function addUserFont(name, url, keep) {
+    const face = new FontFace(name, `url(${url})`);
+    return face.load().then((ff) => { document.fonts.add(ff); userFonts.set(name, url); if (keep) store.set(Object.fromEntries(userFonts), FONTKEY); fontsChanged(name); return true; });
+  }
+  function uploadFont(file, done) {
+    const name = file.name.replace(/\.(ttf|otf|woff2?)$/i, '').replace(/[-_]+/g, ' ').trim() || 'My font';
+    const rd = new FileReader();
+    rd.onload = () => addUserFont(name, rd.result, rd.result.length < 2.5e6).then(() => { toast(`Added the font “${name}”.`, null, null, 2500); done(name); }, () => toast('That file isn’t a font this browser can read. Try a .ttf, .otf or .woff2 file.'));
+    rd.readAsDataURL(file);
+  }
   const paths = new Map();
+  let instDepth = 0;
   const svgPaths = new Map();
   const svgPath2D = (d) => { let p = svgPaths.get(d); if (!p) { if (svgPaths.size > 4000) svgPaths.clear(); p = new Path2D(d); svgPaths.set(d, p); } return p; };
   const iconPath = (name) => { let p = paths.get(name); if (!p) { p = new Path2D(ICONS[name] || ICONS.star); paths.set(name, p); } return p; };
@@ -975,9 +1051,20 @@ body.tab-logo .design-only { display: none !important; }
         break;
       }
       case 'text': {
+        if (n.font) loadFont(n.font);
         ctx.fillStyle = n.color; ctx.font = FONT(n); ctx.textBaseline = 'top';
-        n.text.split('\n').forEach((line, i) => ctx.fillText(line, n.x, n.y + i * n.size * 1.25));
+        if (HAS_LS && n.ls) ctx.letterSpacing = n.ls + 'px';
+        const lines = n.text.split('\n'), lh = n.size * LH(n), al = lines.length > 1 && (n.align === 'center' || n.align === 'right');
+        lines.forEach((line, i) => { const off = al ? (n.w - ctx.measureText(line).width) * (n.align === 'center' ? 0.5 : 1) : 0; ctx.fillText(line, n.x + off, n.y + i * lh + (lh - n.size * 1.25) / 2); });
+        if (HAS_LS && n.ls) ctx.letterSpacing = '0px';
         break;
+      }
+      case 'inst': {       // a copy of a main component: drawn straight from it, scaled to this box
+        const m = instDepth < 4 && masterOf(n.ref);
+        if (!m) { ctx.save(); ctx.setLineDash([6 / z, 4 / z]); ctx.strokeStyle = MASTER; ctx.lineWidth = 1.5 / z; ctx.strokeRect(n.x, n.y, n.w, n.h); ctx.restore(); break; }
+        ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / m.w, n.h / m.h); ctx.translate(-m.x, -m.y);
+        instDepth++; drawItem({ ...m, hidden: false, opacity: m.opacity }); instDepth--;
+        ctx.restore(); break;
       }
       case 'svgp': {       // one shape of imported SVG artwork: its path data, drawn through its original transform
         ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / n.bw, n.h / n.bh); ctx.translate(-n.bx, -n.by); ctx.transform(...n.m);
@@ -1177,13 +1264,16 @@ body.tab-logo .design-only { display: none !important; }
     return null;
   }
   // Measures text; centred labels (inside buttons, tabs…) stay centred when their words change.
+  const LH = (n) => n.lh || 1.25;
+  const HAS_LS = 'letterSpacing' in CanvasRenderingContext2D.prototype;
+  function textWidth(n, l) { ctx.font = FONT(n); if (HAS_LS) ctx.letterSpacing = (n.ls || 0) + 'px'; const w = ctx.measureText(l).width; if (HAS_LS) ctx.letterSpacing = '0px'; return w; }
   function measure(n) {
-    const c0 = n.x + (n.w || 0) / 2, hadWidth = n.w > 0;
-    ctx.font = FONT(n);
+    const c0 = n.x + (n.w || 0) / 2, r0 = n.x + (n.w || 0), hadWidth = n.w > 0;
     const lines = n.text.split('\n');
-    n.w = Math.max(4, ...lines.map((l) => ctx.measureText(l).width));
-    n.h = lines.length * n.size * 1.25;
+    n.w = Math.max(4, ...lines.map((l) => textWidth(n, l)));
+    n.h = lines.length * n.size * LH(n);
     if (n.align === 'center' && hadWidth) n.x = c0 - n.w / 2;
+    if (n.align === 'right' && hadWidth) n.x = r0 - n.w;
   }
 
   // ---------- Shape recognition: rough stroke → clean shape ----------
@@ -1261,6 +1351,7 @@ body.tab-logo .design-only { display: none !important; }
     return [...count].sort((a, b) => b[1] - a[1])[0]?.[0] || null;
   }
   function colorOf(n) {
+    if (n.type === 'inst') { const m = masterOf(n.ref); return m ? colorOf(m) : null; }
     if (n.type === 'svgp') return n.fill || n.stroke;
     if (isArt(n)) return artColor(n);
     if (n.type === 'vec') return n.layers.length ? n.layers[n.layers.length - 1].fill : null;
@@ -1268,6 +1359,7 @@ body.tab-logo .design-only { display: none !important; }
     return isShape(n) ? (n.fill || n.stroke) : n.color;
   }
   function setColor(n, c) {
+    if (n.type === 'inst') return;          // copies follow their main component
     if (n.type === 'svgp') { if (n.fill) n.fill = c; else n.stroke = c; return; }
     if (isArt(n)) { const c0 = artColor(n); for (const k of n.children) { if (k.fill === c0) k.fill = c; if (k.stroke === c0) k.stroke = c; } return; }
     if (n.type === 'vec') { if (n.layers.length) n.layers[n.layers.length - 1].fill = c; return; }   // the darkest colour: the lines
@@ -2446,6 +2538,12 @@ body.tab-logo .design-only { display: none !important; }
         let dx = p.x - G.start.x, dy = p.y - G.start.y;
         if (!G.moved) { if (Math.hypot(dx, dy) * z < 4) return; G.moved = true; checkpoint(); }
         const sn = e.metaKey || e.ctrlKey ? { dx, dy, guides: [] } : snapMove(G, dx, dy);
+        if (S.snapGrid && G.bb0 && !(e.metaKey || e.ctrlKey)) {
+          const b = G.bb0, F = G.items.some((it) => it.n.type === 'frame') ? null : frameAtPoint({ x: b.x + sn.dx + b.w / 2, y: b.y + sn.dy + b.h / 2 }), tol = 8 / z;
+          const l = snapX(b.x + sn.dx, F, tol), r = snapX(b.x + sn.dx + b.w, F, tol);
+          sn.dx = Math.abs(r - (b.x + sn.dx + b.w)) < Math.abs(l - (b.x + sn.dx)) && F && colEdges(F).includes(r) ? r - b.w - b.x : l - b.x;
+          sn.dy = snapY(b.y + sn.dy, F) - b.y;
+        }
         G.guides = sn.guides;
         for (const it of G.items) { it.n.x = it.x + sn.dx; it.n.y = it.y + sn.dy; }
         break;
@@ -2492,14 +2590,16 @@ body.tab-logo .design-only { display: none !important; }
       }
       case 'resize': {
         if (!G.moved) { G.moved = true; checkpoint(); }
-        const n = G.n, r = rectOf(G.ax, G.ay, p.x, p.y);
+        const n = G.n; let q = p;
+        if (S.snapGrid && !(e.metaKey || e.ctrlKey)) { const F = n.type === 'frame' ? null : frameOf(n); q = { x: snapX(p.x, F, 8 / z), y: snapY(p.y, F) }; }
+        const r = rectOf(G.ax, G.ay, q.x, q.y);
         if (n.type === 'text') {
           n.size = Math.max(6, G.orig.size * Math.max(r.w, 4) / G.orig.w); n.w = 0; measure(n);
-          n.x = p.x < G.ax ? G.ax - n.w : G.ax; n.y = p.y < G.ay ? G.ay - n.h : G.ay;
+          n.x = q.x < G.ax ? G.ax - n.w : G.ax; n.y = q.y < G.ay ? G.ay - n.h : G.ay;
         } else if (keepsAspect(n) || e.shiftKey) {
           const s = Math.max(r.w / G.orig.w, r.h / G.orig.h, 4 / Math.min(G.orig.w, G.orig.h));
           n.w = G.orig.w * s; n.h = G.orig.h * s;
-          n.x = p.x < G.ax ? G.ax - n.w : G.ax; n.y = p.y < G.ay ? G.ay - n.h : G.ay;
+          n.x = q.x < G.ax ? G.ax - n.w : G.ax; n.y = q.y < G.ay ? G.ay - n.h : G.ay;
         } else { n.x = r.x; n.y = r.y; n.w = Math.max(r.w, 4); n.h = Math.max(r.h, 4); }
         break;
       }
@@ -2595,6 +2695,39 @@ body.tab-logo .design-only { display: none !important; }
     toast(`Opened “${g.name || 'Group'}” so you can edit its parts.`, 'Undo', undo, 4000);
   }
 
+  // ---------- Layout grid, snap to grid, auto layout (§3.30) ----------
+  function gridSpec(F) { return F.w < 600 ? { cols: 4, m: 16, g: 16 } : F.w < 1100 ? { cols: 8, m: 24, g: 24 } : { cols: 12, m: 48, g: 24 }; }
+  function colWidth(F, g) { return (F.w - 2 * g.m - (g.cols - 1) * g.g) / g.cols; }
+  function colEdges(F) { const g = gridSpec(F), cw = colWidth(F, g), xs = []; for (let i = 0; i < g.cols; i++) { const x = F.x + g.m + i * (cw + g.g); xs.push(x, x + cw); } return xs; }
+  // Snaps an x to a column edge of frame F when close, otherwise to the 8 pt grid.
+  function snapX(x, F, tol) {
+    if (F && !F.logo) { let best = null; for (const e of colEdges(F)) if (Math.abs(e - x) < tol && (best === null || Math.abs(e - x) < Math.abs(best - x))) best = e; if (best !== null) return best; }
+    const o = F ? F.x : 0; return o + Math.round((x - o) / 8) * 8;
+  }
+  function snapY(y, F) { const o = F ? F.y : 0; return o + Math.round((y - o) / 8) * 8; }
+  function autoKids(F) { return S.nodes.filter((n) => n !== F && n.type !== 'frame' && !n.hidden && frameOf(n) === F); }
+  function applyAuto(F) {
+    const a = F.auto, v = a.dir !== 'h', kids = autoKids(F).sort((p, q) => (v ? p.y - q.y || p.x - q.x : p.x - q.x || p.y - q.y));
+    let c = (v ? F.y : F.x) + a.pad, cross = 0;
+    for (const n of kids) {
+      if (v) { n.x = F.x + a.pad; n.y = c; c += n.h + a.gap; cross = Math.max(cross, n.w); }
+      else { n.x = c; n.y = F.y + a.pad; c += n.w + a.gap; cross = Math.max(cross, n.h); }
+    }
+    if (a.hug && kids.length) { if (v) { F.h = Math.max(40, c - a.gap + a.pad - F.y); F.w = Math.max(F.w, cross + 2 * a.pad); } else { F.w = Math.max(40, c - a.gap + a.pad - F.x); F.h = Math.max(F.h, cross + 2 * a.pad); } }
+  }
+  function applyAllAuto() { if (!G) for (const f of S.nodes) if (f.type === 'frame' && f.auto) applyAuto(f); }
+  function buildAuto() {
+    const F = selected().find((n) => n.type === 'frame'); if (!F) return [];
+    const live = (fn) => (v) => { fn(v); applyAuto(F); };
+    if (!F.auto) return [h('h3', {}, 'Auto layout'), h('p', { class: 'hint' }, 'Stack the items in this frame with even spacing. Drag an item to reorder it; new items join the stack.'),
+      h('button', { class: 'chipb primary', onclick: () => { checkpoint(); F.auto = { dir: 'v', gap: 16, pad: 24, hug: true }; changed(); refreshSelPop(); } }, 'Turn on auto layout')];
+    return [h('h3', {}, 'Auto layout'),
+      segRow('Direction', [['v', '↓ Down'], ['h', '→ Across']], F.auto.dir, (v) => { F.auto.dir = v; }),
+      sliderRow('Gap', 0, 96, 4, F.auto.gap, (v) => v + ' pt', live((v) => { F.auto.gap = v; })),
+      sliderRow('Padding', 0, 96, 4, F.auto.pad, (v) => v + ' pt', live((v) => { F.auto.pad = v; })),
+      toggleRow('Fit frame to content', F.auto.hug, (on) => { F.auto.hug = on; }),
+      h('button', { class: 'chipb', onclick: () => { checkpoint(); delete F.auto; changed(); refreshSelPop(); } }, 'Turn off auto layout')];
+  }
   function frameAtPoint(p) {
     for (let i = S.nodes.length - 1; i >= 0; i--) { const f = S.nodes[i]; if (f.type === 'frame' && p.x >= f.x && p.x <= f.x + f.w && p.y >= f.y && p.y <= f.y + f.h) return f; }
     return null;
@@ -2731,16 +2864,16 @@ body.tab-logo .design-only { display: none !important; }
     editing = { n, g, isNew };
     if (!isNew) checkpoint();
     const pl = textPlace(n, g), s = toScreen(pl.x, pl.y);
-    Object.assign(ed.style, { left: s.x + 'px', top: s.y + 'px', fontSize: n.size * pl.k * S.cam.z + 'px', fontWeight: n.weight || 500, color: n.color });
+    Object.assign(ed.style, { left: s.x + 'px', top: s.y + 'px', fontSize: n.size * pl.k * S.cam.z + 'px', fontWeight: n.weight || 500, color: n.color,
+      fontFamily: FONT(n).replace(/^\S+ \S+ /, ''), lineHeight: String(LH(n)), letterSpacing: (n.ls || 0) * pl.k * S.cam.z + 'px', textAlign: n.align || 'left' });
     ed.value = n.text; ed.hidden = false; sizeEditor(); ed.focus(); ed.select();
     S.sel.clear(); updateUI(); requestRender();
   }
   function sizeEditor() {
     if (!editing) return;
     const { n, g } = editing, k = textPlace(n, g).k, lines = ed.value.split('\n');
-    ctx.font = FONT(n);
-    const w = Math.max(24, ...lines.map((l) => ctx.measureText(l).width)) * k * S.cam.z;
-    ed.style.width = w + 12 + 'px'; ed.style.height = lines.length * n.size * 1.25 * k * S.cam.z + 'px';
+    const w = Math.max(24, ...lines.map((l) => textWidth(n, l))) * k * S.cam.z;
+    ed.style.width = w + 12 + 'px'; ed.style.height = lines.length * n.size * LH(n) * k * S.cam.z + 'px';
   }
   ed.addEventListener('input', sizeEditor);
   ed.addEventListener('keydown', (e) => { if (e.key === 'Escape' || (e.key === 'Enter' && (e.metaKey || e.ctrlKey))) { e.preventDefault(); ed.blur(); } });
@@ -3251,9 +3384,10 @@ body.tab-logo .design-only { display: none !important; }
     pop.style.maxHeight = hgt + 'px';
     pop.style.left = left + 'px'; pop.style.top = (up ? a.top - 10 - hgt : a.bottom + 10) + 'px';
   }
-  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop', 'cornersPop', 'vectorPop'];
+  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop', 'cornersPop', 'vectorPop', 'autoPop'];
   let openSel = null;               // { id, label, build }
   function closePops() {
+    textPane = 'main';
     for (const id of ['colorPop', 'pencilPop', 'shapePop', 'insertPop', 'viewPop', ...SEL_POPS]) $(id).hidden = true;
     $('insertBtn').setAttribute('aria-expanded', 'false'); $('zoom').setAttribute('aria-expanded', 'false');
     ctxBar.querySelectorAll('[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
@@ -3269,7 +3403,7 @@ body.tab-logo .design-only { display: none !important; }
   }
   function refreshSelPop() {
     if (!openSel) return;
-    if (!S.sel.size || (!fxNodes().length && openSel.id !== 'arrangePop')) { closePops(); return; }
+    if (!S.sel.size || (!fxNodes().length && openSel.id !== 'arrangePop' && openSel.id !== 'autoPop')) { closePops(); return; }
     const pop = $(openSel.id), st = pop.scrollTop, h0 = pop.scrollHeight; pop.replaceChildren(...openSel.build());
     const b = [...ctxBar.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === openSel.label);
     if (b) b.setAttribute('aria-expanded', 'true');
@@ -3348,6 +3482,8 @@ body.tab-logo .design-only { display: none !important; }
         h('button', { class: 'chipb', onclick: () => { fit(S.nodes); closePops(); } }, 'Fit everything'),
         h('button', { class: 'chipb', disabled: !S.sel.size, onclick: () => { fit(selected()); closePops(); } }, 'Fit selection'),
         h('button', { class: 'chipb', onclick: () => { zoomAt((W - panelW()) / 2, H / 2, 1 / S.cam.z); save(); closePops(); } }, '100%')),
+      ...[['layoutGrid', 'Layout grid on frames'], ['snapGrid', 'Snap to grid']].map(([k, l]) => h('div', { class: 'row' }, h('span', {}, l),
+        h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!S[k]), 'aria-label': l, onclick: (e) => { S[k] = !S[k]; e.currentTarget.setAttribute('aria-checked', String(S[k])); save(); requestRender(); } }))),
       h('h4', {}, 'Mouse wheel'),
       h('div', { class: 'seg' }, [['auto', 'Auto'], ['zoom', 'Always zoom'], ['scroll', 'Always scroll']].map(([v, l]) =>
         h('button', { 'aria-pressed': String(S.wheel === v), onclick: (e) => { S.wheel = v; save(); e.currentTarget.parentNode.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); } }, l))),
@@ -3394,21 +3530,55 @@ body.tab-logo .design-only { display: none !important; }
   function buildText() {
     const ts = fxNodes().filter((n) => n.type === 'text'), n = ts[0];
     const setAll = (f) => { checkpoint(); for (const t of ts) { f(t); measure(t); } changed(); refreshSelPop(); };
+    if (textPane === 'fonts') return buildFontList(ts, setAll);
     const sizeOut = h('output', {}, String(Math.round(n.size)));
     const step = (d) => { for (const t of ts) { t.size = Math.max(6, Math.round(t.size) + d); measure(t); } sizeOut.textContent = String(Math.round(ts[0].size)); requestRender(); };
     const done = () => { changed(); refreshSelPop(); };
+    const WN = { 100: 'Thin', 200: 'Extra light', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'Semibold', 700: 'Bold', 800: 'Extra bold', 900: 'Black' };
+    const ws = fontWeights(n.font);
     return [
       h('h3', {}, 'Text'),
+      h('button', { class: 'fontpick', 'aria-label': 'Font: ' + fontLabel(n.font), onclick: () => { textPane = 'fonts'; fontQuery = ''; refreshSelPop(); } },
+        h('span', { style: `font-family:${FONT(n).replace(/^\S+ \S+ /, '')}` }, fontLabel(n.font)), h('small', {}, 'Change font ›')),
+      h('div', { class: 'chips' }, ws.map((w) => h('button', { class: 'chipb', 'aria-pressed': String((n.weight || 500) === w || (!ws.includes(n.weight || 500) && w === ws[0])), onclick: () => setAll((t) => { t.weight = w; }) }, WN[w] || String(w)))),
       h('div', { class: 'row' }, h('span', {}, 'Size'), h('div', { class: 'stepper' },
         holdBtn('Smaller', '−', () => step(-1), done), sizeOut, holdBtn('Bigger', '+', () => step(1), done))),
-      h('div', { class: 'chips' }, [12, 14, 16, 20, 24, 32, 48, 64].map((s) => h('button', { class: 'chipb', 'aria-pressed': String(Math.round(n.size) === s), onclick: () => setAll((t) => { t.size = s; }) }, String(s)))),
-      h('h4', {}, 'Typeface'),
-      h('div', { class: 'seg' }, [['system', 'System'], ['helvetica', 'Helvetica']].map(([f, l]) =>
-        h('button', { 'aria-pressed': String((n.font || 'system') === f), onclick: () => setAll((t) => { if (f === 'system') delete t.font; else t.font = f; }) }, l))),
-      h('h4', {}, 'Weight'),
-      h('div', { class: 'seg' }, [[400, 'Regular'], [500, 'Medium'], [600, 'Semibold'], [700, 'Bold']].map(([w, l]) =>
-        h('button', { 'aria-pressed': String((n.weight || 500) === w), onclick: () => setAll((t) => { t.weight = w; }) }, l))),
+      h('div', { class: 'chips' }, [12, 14, 16, 20, 24, 32, 48, 64].map((s2) => h('button', { class: 'chipb', 'aria-pressed': String(Math.round(n.size) === s2), onclick: () => setAll((t) => { t.size = s2; }) }, String(s2)))),
+      sliderRow('Line height', 0.8, 2.5, 0.05, LH(n), (v) => v.toFixed(2), (v) => ts.forEach((t) => { t.lh = v; measure(t); })),
+      sliderRow('Letter spacing', -4, 20, 0.5, n.ls || 0, (v) => v + ' pt', (v) => ts.forEach((t) => { t.ls = v; measure(t); })),
+      segRow('Align', [['left', 'Left'], ['center', 'Centre'], ['right', 'Right']], n.align || 'left', (v) => ts.forEach((t) => { const c = t.x + t.w / 2, r = t.x + t.w; if (v === 'left') delete t.align; else t.align = v; if (v === 'center') t.x = c - t.w / 2; })),
       h('p', { class: 'hint' }, 'Double-tap text to change what it says. Inside a component, double-tap its label.'),
+    ];
+  }
+  // The font list: search, previews in each font (loaded only while visible), Google fonts by name, uploads.
+  function buildFontList(ts, setAll) {
+    const cur = ts[0].font || 'system', q = fontQuery.trim().toLowerCase();
+    const pick = (f) => { textPane = 'main'; loadFont(f === 'system' ? null : f); setAll((t) => { if (f === 'system') delete t.font; else t.font = f; const w = fontWeights(t.font); if (!w.includes(t.weight || 500)) t.weight = w.reduce((a, b) => (Math.abs(b - (t.weight || 500)) < Math.abs(a - (t.weight || 500)) ? b : a)); }); };
+    const io = 'IntersectionObserver' in window ? new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { loadFont(e.target.dataset.f, true); io.unobserve(e.target); } })) : null;
+    const row = (f, label, cat) => {
+      const b = h('button', { class: 'fontrow', 'aria-pressed': String(cur === f), 'data-f': FAMILY[f] ? '' : f, onclick: () => pick(f) },
+        h('span', { style: `font-family:${FAMILY[f] || `"${f}", ${SANS}`}` }, label), h('small', {}, cat));
+      if (io && !FAMILY[f] && !userFonts.has(f)) io.observe(b);
+      return b;
+    };
+    const match = (name, cat) => !q || name.toLowerCase().includes(q) || cat.toLowerCase().startsWith(q);
+    const list = h('div', { class: 'fontlist' },
+      ...BUILTIN_FONTS.filter(([, l, c]) => match(l, c)).map(([f, l, c]) => row(f, l, c)),
+      ...[...userFonts.keys()].filter((f) => match(f, 'yours')).map((f) => row(f, f, 'Yours')),
+      ...GFONTS.filter(([f, c]) => match(f, c)).map(([f, c]) => row(f, f, c)));
+    const typed = fontQuery.trim();
+    const inp = h('input', { type: 'search', id: 'fontSearch', placeholder: 'Search fonts, or type any Google font', value: fontQuery, autocomplete: 'off', 'aria-label': 'Search fonts' });
+    inp.addEventListener('input', () => { fontQuery = inp.value; refreshSelPop(); const i2 = $('fontSearch'); if (i2) { i2.focus(); i2.setSelectionRange(i2.value.length, i2.value.length); } });
+    const fileIn = h('input', { type: 'file', accept: '.ttf,.otf,.woff,.woff2,font/*', hidden: true });
+    fileIn.addEventListener('change', () => { const fl = fileIn.files[0]; if (fl) uploadFont(fl, (name) => pick(name)); });
+    return [
+      h('div', { class: 'row' }, h('button', { class: 'chipb', onclick: () => { textPane = 'main'; refreshSelPop(); } }, '‹ Text'), h('h3', {}, 'Font')),
+      h('label', { class: 'search' }, inp),
+      ...(typed && !GFONTS.some(([f]) => f.toLowerCase() === typed.toLowerCase()) && !BUILTIN_FONTS.some(([, l]) => l.toLowerCase() === typed.toLowerCase())
+        ? [h('button', { class: 'chipb primary', onclick: () => pick(typed.replace(/\b\w/g, (c) => c.toUpperCase())) }, `Use “${typed}” from Google Fonts`)] : []),
+      list,
+      h('div', { class: 'row' }, h('button', { class: 'chipb', onclick: () => fileIn.click() }, 'Upload font…'), fileIn),
+      h('p', { class: 'hint' }, 'Google fonts download the first time you use them, then work offline.'),
     ];
   }
   function buildFx() {
@@ -3514,20 +3684,22 @@ body.tab-logo .design-only { display: none !important; }
   }
   function buildLibrary() {
     const body = $('libBody'); body.replaceChildren();
+    syncLib();
     const sections = [
+      ...(compLib.size ? [{ cat: 'Components', items: [...compLib.entries()].map(([mid, e]) => [e.name, () => instanceOf(mid), () => masterOf(mid) || e.node]) }] : []),
       ...(myLib.length ? [{ cat: 'My components', mine: true, items: myLib.map((c) => [c.name, () => reid(clone(c.node))]) }] : []),
       ...LIB,
     ];
-    if (!myLib.length) body.append(h('p', { class: 'hint' }, 'Tip: group anything you build and tap Save in the selection bar to reuse it here.'));
+    if (!myLib.length && !compLib.size) body.append(h('p', { class: 'hint' }, 'Tip: select anything you build and tap Make component in the selection bar to reuse it here.'));
     for (const sec of sections) {
       const grid = h('div', { class: 'tiles' });
-      sec.items.forEach(([name, make], idx) => {
+      sec.items.forEach(([name, make, look], idx) => {
         const c = h('canvas', { 'aria-hidden': 'true' });
         const b = h('button', { class: 'tile', 'data-q': (name + ' ' + sec.cat).toLowerCase(), onclick: () => insertNode(make(), name) }, c, h('span', {}, name));
         if (sec.mine) b.append(h('span', { class: 'rm', role: 'button', 'aria-label': `Remove ${name}`, html: svg('<path d="M6 6l12 12M18 6 6 18"/>', 's'),
           onclick: (e) => { e.stopPropagation(); myLib.splice(idx, 1); store.set(myLib, LIBKEY); buildLibrary(); } }));
         grid.append(b);
-        thumb(c, make(), sec.glass && name !== 'Soft glow');
+        thumb(c, look ? { ...look(), x: 0, y: 0 } : make(), sec.glass && name !== 'Soft glow');
       });
       body.append(h('section', {}, h('h3', {}, sec.cat), grid));
     }
@@ -3613,10 +3785,13 @@ body.tab-logo .design-only { display: none !important; }
 
   // ---------- Layers panel ----------
   function layerName(n) {
+    if (n.type === 'inst') return '◇ ' + (n.name || 'Component');
+    if (n.master) return '◆ ' + (n.name || 'Component');
     if (n.name) return n.name;
     if (n.type === 'text') return n.text.split('\n')[0].slice(0, 32) || 'Text';
     if (n.type === 'icon') return (ICON_LABEL[n.icon] || 'Icon') + ' icon';
     if (n.type === 'svgp') return 'Vector shape';
+    if (n.type === 'inst') return '◇ ' + (n.name || 'Component');
     if (n.type === 'polygon') return n.sides === 4 ? 'Diamond' : 'Polygon';
     if (n.type === 'line') return n.head ? 'Arrow' : 'Line';
     if (n.type === 'path') return 'Vector';
@@ -3745,6 +3920,16 @@ body.tab-logo .design-only { display: none !important; }
       btn('Edit points', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => enterPoints(items[0]), '', 'Edit points');
       btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
     }
+    const one = items.length === 1 ? items[0] : null;
+    if (one && one.type === 'inst') {
+      btn('Go to main component', '<path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/>', () => goToMain(one), '', 'Main component');
+      btn('Detach: turn this copy into an ordinary group', '<path d="M9 15 15 9M8 12l-2 2a3 3 0 0 0 4 4l2-2M16 12l2-2a3 3 0 0 0-4-4l-2 2"/>', () => detach(one), '', 'Detach');
+    } else if (one && one.master) {
+      btn('Add variant: a copy for another state', '<path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/><path d="M12 9v6M9 12h6" stroke-width="1.5"/>', () => addVariant(one), '', 'Add variant');
+    } else if (items.length && items.every((n) => n.type !== 'inst'))
+      btn('Make component: reuse this anywhere; copies update when you edit it', '<path d="M12 3.5 20.5 12 12 20.5 3.5 12z"/>', makeComponent, '', 'Make component');
+    if (nodes.length === 1 && nodes[0].type === 'frame' && !nodes[0].logo)
+      btn('Auto layout: stack items with even spacing', '<rect x="4" y="4" width="16" height="5" rx="1.5"/><rect x="4" y="15" width="16" height="5" rx="1.5"/><path d="M12 10v4M10 12h4" stroke-width="1.4"/>', (b) => openSelPop('autoPop', b, buildAuto), nodes[0].auto ? 'on' : '', 'Auto layout');
     btn('Arrange: order, align, position', '<rect x="4" y="4" width="9" height="9" rx="1.5"/><rect x="11" y="11" width="9" height="9" rx="1.5" fill="currentColor" stroke="none" opacity=".35"/>', (b) => openSelPop('arrangePop', b, buildArrange), '', 'Arrange');
     if (items.some((n) => n.type === 'group')) {
       btn('Ungroup (⇧⌘G)', '<rect x="3.5" y="3.5" width="8" height="8" rx="1.5"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', ungroup, '', 'Ungroup');
@@ -3834,7 +4019,73 @@ body.tab-logo .design-only { display: none !important; }
   });
   $('sheetWrap').addEventListener('pointerdown', (e) => { if (e.target === $('sheetWrap')) $('sheetWrap').hidden = true; });
 
-  // ---------- Workspaces: Design and Logo tabs, each with its own document and history ----------
+  // ---------- Components (§3.31): main components, variants and instances ----------
+  const LIBC = 'chitrakar.complib.v1', MASTER = '#8b5cf6';
+  const compLib = new Map(Object.entries(store.get(LIBC) || {}));   // mid → { name, node, tab }
+  let masterIdx = null;                                               // live main components in this document, by mid
+  function masterOf(ref) {
+    if (!masterIdx) { masterIdx = new Map(); for (const n of S.nodes) if (n.master) masterIdx.set(n.mid, n); }
+    return masterIdx.get(ref) || compLib.get(ref)?.node || null;
+  }
+  function syncLib() {
+    let changedLib = false;
+    const here = new Set();
+    for (const n of S.nodes) if (n.master) {
+      here.add(n.mid);
+      const node = clone(n), old = compLib.get(n.mid);
+      if (!old || JSON.stringify(old.node) !== JSON.stringify(node) || old.name !== n.name) { compLib.set(n.mid, { name: n.name, node, tab: S.tab }); changedLib = true; }
+    }
+    for (const [mid, e] of compLib) if (e.tab === S.tab && !here.has(mid)) { compLib.delete(mid); changedLib = true; }
+    if (changedLib) { store.set(Object.fromEntries(compLib), LIBC); libBuilt = false; }
+  }
+  const baseName = (nm) => (nm || 'Component').split(' / ')[0];
+  function makeComponent() {
+    let ns = selected().filter((n) => n.type !== 'frame'); if (!ns.length) return;
+    if (ns.length > 1 || ns[0].type !== 'group') {
+      if (ns.length === 1) { checkpoint(); const n = ns[0], g = Grp(layerName(n), n.w, n.h, [{ ...clone(n), x: 0, y: 0 }]); g.x = n.x; g.y = n.y; S.nodes.splice(S.nodes.indexOf(n), 1, g); S.sel = new Set([g.id]); }
+      else groupSel();
+      ns = selected();
+    } else checkpoint();
+    const g = ns[0]; g.master = true; g.mid = g.id;
+    if (!g.name || g.name === 'Group') g.name = `Component ${[...compLib.values()].length + 1}`;
+    masterIdx = null; syncLib(); changed();
+    toast(`“${g.name}” is now a main component. Insert → Components places copies that update when you edit it.`, 'Undo', undo, 6000);
+  }
+  function addVariant(m) {
+    checkpoint();
+    const v = reid(clone(m)), n = [...S.nodes].filter((k) => k.master && baseName(k.name) === baseName(m.name)).length + 1;
+    v.name = `${baseName(m.name)} / Variant ${n}`; v.x = m.x + m.w + 40; v.y = m.y;
+    S.nodes.splice(S.nodes.indexOf(m) + 1, 0, v); S.sel = new Set([v.id]); masterIdx = null; syncLib(); changed();
+    toast(`Added “${v.name}”. Rename it in Layers (for example “${baseName(m.name)} / Hover”).`, null, null, 4500);
+  }
+  function instanceOf(mid) { const m = masterOf(mid), e = compLib.get(mid); return { id: nid(), type: 'inst', ref: mid, name: (m && m.name) || (e && e.name) || 'Component', x: 0, y: 0, w: m ? m.w : 100, h: m ? m.h : 40 }; }
+  function detach(n) {
+    const m = masterOf(n.ref); if (!m) return;
+    checkpoint();
+    const g = reid(clone(m)); delete g.master; delete g.mid; Object.assign(g, { x: n.x, y: n.y, w: n.w, h: n.h, name: n.name });
+    if (n.opacity != null) g.opacity = n.opacity;
+    S.nodes.splice(S.nodes.indexOf(n), 1, g); S.sel = new Set([g.id]); changed();
+  }
+  function goToMain(n) {
+    const e = compLib.get(n.ref), tab = (S.nodes.some((k) => k.master && k.mid === n.ref)) ? S.tab : e && e.tab;
+    if (!tab) { toast('This component’s main copy was deleted. Detach the copy to keep it as a group.'); return; }
+    if (tab !== S.tab) switchTab(tab);
+    const m = S.nodes.find((k) => k.master && k.mid === n.ref); if (!m) return;
+    setTool('select'); S.sel = new Set([m.id]); fit([m]); changed();
+  }
+  // The Components tab starts as a sheet ready for components: auto layout frames with a few main components.
+  function compStarter() {
+    const mk = (g, name) => Object.assign(g, { master: true, mid: g.id, name });
+    const frame = (name, x, y, w, h, dir) => ({ id: nid(), type: 'frame', name, x, y, w, h, auto: { dir, gap: 24, pad: 32, hug: true } });
+    const out = [frame('Buttons', 0, 0, 720, 160, 'h'), frame('Inputs', 0, 260, 400, 360, 'v'), frame('Cards', 520, 260, 600, 240, 'h')];
+    const put = (n, x, y) => { n.x = x; n.y = y; out.push(n); };
+    put(mk(K.primary(), 'Button / Primary'), 32, 40); put(mk(K.secondary(), 'Button / Secondary'), 260, 40); put(mk(K.text(), 'Button / Text'), 480, 50);
+    put(mk(K.field(), 'Text field'), 32, 300); put(mk(K.select(), 'Select'), 32, 400); put(mk(K.checkbox(), 'Checkbox'), 32, 500);
+    put(mk(K.stat(), 'Stat block'), 552, 300); put(mk(PRO.telemetry(), 'Telemetry card'), 800, 300);
+    return out;
+  }
+
+  // ---------- Workspaces: Design, Logo and Components tabs, each with its own document and history ----------
   const docs = {};
   const logoBoard = (x, y, name) => ({ id: nid(), type: 'frame', x, y, w: 512, h: 512, name, logo: true });
   function switchTab(t) {
@@ -3846,18 +4097,19 @@ body.tab-logo .design-only { display: none !important; }
     S.tab = t; store.set(t, 'chitrakar.tab');
     let d = docs[t];
     if (!d) {
-      const sv = store.get(t === 'logo' ? LOGOKEY : KEY);
-      if (sv && Array.isArray(sv.nodes)) d = { nodes: sv.nodes, cam: sv.cam, past: [], future: [], name: t === 'logo' ? 'Logo' : 'Your design' };
-      else d = t === 'logo' ? { nodes: [logoBoard(0, 0, 'Logo')], cam: null, past: [], future: [], name: 'Logo' } : { nodes: sample(), cam: null, past: [], future: [], name: 'Example' };
+      const sv = store.get(DOCKEY[t]), nm = { design: 'Your design', logo: 'Logo', comp: 'Components' }[t];
+      if (sv && Array.isArray(sv.nodes)) d = { nodes: sv.nodes, cam: sv.cam, past: [], future: [], name: nm };
+      else d = t === 'logo' ? { nodes: [logoBoard(0, 0, 'Logo')], cam: null, past: [], future: [], name: 'Logo' } : t === 'comp' ? { nodes: compStarter(), cam: null, past: [], future: [], name: 'Components' } : { nodes: sample(), cam: null, past: [], future: [], name: 'Example' };
     }
     S.nodes = d.nodes; past.push(...d.past); future.push(...d.future); S.sel.clear();
-    document.body.classList.toggle('tab-logo', t === 'logo');
+    document.body.classList.toggle('tab-logo', t === 'logo'); document.body.classList.toggle('tab-comp', t === 'comp');
     document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === t)));
     $('docName').textContent = d.name;
     if (t !== 'logo') { $('preview').hidden = true; $('previewBtn').setAttribute('aria-expanded', 'false'); }
     if (d.cam) S.cam = d.cam; else fit(S.nodes);
-    setTool(t === 'logo' ? 'draw' : S.tool === 'frame' ? 'select' : S.tool);
-    updateLogoDock(); changed();
+    setTool(t === 'logo' ? 'draw' : t === 'comp' ? 'select' : S.tool === 'frame' ? 'select' : S.tool);
+    updateLogoDock(); loadDocFonts(); changed();
+    if (t === 'comp') tipOnce('comptab', 'Your component workspace. Select anything and tap Make component; add variants for states. Every component appears in Insert → Components, and editing it updates every copy.', 8000);
     if (t === 'logo') tipOnce('logotab', 'Your logo workspace. Turn on Mirror for symmetric marks, draw with the Pencil, then tap Make it a vector.', 7000);
   }
   document.querySelectorAll('.tabs [data-tab]').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
@@ -3992,8 +4244,9 @@ body.tab-logo .design-only { display: none !important; }
       case 'stroke': { const sx = n.w / n.pw, sy = n.h / n.ph; let d = ''; for (let i = 0; i < n.pts.length; i += 3) d += (i ? 'L' : 'M') + f(n.x + n.pts[i] * sx - ox) + ' ' + f(n.y + n.pts[i + 1] * sy - oy); return `<path d="${d}" ${paint(null, n.color, n.sw)}${op}/>`; }
       case 'path': { const A = pathWorld(n); let d = `M${f(A[0][0] - ox)} ${f(A[0][1] - oy)}`; for (const [a, b] of segments(A, n.closed)) d += `C${f(a[4] - ox)} ${f(a[5] - oy)} ${f(b[2] - ox)} ${f(b[3] - oy)} ${f(b[0] - ox)} ${f(b[1] - oy)}`; if (n.closed) d += 'Z'; return `<path d="${d}" ${paint(n.fill && n.closed ? n.fill : null, n.color, n.sw)}${op}/>`; }
       case 'vec': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.pw)} ${f(n.h / n.ph)})"${op}>` + n.layers.map((L) => { let d = ''; for (const A of L.rings) { d += `M${f(A[0][0])} ${f(A[0][1])}`; for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; d += `C${f(a[4])} ${f(a[5])} ${f(b[2])} ${f(b[3])} ${f(b[0])} ${f(b[1])}`; } d += 'Z'; } return `<path d="${d}" fill="${L.fill}" fill-rule="evenodd"/>`; }).join('') + '</g>';
-      case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * 1.25 + n.size * 0.95)}" font-family="${n.font === 'helvetica' ? 'Helvetica Neue, Helvetica, Arial, sans-serif' : '-apple-system, system-ui, sans-serif'}" font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
+      case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * LH(n) + n.size * 0.95)}" font-family="${(!n.font ? SANS : FAMILY[n.font] || `'${n.font}', ${SANS}`).replace(/"/g, "'")}"${n.ls ? ` letter-spacing="${f(n.ls)}"` : ''} font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
       case 'icon': return `<path d="${ICONS[n.icon]}" transform="translate(${x} ${y}) scale(${f(n.w / 24)})" ${paint(null, n.color, n.sw || 1.8)}${op}/>`;
+      case 'inst': { const m = masterOf(n.ref); return m ? `<g transform="translate(${x} ${y}) scale(${f(n.w / m.w)} ${f(n.h / m.h)}) translate(${f(-m.x)} ${f(-m.y)})"${op}>${svgOf({ ...m, opacity: 1 }, 0, 0)}</g>` : ''; }
       case 'svgp': return `<path d="${n.d.replace(/"/g, '')}" transform="translate(${x} ${y}) scale(${f(n.w / n.bw)} ${f(n.h / n.bh)}) translate(${f(-n.bx)} ${f(-n.by)}) matrix(${n.m.map(f).join(' ')})" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${n.rule === 'evenodd' ? ' fill-rule="evenodd"' : ''}${op}/>`;
       case 'image': return `<image href="${n.src}" x="${x}" y="${y}" width="${f(n.w)}" height="${f(n.h)}"${op}/>`;
       case 'group': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.gw)} ${f(n.h / n.gh)})"${op}>${n.children.map((c) => svgOf(c, 0, 0)).join('')}</g>`;
@@ -4099,7 +4352,9 @@ body.tab-logo .design-only { display: none !important; }
     fit(S.nodes);
   }
   updateUI(); requestRender(); updateLogoDock();
-  if (store.get('chitrakar.tab') === 'logo') switchTab('logo');
+  { const t0 = store.get('chitrakar.tab'); if (t0 === 'logo' || t0 === 'comp') switchTab(t0); }
+  const savedFonts = store.get(FONTKEY); if (savedFonts) for (const [nm, url] of Object.entries(savedFonts)) addUserFont(nm, url, false).catch(() => {});
+  loadDocFonts();
   if (!S.tips.coach) {
     setTimeout(() => toast('Draw with your finger, mouse or Apple Pencil. Tap Insert for ready-made buttons, cards and bars.', 'Got it', null, 9000), 500);
     S.tips.coach = 1; save();
