@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.2** · Owner: @shibam-apple · Last updated: 2026-10-24
+Status: **Draft v0.3** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -46,13 +46,13 @@ Air with Pencil Pro), one older iPad with 1st-gen/USB-C Pencil, one Mac.
 
 Ease of use is the reason Chitrakar exists. This section is the design spec for
 the interface. The prototype in `prototype/index.html` implements most of it,
-and §3.12 lists what it does not cover yet.
+and §3.16 lists what it does not cover yet.
 
 ### 3.1 Design goals and how we measure them
 
 | Goal | Target | How we check |
 |---|---|---|
-| Start without learning anything | First shape or stroke on the canvas within **10 s** of opening the app | Usability sessions (§3.13) |
+| Start without learning anything | First shape or stroke on the canvas within **10 s** of opening the app | Usability sessions (§3.17) |
 | Build a real screen quickly | A first-time user builds a sign-in screen (status bar, title, two fields, button) in **under 3 min** | Timed task |
 | Short paths to common changes | Any common property (color, corners, shadow, order, size) is **≤ 2 taps** from a selection | Tap-count audit per release |
 | Nothing is scary | **0** confirmation dialogs in core flows; every action undoable | Code review rule |
@@ -103,7 +103,7 @@ duplicate, lock, hide, undo history, keyboard shortcuts.
 
 **Deliberately later:** auto layout, variants, prototyping links, vector
 networks, variables. They are powerful but complex, and each must arrive with
-its own "one-tap preset" form (§3.15).
+its own "one-tap preset" form (§3.19).
 
 ### 3.4 Lessons from Instagram's editor
 
@@ -136,9 +136,9 @@ patterns. Chitrakar adopts them directly.
 
 | Surface | Contents | Rules |
 |---|---|---|
-| **Top bar** | New design, file name; undo and redo; Pencil chip (after a Pencil is seen), Layers, zoom (tap to fit) | Three small floating groups so the canvas stays visible |
+| **Top bar** | New design, file name; undo and redo; Pencil chip (after a Pencil is seen), Layers, zoom (opens the View menu, §3.10) | Three small floating groups so the canvas stays visible |
 | **Dock** | Select, Draw, Shapes (opens shape picker), Insert (opens library), Text, Frame, Erase, Color | Labelled icons; active tool filled; scrolls sideways on narrow screens |
-| **Selection bar** | 7 color swatches; Style; Text (for text); Effects; Arrange; Group or Ungroup; Save (for a group); Duplicate; Delete | Floats above the selection (below it near the top edge); hidden while dragging or pinching |
+| **Selection bar** | 7 color swatches; Corners (rectangles, images); Style; Text (for text); Effects; Arrange; Vectorize (drawings) or Edit points (vectors); Group or Ungroup; Save (for a group); Duplicate; Delete | Floats above the selection (below it near the top edge); hidden while dragging or pinching |
 | **Panels** | Style, Text, Effects, Arrange (§3.9) | One at a time, beside their button; bottom sheet on narrow screens; close on canvas tap |
 | **Insert** | Search, Image button, My components, 9 built-in categories | Large previews; tap a tile to place it in the middle of the view |
 | **Layers** | Rows grouped under each frame; eye, lock, drag handle; rename by double-click | Docked on the right; stays open while you work |
@@ -159,6 +159,8 @@ patterns. Chitrakar adopts them directly.
 | Palm rejection | In Pencil mode, a resting palm or finger never draws | Prototype |
 | Pressure ink | Line width follows pressure | Prototype |
 | Rough shape → clean shape | Box, ellipse, straight line (snapped to horizontal/vertical) | Prototype |
+| Vectorize on lift | Optional: every Pencil stroke becomes an editable vector path | Prototype |
+| Edit points with the Pencil | Precise point and handle dragging; hover shows which point a tap would grab | Prototype |
 | Hover preview (M2+ iPads) | Pencil hover shows the brush size while drawing, and outlines the item a tap would pick while selecting | Prototype |
 | Scribble into text | Handwrite into a text box; iPadOS converts it | Prototype (system feature) |
 | Finger + Pencil together | Finger drags or pinches the selected item while the Pencil stays ready to draw | Prototype |
@@ -187,6 +189,9 @@ Erase tool while held. Android and Windows tablets are a secondary target (§2).
 | Rebuild a segmented control from basics and reuse it | Draw two rounded rectangles with Shapes, add labels with Text → select them all → Group → Save; it appears under Insert → My components |
 | Align three items and space them evenly | Select them (marquee or Shift) → Arrange → Middle → Space evenly ↔ |
 | Bring something forward | Tap → Arrange → Forward (3 taps), or ⌘] |
+| Round a card's corners | Tap → drag the corner handle; or Corners → Medium |
+| Clean up a sketched icon | Tap the drawing → Vectorize → Edit points → drag points → Done |
+| Zoom with a mouse | Turn the wheel over the spot you want to zoom into |
 
 ### 3.8 Selection and editing model
 
@@ -219,7 +224,8 @@ Erase tool while held. Android and Windows tablets are a secondary target (§2).
 | **Style** | Shapes, components, lines, drawings, icons, images | Fill on/off; Border on/off, width, border colour; Corners slider + Square/Small/Medium/Round; Sides (polygon) or Points (star); Width or Line weight; Arrow head |
 | **Text** | Text | Size stepper and chips (12–64); Weight: Regular, Medium, Semibold, Bold |
 | **Effects** | Anything but frames | Presets: None, Soft shadow, Lifted, Glass; Opacity; Shadow (None/Soft/Medium/Strong); Blur; Background blur; Fill opacity |
-| **Arrange** | Anything | To front, Forward, Backward, To back; Align left/centre/right/top/middle/bottom (to each other, or within the frame for one item); Space evenly (3+ items); X, Y (relative to the frame), W, H; Lock |
+| **Corners** | Rectangles, images, components with a rectangle base | Square, Small, Medium, Large, Round; slider (§3.11) |
+| **Arrange** | Anything | To front, Forward, Backward, To back; Align left/centre/right/top/middle/bottom (to each other, or within the frame for one item); Space evenly (3+ items); X, Y (relative to the frame), W, H, R (corner radius); drag a label to scrub; Lock |
 | **Insert** | Always | Search; Image from Files; My components; Basic shapes (9), Buttons (8), Controls (10), Inputs (6), Navigation (8), Content (11), Feedback & overlays (7), Glass & effects (4), Icons (28) |
 | **Layers** | Always | Frames as headings with their items beneath, topmost first; eye, lock, drag handle; tap to select and scroll it into view; double-click to rename |
 
@@ -227,7 +233,107 @@ Components apply colour, style and effects to their **main shape** (the first
 visible shape, such as a button's background or a card's surface), so recolouring
 a button recolours the button, not its label.
 
-### 3.10 Visual design system (app chrome)
+### 3.10 Navigation and zoom
+
+| Input | Behaviour |
+|---|---|
+| **Mouse wheel** | **Zooms** around the pointer by default. Hold Shift to scroll sideways, Space + drag to pan. Can be switched to "Scroll" in the View menu |
+| **Trackpad** | Two-finger swipe pans; pinch zooms around the pointer (unchanged by the wheel setting) |
+| **Touch** | Pinch zooms around the fingers; two-finger drag pans |
+| **Keyboard** | ⌘+ / ⌘− zoom around the centre, ⌘0 zoom to fit, ⌘1 actual size |
+
+Telling a mouse wheel from a trackpad: wheel events in line or page units, or
+whole-number vertical steps of 40 px or more with no sideways movement, count as
+a mouse wheel. Everything else counts as a trackpad. If the guess is wrong, the
+View menu setting lets people pick.
+
+**View menu** (tap the zoom percentage in the top bar):
+
+- Large − and + buttons, and the current zoom.
+- **Fit everything**, **Fit selection**, **100 %**.
+- **Mouse wheel:** Zoom / Scroll (saved per device).
+
+Zoom range stays 10 %–3200 %. Each wheel notch zooms by about 10 %, and the
+point under the cursor stays put.
+
+### 3.11 Corner rounding
+
+Rounded corners are one of the most common UI edits, so they get three entry
+points:
+
+1. **On the canvas:** a selected rectangle or image shows a small round
+   **corner handle** just inside its top-left corner. Drag it diagonally to round
+   all corners. The value shows next to the handle while dragging. The handle
+   appears only when the item is at least 48 pt on screen, so it never crowds
+   small items.
+2. **Selection bar → Corners** (rectangles, images and components whose main
+   shape is a rectangle): presets **Square, Small (8), Medium (16), Large (24),
+   Round** and a slider. "Round" makes a pill or a circle.
+3. **Arrange → R** field for an exact value, with drag-to-scrub.
+
+Later: per-corner radii (drag a corner handle with a second finger held, or
+unlock corners in the Corners panel) and smooth "squircle" corners like iOS.
+
+### 3.12 Touch-first controls
+
+The interface is designed for fingers first and still works well with a mouse.
+
+| Control | Spec |
+|---|---|
+| Targets | **48 × 48 pt** minimum in panels and bars, 8 pt apart; dock tools 64 × 60 pt |
+| Sliders | Full-width track 8 pt high, **28 pt thumb**, drag anywhere on the track, value shown beside it, live preview, one undo step per drag |
+| Number fields | 44 pt high. **Drag the label left or right to scrub** the value (Shift for ×10); tap the field to type with the number keypad |
+| Steppers | 48 pt buttons; press and hold to repeat |
+| Segmented controls | 40 pt high, whole segment is the target |
+| Swatches | 40 pt in panels, 36 pt in the selection bar |
+| Toggles | 52 × 32 pt, whole row is tappable |
+| Panels | 340 pt wide on iPad and desktop; bottom sheets under 600 pt with a grab handle |
+| Handles | 24 pt touch radius (14 pt for mouse); shrink on small items so the middle stays grabbable |
+| Feedback | Pressed state shows at once (no 300 ms delay); haptic tap on snap and on value presets in the native wrapper |
+
+### 3.13 Vectorize and edit points
+
+Freehand ink is great for sketching but hard to refine. **Vectorize** turns a
+drawing into a clean vector path that you can edit like a Figma vector.
+
+**Turning ink into vectors**
+
+- **Selection bar → Vectorize** on one or more drawings.
+- **Color menu → "Vectorize drawings when I lift the Pencil"** for automatic
+  vectorizing (off by default). Rough shapes still snap to clean shapes first.
+- How it works: the stroke is simplified (Ramer–Douglas–Peucker, tolerance tied
+  to stroke width), then fitted with smooth cubic Bézier curves through the
+  remaining points. A typical stroke drops from hundreds of points to under 20.
+  The path keeps the stroke's colour and its average thickness. Closed loops
+  stay closed and can be filled.
+- A toast says what happened ("Vectorized: 184 points → 11") with **Undo**.
+
+**Editing points** (tap **Edit points** on a vector, or double-tap it)
+
+| Action | Gesture |
+|---|---|
+| Move a point | Drag it (24 pt touch target) |
+| Select a point | Tap it; its curve handles appear |
+| Bend a curve | Drag a handle; on smooth points the opposite handle mirrors it |
+| Corner ↔ smooth | Double-tap a point, or the Corner / Smooth button |
+| Add a point | Tap on the line between two points |
+| Delete a point | Delete button in the bar, or the Delete key |
+| Close or open the path | Close path / Open path button |
+| Finish | **Done**, tap empty canvas, or Esc |
+
+While editing, the selection bar shows only these point actions plus Done.
+
+**Using vectors**
+
+- Style applies as for lines: colour, width, fill for closed paths.
+- **Copy SVG** puts the path's SVG on the clipboard for use in code or other
+  tools. Full SVG export comes with Export (§3.18).
+
+**Later:** pressure-preserving vectors (variable-width outlines), boolean
+operations (union, subtract), a Pen tool for drawing Béziers point by point,
+and **image tracing** (turn a photo or a scanned sketch into vector shapes).
+
+### 3.14 Visual design system (app chrome)
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
@@ -243,7 +349,7 @@ a button recolours the button, not its label.
 - **Type:** system font (San Francisco on Apple devices), no download. Scale:
   11 (labels), 12–13 (secondary), 14–15 (body), 22 (sheet titles). Uppercase
   section labels with 0.04 em letter spacing.
-- **Spacing:** 4 pt grid; panels 12 pt padding; 44 pt minimum targets.
+- **Spacing:** 4 pt grid; panels 14 pt padding; 48 pt targets in panels and bars (§3.12).
 - **Shape:** 14 pt radius for bars and panels, 10 pt for buttons, 8 pt for chips.
 - **Elevation:** one level only (1 px border + small soft shadow); no blur or
   frosted chrome, for battery reasons (§5.2).
@@ -254,7 +360,7 @@ a button recolours the button, not its label.
 - **Motion:** only the toggle thumb animates (150 ms); nothing animates while
   idle; `prefers-reduced-motion` turns it off.
 
-### 3.11 Feedback and copy
+### 3.15 Feedback and copy
 
 - Toasts: one sentence, at most one action ("Undo", "Keep my drawing",
   "Open Insert"), 3–6 s.
@@ -264,13 +370,13 @@ a button recolours the button, not its label.
   image. Try a PNG or JPEG.").
 - No modal confirmations; destructive actions are undoable instead.
 
-### 3.12 Prototype coverage
+### 3.16 Prototype coverage
 
-Covered: everything in §3.5–3.11 marked "Prototype".
-Not yet: lasso select, rotation, tilt shading, export, multiple pages,
+Covered: everything in §3.5–3.15 marked "Prototype".
+Not yet: lasso select, rotation, tilt shading, export, multiple pages, per-corner radii, image tracing,
 auto layout, pen eraser button, keyboard shortcut overlay, VoiceOver pass.
 
-### 3.13 Usability testing
+### 3.17 Usability testing
 
 - **Who:** 5 people per round: 2 who have never used a design tool, 2 Figma
   users, 1 iPad-only artist.
@@ -280,11 +386,11 @@ auto layout, pen eraser button, keyboard shortcut overlay, VoiceOver pass.
   any task; every "where is…?" moment becomes an issue.
 - **Cadence:** every milestone (§11).
 
-### 3.14 MVP feature list
+### 3.18 MVP feature list
 
 | Feature | Description |
 |---|---|
-| Infinite canvas | Pan, zoom (10 %–3200 %), zoom to fit |
+| Infinite canvas | Pan, zoom (10 %–3200 %) with mouse wheel, trackpad, pinch; View menu (§3.10) |
 | Frames | Device presets (iPhone, iPad, Desktop) and custom; move with contents |
 | Freehand ink | Pressure-sensitive strokes with smoothing |
 | Shapes | Rectangle, ellipse, line, arrow, triangle, polygon, star, diamond |
@@ -294,7 +400,8 @@ auto layout, pen eraser button, keyboard shortcut overlay, VoiceOver pass.
 | Images | Files picker, paste, drag and drop |
 | Select & transform | Tap, tap-to-dig, marquee, move, resize, pinch-resize, line ends |
 | Smart guides | Edges and centres, to items and frames |
-| Style & effects | §3.9 |
+| Style & effects | §3.9, corner rounding §3.11 |
+| Vectorize | Ink → editable vector paths, point editing, Copy SVG (§3.13) |
 | Arrange | Order, align, distribute, numeric position and size, lock |
 | Layers | Frames and items, hide, lock, reorder, rename |
 | Clipboard | Copy, cut, paste, duplicate |
@@ -303,7 +410,7 @@ auto layout, pen eraser button, keyboard shortcut overlay, VoiceOver pass.
 | Export | PNG, SVG, PDF of a frame or selection (not in prototype) |
 | File | `.chitrakar` import/export (§6) |
 
-### 3.15 Later (post-MVP)
+### 3.19 Later (post-MVP)
 
 Each arrives with a one-tap form first and detail second:
 
@@ -341,8 +448,8 @@ All input uses **Pointer Events**; `pointerType` tells `pen`, `touch` and
 | Edit text / open a component | Double-tap | Double-tap | Double-tap | Double-click, Enter |
 | Move selected | Drag (Select) | Drag the selected item | Drag (Select) | Drag |
 | Resize selected | Drag a handle | Drag a handle, or pinch the item | Drag a handle, or pinch the item | Drag a handle |
-| Pan | — | Drag empty canvas, or two fingers | Two fingers | Scroll, Space + drag, middle button |
-| Zoom | — | Pinch on empty canvas | Pinch | ⌘/Ctrl + scroll, trackpad pinch |
+| Pan | — | Drag empty canvas, or two fingers | Two fingers | Trackpad swipe, Shift + wheel, Space + drag, middle button |
+| Zoom | — | Pinch on empty canvas | Pinch | **Mouse wheel** (or Scroll, §3.10), trackpad pinch, ⌘/Ctrl + scroll |
 | Undo / redo | — | Two- / three-finger tap | Two- / three-finger tap | ⌘Z / ⇧⌘Z |
 | Hover preview | Brush size, item outline | — | — | Item outline |
 
@@ -358,8 +465,9 @@ All input uses **Pointer Events**; `pointerType` tells `pen`, `touch` and
 | ⌘], ⌘[, ⇧⌘], ⇧⌘[ | Forward, backward, to front, to back |
 | Arrows, ⇧ + arrows | Nudge 1, 10 |
 | Enter, Esc | Edit text or open a component; deselect / close |
-| ⌘0, ⌘+, ⌘− | Zoom to fit, in, out |
+| ⌘0, ⌘1, ⌘+, ⌘− | Zoom to fit, 100 %, in, out |
 | Space (hold) | Pan with the mouse |
+| Shift + wheel | Scroll sideways |
 | ⌘ (hold while dragging) | Turn smart guides off |
 
 ### 4.4 Pencil data captured
