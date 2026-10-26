@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.8** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.9** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -605,6 +605,62 @@ double-tapping picks one shape. Scripts, links and embedded web content inside
 an SVG are removed for safety. Text inside an SVG is skipped (it would need the
 original font). If the icon library can't be reached (offline, or blocked by
 the page hosting the prototype), the panel says so and points to Paste SVG.
+
+### 3.25 Pro UI: a built-in design system
+
+**Pro UI** is a ready-made design system in Insert for serious, precise
+interfaces: dashboards, tools, control panels. It takes inspiration from two
+sources, without copying either one's logos, names or artwork:
+
+- **Apple's Human Interface Guidelines:** clarity, 44 pt touch targets, system
+  type and colours, grouped lists, segmented controls, large titles.
+- **The 1975 NASA Graphics Standards Manual:** one strong red accent used
+  sparingly on white, royal-blue and grey fields, strict placement rules, bold
+  sans-serif type, hairline rules, and small lettered captions ("a) Flight
+  jacket").
+
+**Tokens**
+
+| Token | Value | Use |
+|---|---|---|
+| Signal red | `#E8392A` | One accent per screen: the main action, a live status |
+| Royal blue | `#1F3F99` | Fields and headers; selected states on dark |
+| Flight blue | `#2D63D8` | Links, charts, secondary emphasis |
+| Ink | `#0E1116` | Text on light, dark surfaces |
+| Steel | `#9AA0A8` | Captions, rules on dark |
+| Field grey | `#C9CBCF` | Panels, placeholders |
+| Paper | `#FFFFFF` | Background |
+| Type | System sans; titles 700, labels 600 UPPERCASE at 11–12 pt; data in tabular figures | |
+| Grid | 8 pt; 24 pt margins; hairline rules (1 pt) separate sections | |
+| Corners | 10 pt controls, 16 pt cards; badges are square-cornered 4 pt | |
+
+**Rules (from the manual's placement discipline)**
+
+1. One red thing per view. If two things are red, neither is important.
+2. Labels sit **above** what they label, flush left, uppercase.
+3. A section starts with a hairline rule and a caption.
+4. Badges ("patches") have a fixed size and a fixed place: top right of a card.
+
+**Components:** Pro button (primary, secondary, quiet), Pro segmented control,
+Pro toggle row, Pro text field, Section header (rule + caption), Patch badge,
+Status light, Telemetry readout, Gauge, Phase tracker, Countdown, Caution
+banner, Systems list, Data table, Orbit card, Title block, Pro sidebar, and a
+complete **Pro dashboard** screen (iPad landscape). Pro UI colours are also a
+row in the Color menu.
+
+### 3.26 Edit points on imported artwork
+
+Imported SVG shapes (§3.24) can be point-edited like anything drawn in
+Chitrakar: tap **Edit points**, or double-tap the shape.
+
+- Filled shapes become vector artwork, one colour layer per shape, with holes
+  kept. Lines become vector paths with their width.
+- An imported group that is all fills becomes one piece of artwork; tap another
+  outline while editing to switch to it. A group that mixes lines and fills is
+  split into separate items, so each can be edited.
+- Curves, arcs and straight segments are all converted exactly to cubic
+  curves. Each point gets the type that matches its handles: corner, smooth or
+  free.
 
 ---
 

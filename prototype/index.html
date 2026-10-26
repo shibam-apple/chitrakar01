@@ -380,6 +380,8 @@ body.tab-logo .design-only { display: none !important; }
 <div id="colorPop" class="bar pop" hidden>
   <h3>Color</h3>
   <div class="swatches" id="toolSwatches"></div>
+  <h3>Pro UI</h3>
+  <div class="swatches" id="proSwatches"></div>
   <div class="row">
     <span>Turn rough drawings into clean shapes</span>
     <button class="toggle" id="autoShape" role="switch" aria-checked="true" aria-label="Turn rough drawings into clean shapes"></button>
@@ -474,6 +476,10 @@ body.tab-logo .design-only { display: none !important; }
   const INK = '#1f2233', MUT = '#6b6e80', LN = '#d5d7e2', SF = '#f3f4f8', AC = '#3d47c9', WH = '#ffffff',
         RED = '#d6453d', GRN = '#2f9e6a', TINT = '#e6e8fb', PH = '#9a9db0', IMG = '#e3e5ef', SHAPE_FILL = '#d9dbe6', GUIDE = '#e5487d';
   const SWATCHES = [INK, AC, RED, '#e39a2d', GRN, SHAPE_FILL, WH];
+  // Pro UI tokens (§3.25): one signal red, royal and flight blue, ink, steel, field grey, paper.
+  const P_RED = '#e8392a', P_ROYAL = '#1f3f99', P_FLIGHT = '#2d63d8', P_INK = '#0e1116', P_STEEL = '#9aa0a8', P_GREY = '#c9cbcf',
+        P_DARK = '#171a21', P_LINE = '#2a2f3a', P_OK = '#2fb26a', P_AMBER = '#f2a23a', P_MIST = '#e9eaec';
+  const PRO_SWATCHES = [P_INK, P_RED, P_ROYAL, P_FLIGHT, P_STEEL, P_GREY, WH];
   const PRESETS = [
     { name: 'iPhone', w: 393, h: 852 }, { name: 'iPad', w: 820, h: 1180 },
     { name: 'Desktop', w: 1440, h: 900 }, { name: 'Blank', w: 0, h: 0 }, { name: 'Logo', w: 512, h: 512, logo: true },
@@ -916,7 +922,9 @@ body.tab-logo .design-only { display: none !important; }
       case 'stroke': drawInk(n.pts, n.x, n.y, n.w / n.pw, n.h / n.ph, n.sw, n.color, n.pen); break;
       case 'vec': {
         ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / n.pw, n.h / n.ph);
-        for (const L of n.layers) { ctx.fillStyle = L.fill; ctx.fill(vecPath(L), 'evenodd'); }
+        const a0 = ctx.globalAlpha;
+        for (const L of n.layers) { ctx.globalAlpha = a0 * (L.alpha ?? 1); ctx.fillStyle = L.fill; ctx.fill(vecPath(L), 'evenodd'); }
+        ctx.globalAlpha = a0;
         ctx.restore();
         break;
       }
@@ -1261,7 +1269,79 @@ body.tab-logo .design-only { display: none !important; }
   }
   const glass = (o = {}) => ({ fill: WH, fillAlpha: 0.35, stroke: WH, strokeAlpha: 0.65, sw: 1, bgBlur: 20, shadow: 1, ...o });
 
+  // ---------- Pro UI (§3.25) ----------
+  const at = (n, x, y) => Object.assign(n, { x, y });
+  const TxR = (text, size, weight, color, right, cy) => { const t = Tx(text, size, weight, color, { x: 0, cy }); t.x = right - t.w; return t; };
+  const lbl = (text, x, y, color = P_STEEL) => Tx(text.toUpperCase(), 11, 700, color, { x, y });
+  const PRO = {
+    button: () => Grp('Pro button', 160, 44, [R(0, 0, 160, 44, { r: 10, fill: P_RED }), Tx('Launch', 16, 700, WH, { cx: 80, cy: 22 })]),
+    secondary: () => Grp('Pro secondary button', 160, 44, [R(0, 0, 160, 44, { r: 10, fill: WH, stroke: P_INK, sw: 1.5 }), Tx('Simulate', 16, 700, P_INK, { cx: 80, cy: 22 })]),
+    quiet: () => { const t = Tx('Details', 16, 600, P_FLIGHT, { x: 0, cy: 14 }); return Grp('Pro quiet button', Math.ceil(t.w + 24), 28, [t, I('chevronRight', t.w + 2, 4, 20, P_FLIGHT, { sw: 2.2 })]); },
+    segmented: () => Grp('Pro segmented control', 300, 36, [R(0, 0, 300, 36, { r: 10, fill: P_MIST }), R(2, 2, 98, 32, { r: 8, fill: WH, shadow: 1 }),
+      Tx('LIVE', 12, 700, P_INK, { cx: 51, cy: 18 }), Tx('REPLAY', 12, 700, MUT, { cx: 150, cy: 18 }), Tx('LOG', 12, 700, MUT, { cx: 249, cy: 18 })]),
+    toggleRow: () => Grp('Pro toggle row', 360, 52, [R(0, 0, 360, 52, { fill: WH }), Tx('Auto-save telemetry', 16, 500, P_INK, { x: 0, cy: 26 }),
+      R(308, 10, 52, 32, { r: 16, fill: P_ROYAL }), E(330, 12, 28, 28, { fill: WH, shadow: 1 }), Ln(0, 52, 360, 52, P_MIST)]),
+    field: () => Grp('Pro text field', 320, 70, [lbl('Call sign', 0, 0), R(0, 20, 320, 48, { r: 10, fill: WH, stroke: P_GREY }), Tx('Orion 7', 16, 500, P_INK, { x: 16, cy: 44 })]),
+    section: (w = 480) => Grp('Section header', w, 36, [Ln(0, 0, w, 0, P_INK, 1), Tx('a) Systems overview', 13, 600, P_INK, { x: 0, y: 12 }), TxR('SECTION 02', 11, 700, P_STEEL, w, 20)]),
+    patch: () => Grp('Patch badge', 96, 40, [R(0, 0, 96, 40, { r: 4, fill: WH, stroke: P_GREY }), Tx('PRO', 18, 800, P_RED, { cx: 48, cy: 20 })]),
+    patchBlue: () => Grp('Patch badge (blue)', 96, 40, [R(0, 0, 96, 40, { r: 4, fill: P_ROYAL }), Tx('PRO', 18, 800, WH, { cx: 48, cy: 20 })]),
+    status: (word = 'Nominal', col = P_OK) => Grp('Status light', word.length > 10 ? 190 : 140, 24, [E(0, 2, 20, 20, { fill: col, fillAlpha: 0.22 }), E(4, 6, 12, 12, { fill: col }), Tx(word.toUpperCase(), 12, 700, P_INK, { x: 30, cy: 12 })]),
+    telemetry: (w = 220, label = 'Altitude', value = '408.2', unit = 'km', live = true, pts = [6, 14, 10, 18, 15, 22, 19, 26]) => {
+      const v = Tx(value, 36, 700, WH, { x: 20, y: 40 }), step = (w - 40) / (pts.length - 1);
+      return Grp('Telemetry readout', w, 140, [R(0, 0, w, 140, { r: 16, fill: P_DARK }), lbl(label, 20, 18), v, Tx(unit, 14, 500, P_STEEL, { x: 20 + v.w + 6, y: 58 }),
+        Pth(curveThrough(pts.map((q, i) => [20 + i * step, 128 - q])), { color: P_FLIGHT, sw: 2 }), ...(live ? [E(w - 30, 18, 10, 10, { fill: P_RED })] : [])]);
+    },
+    gauge: () => Grp('Gauge', 160, 120, [Pth(arcA(80, 80, 64, Math.PI, Math.PI * 2), { color: P_MIST, sw: 12 }), Pth(arcA(80, 80, 64, Math.PI, Math.PI * 1.68), { color: P_ROYAL, sw: 12 }),
+      Tx('68%', 26, 700, P_INK, { cx: 80, cy: 70 }), Tx('FUEL', 11, 700, P_STEEL, { cx: 80, y: 94 })]),
+    phases: (w = 480) => { const names = ['Launch', 'Ascent', 'Orbit', 'Return', 'Landing'], sw2 = w / names.length;
+      return Grp('Phase tracker', w, 40, names.flatMap((nm, i) => [R(i * sw2, 0, sw2 - 4, 6, { r: 3, fill: i < 2 ? P_ROYAL : i === 2 ? P_INK : P_MIST }), lbl(nm, i * sw2, 16, i <= 2 ? P_INK : P_STEEL)])); },
+    countdown: () => Grp('Countdown', 320, 96, [R(0, 0, 320, 96, { r: 16, fill: P_INK }), Tx('T – 00:12:48', 36, 700, WH, { x: 20, y: 14 }), lbl('Until launch window', 20, 66), E(286, 22, 12, 12, { fill: P_RED })]),
+    caution: (w = 480) => Grp('Caution banner', w, 56, [R(0, 0, w, 56, { r: 10, fill: '#fff4e0' }), R(0, 0, 6, 56, { r: 3, fill: P_AMBER }), I('alert', 20, 16, 24, '#a85f00'),
+      Tx('CAUTION', 11, 800, '#a85f00', { x: 56, y: 10 }), Tx('Cabin pressure trending low. Check valve 3.', 14, 500, P_INK, { x: 56, y: 28 })]),
+    warning: (w = 480) => Grp('Warning banner', w, 56, [R(0, 0, w, 56, { r: 10, fill: '#fde8e6' }), R(0, 0, 6, 56, { r: 3, fill: P_RED }), I('alert', 20, 16, 24, P_RED),
+      Tx('WARNING', 11, 800, P_RED, { x: 56, y: 10 }), Tx('Signal lost with ground station 2.', 14, 500, P_INK, { x: 56, y: 28 })]),
+    systems: () => Grp('Systems list', 360, 228, [R(0, 0, 360, 228, { r: 16, fill: WH, stroke: P_MIST }), lbl('Systems', 20, 18),
+      ...[['Power', 'Nominal', P_OK], ['Communications', 'Nominal', P_OK], ['Thermal', 'Watch', P_AMBER], ['Navigation', 'Nominal', P_OK]].flatMap(([nm, st, c], i) => {
+        const y = 44 + i * 44; return [Ln(20, y, 340, y, P_MIST), Tx(nm, 15, 500, P_INK, { x: 20, cy: y + 22 }), E(250, y + 17, 10, 10, { fill: c }), Tx(st.toUpperCase(), 11, 700, P_INK, { x: 268, cy: y + 22 })];
+      })]),
+    table: () => Grp('Pro data table', 480, 200, [R(0, 0, 480, 200, { r: 16, fill: P_DARK }), lbl('Channel', 20, 18), lbl('Value', 220, 18), lbl('Status', 360, 18),
+      ...[['Battery A', '28.4 V', 'OK'], ['Battery B', '27.9 V', 'OK'], ['Cabin temp', '21.6 °C', 'OK'], ['O₂ partial', '20.1 kPa', 'Watch']].flatMap(([a, v, st], i) => {
+        const y = 44 + i * 38; return [Ln(20, y, 460, y, P_LINE), Tx(a, 14, 500, WH, { x: 20, cy: y + 19 }), Tx(v, 14, 600, WH, { x: 220, cy: y + 19 }), Tx(st.toUpperCase(), 11, 700, st === 'OK' ? P_OK : P_AMBER, { x: 360, cy: y + 19 })];
+      })]),
+    orbit: (w = 300, h = 220) => Grp('Orbit card', w, h, [R(0, 0, w, h, { r: 16, fill: '#0b1b44' }), lbl('Orbit 14 of 16', 20, 18, '#9fb2e6'),
+      E(w / 2 - 110, h / 2 - 40, 220, 90, { stroke: '#5a78c8', sw: 1.5 }), E(w / 2 - 28, h / 2 - 23, 56, 56, { fill: P_FLIGHT }), E(w / 2 + 100, h / 2 + 2, 10, 10, { fill: WH }),
+      Tx('92 min period · 408 km', 14, 500, WH, { x: 20, y: h - 34 })]),
+    titleBlock: () => Grp('Title block', 480, 168, [Tx('Mission Brief', 40, 800, P_INK, { x: 0, y: 0 }), Ln(0, 64, 480, 64, P_INK, 2),
+      ...[['Project', 'Chitrakar'], ['Revision', 'A'], ['Date', '26 Oct 2026']].flatMap(([k, v], i) => [lbl(k, i * 160, 80), Tx(v, 16, 600, P_INK, { x: i * 160, y: 100 })]),
+      Ln(0, 136, 480, 136, P_GREY), Tx('a) Cover sheet', 12, 500, P_STEEL, { x: 0, y: 148 })]),
+    sidebar: (h = 400) => Grp('Pro sidebar', 240, h, [R(0, 0, 240, h, { fill: P_INK }), at(PRO.patchBlue(), 24, 28),
+      ...[['home', 'Overview'], ['globe', 'Tracking'], ['bolt', 'Power'], ['shield', 'Safety'], ['settings', 'Settings']].flatMap(([ic, t], i) => {
+        const y = 100 + i * 48; return [...(i === 0 ? [R(12, y, 216, 40, { r: 10, fill: P_ROYAL })] : []), I(ic, 26, y + 8, 24, i === 0 ? WH : P_STEEL), Tx(t, 15, i === 0 ? 700 : 500, i === 0 ? WH : '#c4c8d0', { x: 62, cy: y + 20 })];
+      }), lbl('Crew of 4 · Day 12', 24, h - 36)]),
+    dashboard: () => {
+      const x0 = 272, w = 890;
+      return Grp('Pro dashboard', 1194, 834, [R(0, 0, 1194, 834, { fill: '#f4f5f7' }), PRO.sidebar(834), lbl('Mission day 12', x0, 26), Tx('Overview', 34, 800, P_INK, { x: x0, y: 42 }),
+        at(PRO.status('All systems nominal'), 1194 - 32 - 190, 52), Ln(x0, 100, x0 + w, 100, P_INK),
+        at(PRO.telemetry(210, 'Altitude', '408.2', 'km', true), x0, 124), at(PRO.telemetry(210, 'Velocity', '7.66', 'km/s', false, [12, 12, 13, 12, 13, 13, 12, 13]), x0 + 226, 124),
+        at(PRO.telemetry(210, 'Signal', '−82', 'dBm', false, [10, 16, 8, 20, 14, 18, 12, 22]), x0 + 452, 124), at(PRO.telemetry(210, 'Crew', '4', 'aboard', false, [14, 14, 14, 14, 14, 14, 14, 14]), x0 + 678, 124),
+        at(PRO.phases(w), x0, 290), at(PRO.systems(), x0, 352), at(PRO.orbit(300, 228), x0 + 376, 352),
+        R(x0 + 692, 352, 198, 228, { r: 16, fill: WH, stroke: P_MIST }), at(PRO.gauge(), x0 + 711, 400),
+        at(PRO.caution(w), x0, 604), at(PRO.section(w), x0, 690), Tx('Live telemetry, updated every second. Signal red marks the one value that is live.', 14, 400, MUT, { x: x0, y: 736 })]);
+    },
+  };
+
   const LIB = [
+    { cat: 'Pro UI · Controls', items: [
+      ['Pro button', PRO.button], ['Pro secondary button', PRO.secondary], ['Pro quiet button', PRO.quiet], ['Pro segmented control', PRO.segmented],
+      ['Pro toggle row', PRO.toggleRow], ['Pro text field', PRO.field], ['Status light', () => PRO.status()], ['Patch badge', PRO.patch], ['Patch badge (blue)', PRO.patchBlue],
+    ] },
+    { cat: 'Pro UI · Data', items: [
+      ['Telemetry readout', () => PRO.telemetry()], ['Gauge', PRO.gauge], ['Phase tracker', () => PRO.phases()], ['Countdown', PRO.countdown], ['Systems list', PRO.systems],
+      ['Pro data table', PRO.table], ['Orbit card', () => PRO.orbit()], ['Caution banner', () => PRO.caution()], ['Warning banner', () => PRO.warning()],
+    ] },
+    { cat: 'Pro UI · Layout', items: [
+      ['Section header', () => PRO.section()], ['Title block', PRO.titleBlock], ['Pro sidebar', () => PRO.sidebar()], ['Pro dashboard', PRO.dashboard],
+    ] },
     { cat: 'Basic shapes', items: [
       ['Rectangle', () => shapeNode('rect', { x: 0, y: 0, w: 160, h: 120 })],
       ['Rounded rectangle', () => shapeNode('rect', { x: 0, y: 0, w: 160, h: 120 }, { r: 20 })],
@@ -2333,9 +2413,9 @@ body.tab-logo .design-only { display: none !important; }
     const quick = t - lastTap.t < 400, near = Math.hypot(sx - lastTap.sx, sy - lastTap.sy) < 24;
     if (!hits.length) { if (S.sel.size) S.sel.clear(); else if (S.tool === 'text') createText(p); lastTap = { id: null, t, sx, sy }; return; }
     const prev = lastTap.id && near && S.sel.has(lastTap.id) ? hits.find((n) => n.id === lastTap.id) : null;
-    if (prev && quick && ['text', 'group', 'path', 'vec'].includes(prev.type)) {
+    if (prev && quick && ['text', 'group', 'path', 'vec', 'svgp'].includes(prev.type)) {
       lastTap = { id: null, t: 0, sx: -99, sy: -99 };
-      if (prev.type === 'text') editText(prev); else if (prev.type === 'path' || prev.type === 'vec') enterPoints(prev, p); else enterGroup(prev, p);
+      if (prev.type === 'svgp') editArt(prev); else if (prev.type === 'text') editText(prev); else if (prev.type === 'path' || prev.type === 'vec') enterPoints(prev, p); else enterGroup(prev, p);
       return;
     }
     let pick = hits[0];
@@ -2607,7 +2687,7 @@ body.tab-logo .design-only { display: none !important; }
         if (invisible(c)) continue;
         const k = { ...clone(c), id: nid(), x: g.x + c.x * sx, y: g.y + c.y * sy, w: c.w * sx, h: c.h * sy };
         if (k.type === 'text') k.size *= sy;
-        if (k.sw) k.sw *= sx;
+        if (k.sw && k.type !== 'svgp') k.sw *= sx;
         if (k.r) k.r *= sx;
         if ((g.opacity ?? 1) !== 1) k.opacity = (k.opacity ?? 1) * g.opacity;
         if (g.blur) k.blur = (k.blur || 0) + g.blur;
@@ -2673,6 +2753,7 @@ body.tab-logo .design-only { display: none !important; }
       const n = selected()[0];
       if (n.type === 'text') editText(n);
       else if (n.type === 'path' || n.type === 'vec') enterPoints(n);
+      else if (n.type === 'svgp' || isArt(n)) editArt(n);
       else if (n.type === 'group') { const map = ungroupNodes([n]); S.sel = new Set([...map.values()].map((m) => m.id)); changed(); }
       return;
     }
@@ -2763,6 +2844,118 @@ body.tab-logo .design-only { display: none !important; }
     } finally { host.remove(); }
     return { shapes: out, vb, skipped };
   }
+  // SVG path data → subpaths of cubic segments: [{ start: [x, y], segs: [[c1x, c1y, c2x, c2y, x, y], …], closed }].
+  function parsePathD(d) {
+    const out = []; let i = 0, cur = null, x = 0, y = 0, sx = 0, sy = 0, lc = null, lq = null, cmd = '';
+    const skip = () => { while (i < d.length && /[\s,]/.test(d[i])) i++; };
+    const num = () => { skip(); const m = /^[-+]?(?:\d*\.\d+|\d+\.?\d*)(?:[eE][-+]?\d+)?/.exec(d.slice(i)); if (!m) throw 0; i += m[0].length; return +m[0]; };
+    const flag = () => { skip(); const c = d[i++]; if (c !== '0' && c !== '1') throw 0; return c === '1'; };
+    const begin = (px, py) => { cur = { start: [px, py], segs: [], closed: false }; out.push(cur); x = sx = px; y = sy = py; };
+    const C = (a, b, c, e, f, g) => { if (!cur) begin(x, y); cur.segs.push([a, b, c, e, f, g]); x = f; y = g; };
+    const L = (px, py) => C(x + (px - x) / 3, y + (py - y) / 3, x + 2 * (px - x) / 3, y + 2 * (py - y) / 3, px, py);
+    function arc(rx, ry, phi, large, sweep, x2, y2) {
+      const x1 = x, y1 = y; if ((x1 === x2 && y1 === y2)) return; rx = Math.abs(rx); ry = Math.abs(ry); if (!rx || !ry) { L(x2, y2); return; }
+      const cp = Math.cos(phi), sp = Math.sin(phi), dx = (x1 - x2) / 2, dy = (y1 - y2) / 2, x1p = cp * dx + sp * dy, y1p = -sp * dx + cp * dy;
+      const lam = x1p * x1p / (rx * rx) + y1p * y1p / (ry * ry); if (lam > 1) { rx *= Math.sqrt(lam); ry *= Math.sqrt(lam); }
+      const num2 = rx * rx * ry * ry - rx * rx * y1p * y1p - ry * ry * x1p * x1p, den = rx * rx * y1p * y1p + ry * ry * x1p * x1p;
+      const co = (large === sweep ? -1 : 1) * Math.sqrt(Math.max(0, num2 / den)), cxp = co * rx * y1p / ry, cyp = -co * ry * x1p / rx;
+      const cx = cp * cxp - sp * cyp + (x1 + x2) / 2, cy = sp * cxp + cp * cyp + (y1 + y2) / 2;
+      const ang = (ux, uy, vx, vy) => { const a = Math.atan2(ux * vy - uy * vx, ux * vx + uy * vy); return a; };
+      const t1 = ang(1, 0, (x1p - cxp) / rx, (y1p - cyp) / ry); let dt = ang((x1p - cxp) / rx, (y1p - cyp) / ry, (-x1p - cxp) / rx, (-y1p - cyp) / ry);
+      if (!sweep && dt > 0) dt -= 2 * Math.PI; else if (sweep && dt < 0) dt += 2 * Math.PI;
+      const n = Math.max(1, Math.ceil(Math.abs(dt) / (Math.PI / 2))), da = dt / n, k = 4 / 3 * Math.tan(da / 4);
+      const pt = (t) => [cx + rx * Math.cos(t) * cp - ry * Math.sin(t) * sp, cy + rx * Math.cos(t) * sp + ry * Math.sin(t) * cp];
+      const dv = (t) => [-rx * Math.sin(t) * cp - ry * Math.cos(t) * sp, -rx * Math.sin(t) * sp + ry * Math.cos(t) * cp];
+      for (let j = 0; j < n; j++) {
+        const a = t1 + da * j, b = a + da, p0 = pt(a), p3 = pt(b), d0 = dv(a), d3 = dv(b);
+        C(p0[0] + k * d0[0], p0[1] + k * d0[1], p3[0] - k * d3[0], p3[1] - k * d3[1], j === n - 1 ? x2 : p3[0], j === n - 1 ? y2 : p3[1]);
+      }
+    }
+    try {
+      while (true) {
+        skip(); if (i >= d.length) break;
+        if (/[a-zA-Z]/.test(d[i])) cmd = d[i++]; else if (!cmd) break;
+        const rel = cmd === cmd.toLowerCase() && cmd !== 'z' ? 1 : 0, U = cmd.toUpperCase(), ox = rel ? x : 0, oy = rel ? y : 0;
+        let nc = null, nq = null;
+        switch (U) {
+          case 'M': { begin(num() + ox, num() + oy); cmd = rel ? 'l' : 'L'; break; }
+          case 'L': L(num() + ox, num() + oy); break;
+          case 'H': L(num() + ox, y); break;
+          case 'V': L(x, num() + oy); break;
+          case 'C': { const a = num() + ox, b = num() + oy, c = num() + ox, e = num() + oy, f = num() + ox, g = num() + oy; C(a, b, c, e, f, g); nc = [c, e]; break; }
+          case 'S': { const r = lc ? [2 * x - lc[0], 2 * y - lc[1]] : [x, y], c = num() + ox, e = num() + oy, f = num() + ox, g = num() + oy; C(r[0], r[1], c, e, f, g); nc = [c, e]; break; }
+          case 'Q': case 'T': {
+            const q = U === 'Q' ? [num() + ox, num() + oy] : lq ? [2 * x - lq[0], 2 * y - lq[1]] : [x, y], f = num() + ox, g = num() + oy;
+            C(x + 2 / 3 * (q[0] - x), y + 2 / 3 * (q[1] - y), f + 2 / 3 * (q[0] - f), g + 2 / 3 * (q[1] - g), f, g); nq = q; break;
+          }
+          case 'A': { const rx = num(), ry = num(), ph = num() * Math.PI / 180, la = flag(), sw = flag(); arc(rx, ry, ph, la, sw, num() + ox, num() + oy); break; }
+          case 'Z': { if (cur) { if (Math.hypot(x - sx, y - sy) > 1e-6) L(sx, sy); cur.closed = true; } x = sx; y = sy; cur = null; cmd = ''; break; }
+          default: throw 0;
+        }
+        lc = nc; lq = nq;
+      }
+    } catch { /* keep what was read: SVG renders up to the first error too */ }
+    return out.filter((sp) => sp.segs.length);
+  }
+  // A subpath (already in world coordinates) → Chitrakar anchors with point types that match the handles.
+  function subpathAnchors(sp, closed) {
+    const A = [[sp.start[0], sp.start[1], sp.start[0], sp.start[1], sp.start[0], sp.start[1], 0]];
+    for (const [a, b, c, e, f, g] of sp.segs) { const last = A[A.length - 1]; last[4] = a; last[5] = b; A.push([f, g, c, e, f, g, 0]); }
+    if (closed && A.length > 1) { const l = A[A.length - 1], f0 = A[0]; if (Math.hypot(l[0] - f0[0], l[1] - f0[1]) < 1e-3) { f0[2] = l[2]; f0[3] = l[3]; A.pop(); } }
+    for (const a of A) {
+      const li = Math.hypot(a[2] - a[0], a[3] - a[1]), lo = Math.hypot(a[4] - a[0], a[5] - a[1]);
+      if (li < 1e-3 && lo < 1e-3) { a[6] = 1; continue; }
+      if (li < 1e-3 || lo < 1e-3) { a[6] = 3; continue; }
+      const cr = ((a[0] - a[2]) * (a[5] - a[1]) - (a[1] - a[3]) * (a[4] - a[0])) / (li * lo);
+      a[6] = Math.abs(cr) < 0.02 && (a[4] - a[0]) * (a[0] - a[2]) + (a[5] - a[1]) * (a[1] - a[3]) > 0 ? 0 : 3;
+    }
+    return A;
+  }
+  // Imported shape → editable Chitrakar vectors: fills become artwork (one colour layer, holes kept), lines become paths.
+  function svgpEditable(n) {
+    const kx = n.w / n.bw, ky = n.h / n.bh, m = n.m;
+    const W = (px, py) => { const X = m[0] * px + m[2] * py + m[4], Y = m[1] * px + m[3] * py + m[5]; return [n.x + (X - n.bx) * kx, n.y + (Y - n.by) * ky]; };
+    const sps = parsePathD(n.d).map((sp) => ({ start: W(...sp.start), closed: sp.closed, segs: sp.segs.map(([a, b, c, e, f, g]) => [...W(a, b), ...W(c, e), ...W(f, g)]) }));
+    if (!sps.length) return [];
+    const op = n.opacity ?? 1;
+    if (!n.stroke) return [{ layer: { fill: n.fill, alpha: (n.fillAlpha ?? 1) * op, rings: sps.map((sp) => subpathAnchors(sp, true)).filter((r) => r.length >= 2) } }];
+    const sw = n.sw * Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) * Math.sqrt(kx * ky);
+    return sps.map((sp) => {
+      const closed = sp.closed || (!!n.fill && sp.segs.length > 1), A = subpathAnchors(sp, closed);
+      const p = { id: nid(), type: 'path', name: n.name || 'Vector', closed: closed && A.length > 2, color: n.stroke, sw, fill: closed && n.fill ? n.fill : null };
+      if (n.fillAlpha != null) p.fillAlpha = n.fillAlpha;
+      const po = (n.strokeAlpha ?? 1) * op; if (po < 1) p.opacity = po;
+      setPathWorld(p, A); return { node: p };
+    });
+  }
+  function vecFromLayers(layers, name) {
+    const v = makeVec(layers.filter((L) => L.rings.length), { x: 0, y: 0, k: 1 }); v.name = name;
+    v.layers.forEach((L, i) => { const a = layers.filter((q) => q.rings.length)[i].alpha; if (a != null && a < 1) L.alpha = a; });
+    return v;
+  }
+  // "Edit points" on imported artwork: convert it in place, then edit.
+  function editArt(n) {
+    checkpoint();
+    const i = S.nodes.indexOf(n); let kids = [n];
+    if (n.type === 'svgp') S.nodes.splice(i, 1);
+    else { const map = ungroupNodes([n]); past.pop(); kids = [...map.values()]; S.nodes = S.nodes.filter((k) => !kids.includes(k)); }
+    const parts = kids.flatMap(svgpEditable);
+    if (!parts.length) { S.nodes = JSON.parse(past.pop()); toast('This artwork has no shapes that can be edited.'); return; }
+    let made;
+    if (parts.every((q) => q.layer)) made = [vecFromLayers(parts.map((q) => q.layer), n.name || 'Imported artwork')];
+    else {
+      // Fills next to each other stay together as artwork; lines become their own paths.
+      made = []; let run = [];
+      const flushRun = () => { if (run.length) made.push(vecFromLayers(run, n.name || 'Imported artwork')); run = []; };
+      for (const q of parts) { if (q.layer) run.push(q.layer); else { flushRun(); made.push(q.node); } }
+      flushRun();
+    }
+    S.nodes.splice(i, 0, ...made);
+    S.sel = new Set(made.map((q) => q.id));
+    if (made.length === 1) { changed(); enterPoints(made[0]); }
+    else { changed(); toast(`Split into ${made.length} editable items. Double-tap any of them to edit its points.`, 'Undo', undo, 5000); }
+  }
+
   // SVG text → one item (a single shape) or a group, scaled to a handy size.
   function svgToNode(text, name = 'Imported artwork') {
     const r = svgShapes(text); if (!r || !r.shapes.length) return null;
@@ -2861,8 +3054,8 @@ body.tab-logo .design-only { display: none !important; }
     $('shapeIcon').innerHTML = SHAPE_KINDS.find((s) => s.k === k).svg;
     setTool('shape');
   }
-  function swatchButtons(current, onPick) {
-    return SWATCHES.map((c) => {
+  function swatchButtons(current, onPick, list = SWATCHES) {
+    return list.map((c) => {
       const b = h('button', { class: 'sw', 'aria-label': 'Color ' + c, 'aria-pressed': String(c === current), onclick: (ev) => { ev.stopPropagation(); onPick(c); } });
       const i = document.createElement('i'); i.style.background = c; b.append(i); return b;
     });
@@ -2923,11 +3116,12 @@ body.tab-logo .design-only { display: none !important; }
     if (pop.scrollHeight !== h0) { placeContextBar(); position(pop, b || ctxBar, openSel.pref); }   // grew or shrank: keep clear of the bar
     pop.scrollTop = st;
   }
-  function pickToolColor(c) { S.color = c; save(); updateUI(); $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor)); }
+  function pickToolColor(c) { S.color = c; save(); updateUI(); $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor)); $('proSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor, PRO_SWATCHES)); }
   $('colorBtn').addEventListener('click', (e) => {
     e.stopPropagation();
     const open = !$('colorPop').hidden; closePops(); if (open) return;
     $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor));
+    $('proSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor, PRO_SWATCHES));
     $('colorPop').hidden = false; position($('colorPop'), $('colorBtn'), 'above');
   });
   $('autoShape').addEventListener('click', () => { S.autoShape = !S.autoShape; save(); updateUI(); });
@@ -3382,6 +3576,8 @@ body.tab-logo .design-only { display: none !important; }
       if (items[0].layers.length > 1) btn('Separate colours into their own items', '<rect x="3.5" y="3.5" width="8" height="8" rx="4"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', separateColours, '', 'Separate');
       btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
     }
+    if (items.length === 1 && (items[0].type === 'svgp' || isArt(items[0])))
+      btn('Edit points: make this imported artwork editable', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => editArt(items[0]), '', 'Edit points');
     if (items.length === 1 && items[0].type === 'path') {
       btn('Edit points', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => enterPoints(items[0]), '', 'Edit points');
       btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
