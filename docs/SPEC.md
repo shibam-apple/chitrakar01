@@ -1,12 +1,13 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.3** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.4** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
 ## 1. What we are building
 
-A UI design app for **iPad (with Apple Pencil) and desktop**, delivered first as a
+An all-in-one design app for **iPad (with Apple Pencil) and desktop**: sketch, turn
+sketches into vector artwork, and design UI screens in one place. It is delivered first as a
 web app (installable PWA) and designed so it can later move to a native iPad app
 without losing users' files or rewriting the core logic.
 
@@ -160,6 +161,7 @@ patterns. Chitrakar adopts them directly.
 | Pressure ink | Line width follows pressure | Prototype |
 | Rough shape → clean shape | Box, ellipse, straight line (snapped to horizontal/vertical) | Prototype |
 | Vectorize on lift | Optional: every Pencil stroke becomes an editable vector path | Prototype |
+| Sketch → vector artwork | Draw a whole character with the Pencil, then trace it into filled vector shapes (Image Trace) | Prototype |
 | Edit points with the Pencil | Precise point and handle dragging; hover shows which point a tap would grab | Prototype |
 | Hover preview (M2+ iPads) | Pencil hover shows the brush size while drawing, and outlines the item a tap would pick while selecting | Prototype |
 | Scribble into text | Handwrite into a text box; iPadOS converts it | Prototype (system feature) |
@@ -190,7 +192,9 @@ Erase tool while held. Android and Windows tablets are a secondary target (§2).
 | Align three items and space them evenly | Select them (marquee or Shift) → Arrange → Middle → Space evenly ↔ |
 | Bring something forward | Tap → Arrange → Forward (3 taps), or ⌘] |
 | Round a card's corners | Tap → drag the corner handle; or Corners → Medium |
-| Clean up a sketched icon | Tap the drawing → Vectorize → Edit points → drag points → Done |
+| Clean up a sketched icon | Tap the drawing → Vectorize → Clean lines → Edit points → drag points → Done |
+| Turn a robot sketch into vector art | Select all its strokes (marquee) → Vectorize → Sketch → adjust Detail → Done |
+| Trace a photo or scanned drawing | Insert → Image → Vectorize → Poster |
 | Zoom with a mouse | Turn the wheel over the spot you want to zoom into |
 
 ### 3.8 Selection and editing model
@@ -291,24 +295,80 @@ The interface is designed for fingers first and still works well with a mouse.
 | Handles | 24 pt touch radius (14 pt for mouse); shrink on small items so the middle stays grabbable |
 | Feedback | Pressed state shows at once (no 300 ms delay); haptic tap on snap and on value presets in the native wrapper |
 
-### 3.13 Vectorize and edit points
+### 3.13 Vectorize: clean lines and artwork
 
-Freehand ink is great for sketching but hard to refine. **Vectorize** turns a
-drawing into a clean vector path that you can edit like a Figma vector.
+Chitrakar is all-in-one: sketch on the iPad, turn the sketch into vector art,
+and use it in a UI, without leaving the app. **Vectorize** (selection bar) works
+on drawings, shapes, groups and images, and offers two kinds of result.
 
-**Turning ink into vectors**
+#### Artwork (image trace)
 
-- **Selection bar → Vectorize** on one or more drawings.
-- **Color menu → "Vectorize drawings when I lift the Pencil"** for automatic
-  vectorizing (off by default). Rough shapes still snap to clean shapes first.
-- How it works: the stroke is simplified (Ramer–Douglas–Peucker, tolerance tied
-  to stroke width), then fitted with smooth cubic Bézier curves through the
-  remaining points. A typical stroke drops from hundreds of points to under 20.
-  The path keeps the stroke's colour and its average thickness. Closed loops
-  stay closed and can be filled.
-- A toast says what happened ("Vectorized: 184 points → 11") with **Undo**.
+Like Adobe Illustrator's Image Trace. Select a whole drawing (for example a
+robot sketched with many Pencil strokes) or an imported image, tap
+**Vectorize**, then pick a preset. The result is filled vector artwork made of
+compound shapes, placed exactly where the original was.
 
-**Editing points** (tap **Edit points** on a vector, or double-tap it)
+| Preset | Result | Good for |
+|---|---|---|
+| **Line art** | One colour, crisp edges, auto threshold | Ink drawings, logos sketched in one colour |
+| **Sketch** | One colour, softened first so pencil texture merges into solid lines | Pencil sketches on iPad, scanned sketches |
+| **Logo** | 3 colours | Flat icons and marks |
+| **Poster** | 6 colours | Illustrations, mascots, coloured drawings |
+| **Detailed** | 16 colours | Photos and painted art |
+
+Options appear after the first trace and update the result live (about 0.2 s
+after each change), so you can tune it the way you would in Illustrator:
+
+| Option | What it does |
+|---|---|
+| Colours (2–16) | Number of colours for the colour presets |
+| Threshold (Auto, 1–254) | Light/dark cut-off for Line art and Sketch |
+| Detail | Low = smooth, few points; high = follows every bump |
+| Ignore specks | Drops shapes smaller than this many pixels |
+| Ignore white background | Leaves the background out (on by default) |
+| Keep original | Keeps the source drawing or image, hidden underneath |
+
+**How it works**
+
+1. **Rasterize** the selection (or use the image) at up to 700 px on the long
+   side (900 px for Detailed).
+2. **Separate tones:** Otsu threshold for one-colour presets (after a small
+   blur for Sketch); k-means colour quantization for colour presets.
+3. **Stack the colours** from light to dark, each layer also covering the
+   darker ones, so there are no hairline gaps between colours.
+4. **Trace boundaries** of each layer along pixel edges into closed outlines,
+   outer edges and holes alike, and drop outlines smaller than "Ignore specks".
+5. **Smooth and simplify:** remove the pixel staircase, simplify
+   (Ramer–Douglas–Peucker, tolerance from Detail), keep sharp turns as corners
+   and fit smooth Bézier curves elsewhere.
+6. **Output:** one **Vector artwork** item with one compound shape per colour
+   (even-odd fill, so holes stay holes).
+
+**Editing the result**
+
+- **Style → Colours** lists each colour of the artwork: tap a swatch to
+  recolour it, or × to remove it (for example the background).
+- **Separate colours** splits the artwork into one item per colour, so each can
+  be moved, recoloured or given effects on its own.
+- Colour swatches in the selection bar recolour one-colour artwork directly.
+- **Copy SVG** gives the full artwork as SVG.
+- Undo returns the original drawing in one step.
+
+**Budgets:** a 700 px trace takes ≤ 300 ms on a recent iPad. In production the
+trace runs in a Web Worker so the UI never freezes.
+
+#### Clean lines (editable strokes)
+
+For drawings only. Each Pencil stroke becomes one editable vector line (the
+centre line of the stroke), keeping its colour and average thickness:
+
+- The stroke is simplified (Ramer–Douglas–Peucker, tolerance tied to stroke
+  width), sharp turns become corners, and smooth Bézier curves are fitted
+  through the rest. A typical stroke drops from hundreds of points to under 20.
+- **Color menu → "Vectorize drawings when I lift the Pencil"** does this
+  automatically for every stroke (off by default).
+
+**Editing points** (tap **Edit points** on a vector line, or double-tap it)
 
 | Action | Gesture |
 |---|---|
@@ -317,21 +377,14 @@ drawing into a clean vector path that you can edit like a Figma vector.
 | Bend a curve | Drag a handle; on smooth points the opposite handle mirrors it |
 | Corner ↔ smooth | Double-tap a point, or the Corner / Smooth button |
 | Add a point | Tap on the line between two points |
-| Delete a point | Delete button in the bar, or the Delete key |
+| Delete a point | Delete point button, or the Delete key |
 | Close or open the path | Close path / Open path button |
 | Finish | **Done**, tap empty canvas, or Esc |
 
-While editing, the selection bar shows only these point actions plus Done.
-
-**Using vectors**
-
-- Style applies as for lines: colour, width, fill for closed paths.
-- **Copy SVG** puts the path's SVG on the clipboard for use in code or other
-  tools. Full SVG export comes with Export (§3.18).
-
-**Later:** pressure-preserving vectors (variable-width outlines), boolean
-operations (union, subtract), a Pen tool for drawing Béziers point by point,
-and **image tracing** (turn a photo or a scanned sketch into vector shapes).
+**Later:** point editing on traced artwork, centre-line tracing of a whole
+sketch into strokes, **Live Paint** (tap a closed area of a traced drawing to
+fill it), tracing straight from the camera, pressure-preserving lines, boolean
+operations and a Pen tool.
 
 ### 3.14 Visual design system (app chrome)
 
@@ -401,7 +454,7 @@ auto layout, pen eraser button, keyboard shortcut overlay, VoiceOver pass.
 | Select & transform | Tap, tap-to-dig, marquee, move, resize, pinch-resize, line ends |
 | Smart guides | Edges and centres, to items and frames |
 | Style & effects | §3.9, corner rounding §3.11 |
-| Vectorize | Ink → editable vector paths, point editing, Copy SVG (§3.13) |
+| Vectorize | Image trace of drawings and images into vector artwork (5 presets, live options); ink → editable vector lines with point editing; Copy SVG (§3.13) |
 | Arrange | Order, align, distribute, numeric position and size, lock |
 | Layers | Frames and items, hide, lock, reorder, rename |
 | Clipboard | Copy, cut, paste, duplicate |
