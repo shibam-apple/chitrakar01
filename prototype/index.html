@@ -174,6 +174,15 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); gap: 8px; }
 .tile { position: relative; display: flex; flex-direction: column; gap: 6px; padding: 6px; border-radius: 12px; border: 1px solid transparent; text-align: left; }
 .tile:hover { border-color: var(--line); background: var(--chrome-2); }
+.import-box { padding: 4px 14px 12px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; }
+.import-box h3 { margin: 10px 0 0; }
+.import-box textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 64px; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--chrome-2); color: var(--fg); -webkit-user-select: text; user-select: text; }
+.import-box .row { display: flex; gap: 8px; flex-wrap: wrap; }
+.import-box .hint, .lib-body .free-msg { margin: 0; font-size: 12px; color: var(--fg-2); line-height: 1.5; }
+.import-box a { color: var(--accent); }
+.tiles.icons { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+.tile img { width: 100%; aspect-ratio: 1; object-fit: contain; padding: 18px; box-sizing: border-box; border-radius: 8px; background: var(--tile); display: block; }
+.tile small { font-size: 10px; color: var(--fg-2); padding: 0 2px; margin-top: -4px; }
 .tile canvas { width: 100%; aspect-ratio: 3 / 2; border-radius: 8px; background: var(--tile); display: block; max-width: 100%; }
 .tile span { font-size: 12px; font-weight: 600; padding: 0 2px; }
 .tile .rm { position: absolute; top: 2px; right: 2px; width: 30px; height: 30px; padding: 0; border-radius: 50%; background: var(--chrome); box-shadow: 0 0 0 1px var(--line); display: grid; place-items: center; color: var(--fg-2); }
@@ -405,6 +414,9 @@ body.tab-logo .design-only { display: none !important; }
       <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
       <input id="libSearch" type="search" placeholder="Search buttons, cards, tab bar…" autocomplete="off" aria-label="Search components">
     </label>
+    <button class="btn label" id="importBtn" title="Import SVG artwork from the internet" aria-expanded="false">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>Import
+    </button>
     <button class="btn label" id="imageBtn" title="Add an image from your files">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5"/><circle cx="15.5" cy="9.5" r="1.5"/></svg>Image
     </button>
@@ -412,9 +424,19 @@ body.tab-logo .design-only { display: none !important; }
       <svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
     </button>
   </div>
+  <div class="import-box" id="importBox" hidden>
+    <h3>Import SVG</h3>
+    <textarea id="svgText" rows="3" placeholder="Paste SVG code here, or a link to an .svg file" aria-label="SVG code or link"></textarea>
+    <div class="row">
+      <button class="chipb primary" id="svgAdd">Add to canvas</button>
+      <button class="chipb" id="svgFile">Open .svg file</button>
+    </div>
+    <p class="hint">Free artwork: <a href="https://www.svgrepo.com" target="_blank" rel="noopener">SVG Repo</a> · <a href="https://undraw.co/illustrations" target="_blank" rel="noopener">unDraw</a> ·
+      <a href="https://heroicons.com" target="_blank" rel="noopener">Heroicons</a> · <a href="https://icon-sets.iconify.design" target="_blank" rel="noopener">Iconify</a>. Copy an SVG there, then paste here or press ⌘V on the canvas.</p>
+  </div>
   <div class="lib-body" id="libBody"></div>
 </div>
-<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="fileIn" accept="image/*,.svg" hidden>
 
 <aside id="preview" class="bar" hidden aria-label="Logo preview">
   <div class="lay-head"><b>Preview</b>
@@ -489,12 +511,23 @@ body.tab-logo .design-only { display: none !important; }
     play: 'M8 5l11 7-11 7z',
     download: 'M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14',
     edit: 'M4 20l4-1 11-11-3-3L5 16zM14 7l3 3',
+    send: 'M21 3 3 10.5l7.5 2.5L13 20.5zM21 3 10.5 13',
+    pause: 'M8 5v14M16 5v14',
+    skipNext: 'M6 5.5l9 6.5-9 6.5zM18 5v14',
+    skipPrev: 'M18 5.5 9 12l9 6.5zM6 5v14',
+    inbox: 'M3 13h5l1.5 3h5l1.5-3h5M5.5 5h13L21 13v6H3v-6z',
+    arrowRight: 'M4 12h16M14 6l6 6-6 6',
+    bolt: 'M13 3 5 14h6l-1 7 8-11h-6z',
+    shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6zM8.5 12l2.5 2.5 4.5-5',
+    globe: 'M12 3a9 9 0 1 0 0 18a9 9 0 1 0 0-18zM3 12h18M12 3c3.5 3.5 3.5 14.5 0 18M12 3c-3.5 3.5-3.5 14.5 0 18',
+    more: 'M5 12h.01M12 12h.01M19 12h.01',
   };
   const ICON_LABEL = {
     home: 'Home', search: 'Search', user: 'Profile', heart: 'Like', bell: 'Notifications', mail: 'Mail', settings: 'Settings',
     menu: 'Menu', close: 'Close', plus: 'Add', check: 'Check', chevronLeft: 'Back', chevronRight: 'Forward', chevronDown: 'Expand',
     star: 'Star', image: 'Image', alert: 'Warning', cart: 'Cart', share: 'Share', trash: 'Delete', camera: 'Camera', wifi: 'Wi-Fi',
     eye: 'Show', calendar: 'Calendar', lock: 'Lock', play: 'Play', download: 'Download', edit: 'Edit',
+    send: 'Send', pause: 'Pause', skipNext: 'Next', skipPrev: 'Previous', inbox: 'Inbox', arrowRight: 'Arrow', bolt: 'Fast', shield: 'Secure', globe: 'Web', more: 'More',
   };
   const STAR_D = 'M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.8l-5.2 2.8 1-5.8-4.3-4.1 5.9-.8z';
   const SHAPE_KINDS = [
@@ -809,6 +842,8 @@ body.tab-logo .design-only { display: none !important; }
 
   const FONT = (n) => `${n.weight || 500} ${n.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif`;
   const paths = new Map();
+  const svgPaths = new Map();
+  const svgPath2D = (d) => { let p = svgPaths.get(d); if (!p) { if (svgPaths.size > 4000) svgPaths.clear(); p = new Path2D(d); svgPaths.set(d, p); } return p; };
   const iconPath = (name) => { let p = paths.get(name); if (!p) { p = new Path2D(ICONS[name] || ICONS.star); paths.set(name, p); } return p; };
   const images = new Map();
   function imageEl(src) {
@@ -896,6 +931,14 @@ body.tab-logo .design-only { display: none !important; }
       case 'text': {
         ctx.fillStyle = n.color; ctx.font = FONT(n); ctx.textBaseline = 'top';
         n.text.split('\n').forEach((line, i) => ctx.fillText(line, n.x, n.y + i * n.size * 1.25));
+        break;
+      }
+      case 'svgp': {       // one shape of imported SVG artwork: its path data, drawn through its original transform
+        ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / n.bw, n.h / n.bh); ctx.translate(-n.bx, -n.by); ctx.transform(...n.m);
+        const pp = svgPath2D(n.d), a = ctx.globalAlpha;
+        if (n.fill) { ctx.globalAlpha = a * (n.fillAlpha ?? 1); ctx.fillStyle = n.fill; ctx.fill(pp, n.rule || 'nonzero'); }
+        if (n.stroke) { ctx.globalAlpha = a * (n.strokeAlpha ?? 1); ctx.strokeStyle = n.stroke; ctx.lineWidth = n.sw; ctx.lineCap = n.cap || 'butt'; ctx.lineJoin = n.join || 'miter'; ctx.stroke(pp); }
+        ctx.globalAlpha = a; ctx.restore();
         break;
       }
       case 'icon': {
@@ -1164,12 +1207,23 @@ body.tab-logo .design-only { display: none !important; }
   }
   // A component's "main" shape: its first visible shape (the button background, the card surface…).
   const primary = (g) => g.children.find((c) => isShape(c) && !invisible(c)) || null;
+  // Imported artwork: its "main" colour is the one most of its shapes use.
+  const isArt = (g) => g.type === 'group' && !primary(g) && g.children.some((c) => c.type === 'svgp');
+  function artColor(g) {
+    const count = new Map();
+    for (const c of g.children) for (const v of [c.fill, c.stroke]) if (v) count.set(v, (count.get(v) || 0) + 1);
+    return [...count].sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+  }
   function colorOf(n) {
+    if (n.type === 'svgp') return n.fill || n.stroke;
+    if (isArt(n)) return artColor(n);
     if (n.type === 'vec') return n.layers.length ? n.layers[n.layers.length - 1].fill : null;
     if (n.type === 'group') { const p = primary(n); return p ? colorOf(p) : (n.children.find((c) => c.color) || {}).color; }
     return isShape(n) ? (n.fill || n.stroke) : n.color;
   }
   function setColor(n, c) {
+    if (n.type === 'svgp') { if (n.fill) n.fill = c; else n.stroke = c; return; }
+    if (isArt(n)) { const c0 = artColor(n); for (const k of n.children) { if (k.fill === c0) k.fill = c; if (k.stroke === c0) k.stroke = c; } return; }
     if (n.type === 'vec') { if (n.layers.length) n.layers[n.layers.length - 1].fill = c; return; }   // the darkest colour: the lines
     if (n.type === 'group') { const p = primary(n); if (p) setColor(p, c); else n.children.forEach((k) => { if (k.color) k.color = c; }); return; }
     if (isShape(n)) { if (n.fill) n.fill = c; else n.stroke = c; }
@@ -1191,6 +1245,20 @@ body.tab-logo .design-only { display: none !important; }
     return n;
   }
   const Grp = (name, w, h, children) => ({ id: nid(), type: 'group', name, x: 0, y: 0, w, h, gw: w, gh: h, children });
+  // Vector lines inside components: smooth curves through points, and circular arcs.
+  const Pth = (A, o = {}) => { const n = { id: nid(), type: 'path', closed: false, color: AC, sw: 2.5, fill: null, ...o }; setPathWorld(n, A); return n; };
+  const curveThrough = (pts) => { const A = pts.map(([x, y]) => [x, y, x, y, x, y, 0]); smoothHandles(A, false); return A; };
+  function arcA(cx, cy, r, a0, a1) {
+    const m = Math.max(1, Math.ceil(Math.abs(a1 - a0) / (Math.PI / 2))), da = (a1 - a0) / m, k = 4 / 3 * Math.tan(da / 4), A = [];
+    for (let i = 0; i <= m; i++) { const a = a0 + da * i, x = cx + r * Math.cos(a), y = cy + r * Math.sin(a), tx = -Math.sin(a) * r * k, ty = Math.cos(a) * r * k; A.push([x, y, x - tx, y - ty, x + tx, y + ty, 0]); }
+    A[0][2] = A[0][0]; A[0][3] = A[0][1]; A[m][4] = A[m][0]; A[m][5] = A[m][1]; return A;
+  }
+  // A row of pill chips; returns [children, width].
+  function chips(labels, x0, y, active = 0) {
+    let x = x0; const out = [];
+    labels.forEach((l, i) => { const t = Tx(l, 14, 600, i === active ? WH : INK, { x: x + 14, cy: y + 16 }), w = Math.ceil(t.w + 28); out.push(R(x, y, w, 32, i === active ? { r: 16, fill: INK } : { r: 16, fill: WH, stroke: LN }), t); x += w + 8; });
+    return [out, x - 8 - x0];
+  }
   const glass = (o = {}) => ({ fill: WH, fillAlpha: 0.35, stroke: WH, strokeAlpha: 0.65, sw: 1, bgBlur: 20, shadow: 1, ...o });
 
   const LIB = [
@@ -1214,6 +1282,12 @@ body.tab-logo .design-only { display: none !important; }
       ['Floating action button', () => Grp('Floating action button', 56, 56, [E(0, 0, 56, 56, { fill: AC, shadow: 2 }), I('plus', 16, 16, 24, WH, { sw: 2.4 })])],
       ['Destructive button', () => Grp('Destructive button', 160, 48, [R(0, 0, 160, 48, { r: 12, fill: RED }), Tx('Delete', 17, 600, WH, { cx: 80, cy: 24 })])],
       ['Pill button', () => Grp('Pill button', 140, 40, [R(0, 0, 140, 40, { r: 20, fill: TINT }), Tx('Follow', 15, 600, AC, { cx: 70, cy: 20 })])],
+      ['Button group', () => Grp('Button group', 240, 40, [R(0, 0, 240, 40, { r: 10, fill: WH, stroke: LN }), R(1, 1, 79, 38, { r: 9, fill: TINT }), Ln(80, 0, 80, 40), Ln(160, 0, 160, 40),
+        Tx('List', 14, 600, AC, { cx: 40, cy: 20 }), Tx('Grid', 14, 500, INK, { cx: 120, cy: 20 }), Tx('Map', 14, 500, INK, { cx: 200, cy: 20 })])],
+      ['Continue with email', () => { const t = Tx('Continue with email', 16, 600, INK, { x: 0, cy: 24 }), x = Math.round((300 - 34 - t.w) / 2); t.x = x + 34;
+        return Grp('Continue with email', 300, 48, [R(0, 0, 300, 48, { r: 12, fill: WH, stroke: LN }), I('mail', x, 12, 24, INK), t]); }],
+      ['Loading button', () => Grp('Loading button', 160, 48, [R(0, 0, 160, 48, { r: 12, fill: AC, fillAlpha: 0.8 }), E(40, 15, 18, 18, { stroke: WH, strokeAlpha: 0.35, sw: 2.5 }),
+        Pth(arcA(49, 24, 9, -Math.PI / 2, Math.PI * 0.6), { color: WH, sw: 2.5 }), Tx('Saving…', 16, 600, WH, { x: 68, cy: 24 })])],
     ] },
     { cat: 'Controls', items: [
       ['Toggle (on)', () => Grp('Toggle', 52, 32, [R(0, 0, 52, 32, { r: 16, fill: '#34c759' }), E(22, 2, 28, 28, { fill: WH, shadow: 1 })])],
@@ -1228,6 +1302,10 @@ body.tab-logo .design-only { display: none !important; }
       ['Progress bar', () => Grp('Progress bar', 240, 8, [R(0, 0, 240, 8, { r: 4, fill: LN }), R(0, 0, 150, 8, { r: 4, fill: AC })])],
       ['Rating', () => Grp('Rating', 136, 24, [0, 1, 2, 3, 4].map((i) => P('star', i * 28, 0, 24, 24, { fill: i < 4 ? '#f5b301' : LN })))],
       ['Page dots', () => Grp('Page dots', 40, 8, [E(0, 0, 8, 8, { fill: AC }), E(16, 0, 8, 8, { fill: LN }), E(32, 0, 8, 8, { fill: LN })])],
+      ['Filter chips', () => { const [c, w] = chips(['All', 'Design', 'Photos', 'Music'], 0, 0); return Grp('Filter chips', w, 32, c); }],
+      ['Progress ring', () => Grp('Progress ring', 80, 80, [E(4, 4, 72, 72, { stroke: LN, sw: 8 }), Pth(arcA(40, 40, 36, -Math.PI / 2, Math.PI), { color: AC, sw: 8 }), Tx('75%', 18, 700, INK, { cx: 40, cy: 40 })])],
+      ['Range slider', () => Grp('Range slider', 240, 48, [Tx('$20 – $80', 13, 600, MUT, { x: 0, y: 0 }), R(0, 32, 240, 4, { r: 2, fill: LN }), R(60, 32, 120, 4, { r: 2, fill: AC }),
+        E(48, 22, 24, 24, { fill: WH, stroke: LN, shadow: 1 }), E(168, 22, 24, 24, { fill: WH, stroke: LN, shadow: 1 })])],
     ] },
     { cat: 'Inputs', items: [
       ['Text field', () => Grp('Text field', 320, 70, [R(0, 22, 320, 48, { r: 12, fill: SF, stroke: LN }), Tx('Email', 13, 600, MUT, { x: 0, y: 0 }), Tx('you@example.com', 16, 400, PH, { x: 16, cy: 46 })])],
@@ -1236,6 +1314,12 @@ body.tab-logo .design-only { display: none !important; }
       ['Dropdown', () => Grp('Dropdown', 240, 48, [R(0, 0, 240, 48, { r: 12, fill: WH, stroke: LN }), Tx('Choose a plan', 16, 400, INK, { x: 16, cy: 24 }), I('chevronDown', 204, 12, 24, MUT)])],
       ['Text area', () => Grp('Text area', 320, 142, [R(0, 22, 320, 120, { r: 12, fill: SF, stroke: LN }), Tx('Message', 13, 600, MUT, { x: 0, y: 0 }), Tx('Write something…', 16, 400, PH, { x: 16, y: 36 })])],
       ['Date field', () => Grp('Date field', 240, 48, [R(0, 0, 240, 48, { r: 12, fill: WH, stroke: LN }), I('calendar', 14, 12, 24, MUT), Tx('24 Oct 2026', 16, 400, INK, { x: 48, cy: 24 })])],
+      ['Login form', () => Grp('Login form', 320, 268, [Tx('Email', 13, 600, MUT, { x: 0, y: 0 }), R(0, 22, 320, 48, { r: 12, fill: SF, stroke: LN }), Tx('you@example.com', 16, 400, PH, { x: 16, cy: 46 }),
+        Tx('Password', 13, 600, MUT, { x: 0, y: 86 }), R(0, 108, 320, 48, { r: 12, fill: SF, stroke: LN }), Tx('••••••••', 18, 600, INK, { x: 16, cy: 132 }), I('eye', 284, 120, 24, MUT),
+        R(0, 176, 320, 50, { r: 12, fill: AC }), Tx('Sign in', 17, 600, WH, { cx: 160, cy: 201 }), Tx('Forgot password?', 14, 600, AC, { cx: 160, y: 244 })])],
+      ['Code input', () => Grp('Code input', 328, 56, [0, 1, 2, 3, 4, 5].flatMap((i) => [R(i * 56, 0, 48, 56, { r: 12, fill: WH, stroke: i === 3 ? AC : LN, sw: i === 3 ? 2 : 1 }),
+        ...(i < 3 ? [Tx(String([4, 2, 7][i]), 24, 700, INK, { cx: i * 56 + 24, cy: 28 })] : [])])) ],
+      ['Comment box', () => Grp('Comment box', 360, 52, [R(0, 0, 360, 52, { r: 26, fill: SF }), Tx('Add a comment…', 15, 400, PH, { x: 20, cy: 26 }), E(312, 6, 40, 40, { fill: AC }), I('send', 321, 15, 22, WH, { sw: 2 })])],
     ] },
     { cat: 'Navigation', items: [
       ['Status bar', () => Grp('Status bar', 393, 54, [Tx('9:41', 17, 600, INK, { cx: 64, cy: 30 }),
@@ -1276,6 +1360,44 @@ body.tab-logo .design-only { display: none !important; }
       ['Divider', () => Ln(0, 0, 320, 0)],
       ['Stat card', () => Grp('Stat card', 200, 112, [R(0, 0, 200, 112, { r: 16, fill: WH, stroke: LN }), Tx('Weekly visitors', 13, 500, MUT, { x: 16, y: 16 }),
         Tx('12,480', 28, 700, INK, { x: 16, y: 40 }), Tx('▲ 8.2%', 13, 600, GRN, { x: 16, y: 82 })])],
+      ['Product card', () => Grp('Product card', 220, 300, [R(0, 0, 220, 200, { r: 16, fill: IMG }), I('image', 86, 76, 48, '#a3a7bd', { sw: 1.4 }), E(176, 12, 32, 32, { fill: WH, shadow: 1 }), I('heart', 182, 18, 20, INK),
+        Tx('Linen chair', 16, 600, INK, { x: 4, y: 214 }), Tx('Living room', 13, 400, MUT, { x: 4, y: 238 }), Tx('$249', 18, 700, INK, { x: 4, y: 266 }), R(168, 260, 52, 32, { r: 16, fill: INK }), I('plus', 184, 266, 20, WH, { sw: 2.2 })])],
+      ['Profile header', () => Grp('Profile header', 360, 204, [R(0, 0, 360, 110, { r: 16, fill: '#c9ccf5' }), E(20, 70, 80, 80, { fill: '#f6d2a8', stroke: WH, sw: 4 }), Tx('SB', 24, 700, '#8a5a1f', { cx: 60, cy: 110 }),
+        Tx('Shibam B.', 20, 700, INK, { x: 20, y: 160 }), Tx('Designer · 1.2k followers', 13, 400, MUT, { x: 20, y: 186 }), R(256, 122, 88, 34, { r: 17, fill: AC }), Tx('Follow', 14, 600, WH, { cx: 300, cy: 139 })])],
+      ['Chat bubbles', () => Grp('Chat bubbles', 320, 150, [R(0, 0, 196, 44, { r: 18, fill: SF }), Tx('Is the logo ready?', 15, 400, INK, { x: 16, cy: 22 }),
+        R(124, 56, 196, 44, { r: 18, fill: AC }), Tx('Yes! Sending it now', 15, 400, WH, { x: 140, cy: 78 }), R(0, 112, 110, 38, { r: 18, fill: SF }), Tx('Love it!', 15, 400, INK, { x: 16, cy: 131 })])],
+      ['Table', () => Grp('Table', 480, 184, [R(0, 0, 480, 184, { r: 12, fill: WH, stroke: LN }), R(0, 0, 480, 40, { r: 12, fill: SF }), R(0, 28, 480, 12, { fill: SF }),
+        Tx('Name', 13, 600, MUT, { x: 16, cy: 20 }), Tx('Status', 13, 600, MUT, { x: 220, cy: 20 }), Tx('Updated', 13, 600, MUT, { x: 360, cy: 20 }),
+        ...[['Sign in screen', 'Done', '2 h ago'], ['Logo', 'In review', 'Yesterday'], ['Onboarding', 'Draft', 'Oct 20']].flatMap(([a, st, d], i) => {
+          const y = 40 + i * 48, col = [GRN, '#b26a00', MUT][i], bg = ['#e3f4ec', '#fdf1dc', SF][i], t = Tx(st, 12, 600, col, { x: 230, cy: y + 24 });
+          return [Ln(0, y, 480, y), Tx(a, 14, 500, INK, { x: 16, cy: y + 24 }), R(220, y + 12, Math.ceil(t.w + 20), 24, { r: 12, fill: bg }), t, Tx(d, 14, 400, MUT, { x: 360, cy: y + 24 })];
+        })])],
+      ['Accordion', () => Grp('Accordion', 360, 196, [R(0, 0, 360, 196, { r: 14, fill: WH, stroke: LN }),
+        Tx('What is Chitrakar?', 15, 600, INK, { x: 16, cy: 26 }), I('chevronDown', 324, 14, 24, MUT), Tx('An easy design app for iPad and desktop:', 14, 400, MUT, { x: 16, y: 48 }), Tx('sketch, vectorize and design screens.', 14, 400, MUT, { x: 16, y: 68 }),
+        Ln(0, 100, 360, 100), Tx('Does it work with Apple Pencil?', 15, 600, INK, { x: 16, cy: 124 }), I('chevronRight', 324, 112, 24, MUT),
+        Ln(0, 148, 360, 148), Tx('Is it free?', 15, 600, INK, { x: 16, cy: 172 }), I('chevronRight', 324, 160, 24, MUT)])],
+      ['Timeline', () => Grp('Timeline', 300, 176, [Ln(8, 8, 8, 168, LN, 2),
+        ...[['Sketched the logo', '9:10'], ['Turned it into a vector', '9:24'], ['Shared with the team', '10:02']].flatMap(([t, tm], i) => [E(0, i * 64, 16, 16, { fill: i === 0 ? AC : WH, stroke: AC, sw: 2 }),
+          Tx(t, 15, 600, INK, { x: 32, y: i * 64 - 2 }), Tx(tm, 13, 400, MUT, { x: 32, y: i * 64 + 20 })])])],
+      ['Empty state', () => Grp('Empty state', 280, 224, [E(100, 0, 80, 80, { fill: TINT }), I('inbox', 120, 20, 40, AC, { sw: 1.6 }), Tx('No messages yet', 18, 700, INK, { cx: 140, y: 98 }),
+        Tx('When someone writes to you,', 14, 400, MUT, { cx: 140, y: 128 }), Tx('it will show up here.', 14, 400, MUT, { cx: 140, y: 148 }), R(80, 180, 120, 44, { r: 12, fill: AC }), Tx('Say hello', 15, 600, WH, { cx: 140, cy: 202 })])],
+      ['Bar chart', () => Grp('Bar chart', 300, 190, [R(0, 0, 300, 190, { r: 16, fill: WH, stroke: LN }), Tx('Visitors this week', 14, 600, INK, { x: 16, y: 14 }),
+        ...[54, 80, 66, 104, 92, 120, 72].flatMap((v, i) => [R(24 + i * 38, 160 - v, 22, v, { r: 6, fill: i === 5 ? AC : '#c9ccf5' }), Tx('MTWTFSS'[i], 11, 600, MUT, { cx: 35 + i * 38, y: 166 })])])],
+      ['Line chart', () => Grp('Line chart', 300, 190, [R(0, 0, 300, 190, { r: 16, fill: WH, stroke: LN }), Tx('Revenue', 14, 600, INK, { x: 16, y: 14 }), Tx('+18%', 13, 700, GRN, { x: 240, y: 15 }),
+        Ln(16, 70, 284, 70, SF), Ln(16, 110, 284, 110, SF), Ln(16, 150, 284, 150, SF),
+        Pth(curveThrough([[16, 150], [60, 128], [104, 136], [148, 100], [192, 108], [236, 74], [284, 60]]), { color: AC, sw: 3 }), E(278, 54, 12, 12, { fill: AC, stroke: WH, sw: 2 })])],
+      ['Calendar', () => Grp('Calendar', 308, 300, [R(0, 0, 308, 300, { r: 16, fill: WH, stroke: LN }), Tx('October 2026', 16, 700, INK, { x: 16, cy: 28 }), I('chevronLeft', 236, 16, 24, MUT), I('chevronRight', 268, 16, 24, MUT),
+        ...'MTWTFSS'.split('').map((d, i) => Tx(d, 12, 600, MUT, { cx: 26 + i * 42, cy: 64 })),
+        ...Array.from({ length: 31 }, (_, k) => { const c = (k + 3) % 7, r = Math.floor((k + 3) / 7), cx = 26 + c * 42, cy = 98 + r * 40, today = k + 1 === 26;
+          return today ? [E(cx - 17, cy - 17, 34, 34, { fill: AC }), Tx(String(k + 1), 14, 700, WH, { cx, cy })] : [Tx(String(k + 1), 14, 500, INK, { cx, cy })]; }).flat()])],
+      ['Music player', () => Grp('Music player', 340, 124, [R(0, 0, 340, 124, { r: 20, fill: INK }), R(16, 18, 88, 88, { r: 12, fill: '#8f97ff' }), I('play', 46, 48, 28, WH),
+        Tx('Midnight sketch', 16, 700, WH, { x: 120, y: 20 }), Tx('Chitrakar FM', 13, 400, '#a3a7bd', { x: 120, y: 44 }), R(120, 72, 204, 4, { r: 2, fill: '#3a3d52' }), R(120, 72, 90, 4, { r: 2, fill: WH }),
+        I('skipPrev', 156, 86, 24, WH), I('pause', 210, 86, 24, WH, { sw: 2.4 }), I('skipNext', 264, 86, 24, WH)])],
+      ['Video player', () => Grp('Video player', 360, 220, [R(0, 0, 360, 220, { r: 16, fill: '#2a2d3e' }), E(150, 70, 60, 60, { fill: WH, fillAlpha: 0.9 }), I('play', 168, 88, 26, INK, { sw: 2 }),
+        Tx('1:24 / 4:05', 12, 600, WH, { x: 16, y: 176 }), R(16, 198, 328, 4, { r: 2, fill: '#4a4e66' }), R(16, 198, 120, 4, { r: 2, fill: AC }), E(130, 194, 12, 12, { fill: WH })])],
+      ['Testimonial', () => Grp('Testimonial', 320, 168, [R(0, 0, 320, 168, { r: 16, fill: SF }), Tx('“The easiest design app', 17, 600, INK, { x: 20, y: 20 }), Tx('I have ever used.”', 17, 600, INK, { x: 20, y: 44 }),
+        E(20, 108, 40, 40, { fill: '#bfe6d3' }), Tx('MR', 14, 700, GRN, { cx: 40, cy: 128 }), Tx('Maya Rao', 14, 600, INK, { x: 72, y: 110 }), Tx('Product designer', 13, 400, MUT, { x: 72, y: 130 })])],
+      ['Loading skeleton', () => Grp('Loading skeleton', 320, 88, [E(0, 0, 56, 56, { fill: IMG }), R(72, 8, 200, 14, { r: 7, fill: IMG }), R(72, 34, 140, 12, { r: 6, fill: IMG }), R(0, 76, 320, 12, { r: 6, fill: IMG })])],
       ['Pricing card', () => Grp('Pricing card', 280, 300, [R(0, 0, 280, 300, { r: 20, fill: WH, stroke: LN, shadow: 1 }), Tx('Pro', 16, 600, AC, { x: 24, y: 24 }),
         Tx('$12', 40, 700, INK, { x: 24, y: 52 }), Tx('per month', 14, 400, MUT, { x: 104, y: 76 }),
         ...['Unlimited designs', 'Pencil pressure brushes', 'Export to PNG, SVG, PDF'].flatMap((s, i) => [I('check', 24, 124 + i * 32, 20, GRN, { sw: 2.2 }), Tx(s, 14, 400, INK, { x: 54, cy: 134 + i * 32 })]),
@@ -1297,6 +1419,23 @@ body.tab-logo .design-only { display: none !important; }
         })])],
       ['Notification', () => Grp('Notification', 360, 76, [R(0, 0, 360, 76, { r: 18, fill: WH, shadow: 2 }), R(14, 16, 44, 44, { r: 10, fill: AC }), I('bell', 25, 27, 22, WH, { sw: 2 }),
         Tx('Chitrakar', 14, 600, INK, { x: 70, y: 16 }), Tx('now', 12, 400, MUT, { x: 316, y: 17 }), Tx('Aisha commented on “Sign in”', 14, 400, MUT, { x: 70, y: 40 })])],
+    ] },
+    { cat: 'Sections (web)', items: [
+      ['Hero section', () => Grp('Hero section', 960, 420, [R(0, 0, 960, 420, { fill: '#f5f6ff' }), Tx('Design anything,', 48, 800, INK, { cx: 480, y: 84 }), Tx('right on your iPad.', 48, 800, AC, { cx: 480, y: 144 }),
+        Tx('Sketch, vectorize and build screens in one simple app.', 18, 400, MUT, { cx: 480, y: 222 }),
+        R(326, 278, 148, 52, { r: 14, fill: AC }), Tx('Get started', 16, 600, WH, { cx: 400, cy: 304 }), R(486, 278, 148, 52, { r: 14, fill: WH, stroke: LN }), Tx('Watch demo', 16, 600, INK, { cx: 560, cy: 304 })])],
+      ['Feature grid', () => Grp('Feature grid', 960, 220, [['bolt', 'Fast by design', 'Draws instantly and sips', 'battery on iPad.'], ['shield', 'Private', 'Your designs stay on', 'your device.'], ['globe', 'Works everywhere', 'iPad, Mac and Windows,', 'right in the browser.']]
+        .flatMap(([ic, t, a, b], i) => { const x = i * 328; return [R(x, 0, 304, 220, { r: 20, fill: WH, stroke: LN }), R(x + 24, 24, 48, 48, { r: 14, fill: TINT }), I(ic, x + 36, 36, 24, AC),
+          Tx(t, 18, 700, INK, { x: x + 24, y: 96 }), Tx(a, 15, 400, MUT, { x: x + 24, y: 130 }), Tx(b, 15, 400, MUT, { x: x + 24, y: 152 })]; }))],
+      ['Call to action', () => Grp('Call to action', 960, 180, [R(0, 0, 960, 180, { r: 24, fill: AC }), Tx('Ready to start designing?', 30, 700, WH, { x: 56, y: 50 }),
+        Tx('Free while in preview. No account needed.', 16, 400, '#cfd3ff', { x: 56, y: 100 }), R(736, 62, 176, 56, { r: 14, fill: WH }), Tx('Start free', 16, 700, AC, { cx: 824, cy: 90 })])],
+      ['Footer', () => Grp('Footer', 960, 220, [R(0, 0, 960, 220, { fill: INK }), E(48, 40, 28, 28, { fill: AC }), Tx('Brand', 18, 700, WH, { x: 86, cy: 54 }),
+        Tx('Design made easy.', 14, 400, '#a3a7bd', { x: 48, y: 84 }),
+        ...[['Product', 'Features', 'Pricing', 'Changelog'], ['Company', 'About', 'Blog', 'Careers'], ['Help', 'Docs', 'Contact', 'Status']].flatMap((col, i) =>
+          col.map((t, j) => Tx(t, 14, j ? 400 : 700, j ? '#c4c7d6' : WH, { x: 520 + i * 140, y: 40 + j * 28 }))),
+        Ln(48, 168, 912, 168, '#3a3d52'), Tx('© 2026 Brand. All rights reserved.', 13, 400, '#a3a7bd', { x: 48, y: 186 })])],
+      ['Cookie banner', () => Grp('Cookie banner', 640, 76, [R(0, 0, 640, 76, { r: 16, fill: WH, shadow: 2 }), Tx('We use cookies to keep you signed in.', 15, 500, INK, { x: 24, cy: 38 }),
+        R(420, 18, 92, 40, { r: 10, fill: SF }), Tx('Settings', 14, 600, INK, { cx: 466, cy: 38 }), R(524, 18, 92, 40, { r: 10, fill: AC }), Tx('Accept', 14, 600, WH, { cx: 570, cy: 38 })])],
     ] },
     { cat: 'Glass & effects', glass: true, items: [
       ['Glass card', () => Grp('Glass card', 300, 180, [R(0, 0, 300, 180, { r: 24, ...glass() }), Tx('Frosted glass', 20, 700, INK, { x: 24, y: 26 }),
@@ -2547,13 +2686,123 @@ body.tab-logo .design-only { display: none !important; }
   window.addEventListener('keyup', (e) => { if (e.key === ' ') { spaceDown = false; cv.classList.remove('space'); } });
   document.addEventListener('paste', (e) => {
     const tag = e.target.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-    const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith('image/'));
+    const file = [...(e.clipboardData?.files || [])].find((f) => f.type.startsWith('image/') || isSVGFile(f));
     if (file) { e.preventDefault(); addImageFile(file); return; }
+    const text = e.clipboardData?.getData('text/plain');
+    if (text && (isSVGText(text) || isSVGLink(text))) { e.preventDefault(); importFromText(text); return; }
     if (clip) { e.preventDefault(); pasteClip(); }
   });
 
+  // ---------- Import SVG artwork (from the internet, a file, or the clipboard) ----------
+  // Each drawable SVG shape becomes an editable "svgp" item that keeps its path data, paint and transform.
+  const hexOf = (v) => { const m = /rgba?\(([^)]+)\)/.exec(v || ''); if (!m) return null; const [r, g, b, a = 1] = m[1].split(/[ ,/]+/).filter(Boolean).map(parseFloat); return a === 0 ? null : [hex(r, g, b), a]; };
+  function svgShapes(text) {
+    const doc = new DOMParser().parseFromString(text.slice(text.search(/<svg[\s>]/i)), 'image/svg+xml'), src = doc.documentElement;
+    if (!src || src.nodeName.toLowerCase() !== 'svg' || doc.querySelector('parsererror')) return null;
+    // Safety: no scripts, embedded web pages, event handlers or outside links.
+    src.querySelectorAll('script, foreignObject, iframe, image').forEach((e) => e.remove());
+    for (const el of [src, ...src.querySelectorAll('*')]) for (const a of [...el.attributes]) if (/^on/i.test(a.name) || (/href$/i.test(a.name) && !/^#/.test(a.value))) el.removeAttribute(a.name);
+    src.querySelectorAll('style').forEach((st) => { st.textContent = st.textContent.replace(/@import[^;]+;?/g, ''); });
+    // <use> → a copy of what it points at
+    src.querySelectorAll('use').forEach((u) => {
+      const ref = (u.getAttribute('href') || u.getAttribute('xlink:href') || '').slice(1), t = ref && doc.getElementById(ref); if (!t) { u.remove(); return; }
+      const g = doc.createElementNS('http://www.w3.org/2000/svg', 'g');
+      for (const a of [...u.attributes]) if (!/^(x|y|width|height|href|xlink:href)$/.test(a.name)) g.setAttribute(a.name, a.value);
+      g.setAttribute('transform', `${u.getAttribute('transform') || ''} translate(${parseFloat(u.getAttribute('x')) || 0} ${parseFloat(u.getAttribute('y')) || 0})`);
+      if (t.nodeName === 'symbol') for (const c of t.childNodes) g.append(c.cloneNode(true)); else g.append(t.cloneNode(true));
+      u.replaceWith(g);
+    });
+    const vbA = (src.getAttribute('viewBox') || '').split(/[ ,]+/).map(parseFloat), num = (v) => (v && !/%/.test(v) ? parseFloat(v) : NaN);
+    const vb = vbA.length === 4 && vbA.every(isFinite) && vbA[2] > 0 && vbA[3] > 0 ? vbA : [0, 0, num(src.getAttribute('width')) || 300, num(src.getAttribute('height')) || 150];
+    const host = h('div', { style: 'position:fixed;left:-100000px;top:0;width:0;height:0;overflow:hidden;pointer-events:none' });
+    const svg = document.importNode(src, true);
+    svg.setAttribute('viewBox', vb.join(' ')); svg.setAttribute('width', vb[2]); svg.setAttribute('height', vb[3]); svg.style.color = INK;
+    host.append(svg); document.body.append(host);
+    const out = []; let skipped = 0;
+    try {
+      const f = (v) => +(+v).toFixed(3), skipIn = 'defs, clipPath, mask, symbol, pattern, marker, linearGradient, radialGradient';
+      const paintOf = (v) => {
+        if (!v || v === 'none') return null;
+        const u = /url\(["']?#([^"')]+)/.exec(v);
+        if (u) { const gr = svg.querySelector('#' + CSS.escape(u[1])), stop = gr && gr.querySelector('stop'); return stop ? hexOf(getComputedStyle(stop).stopColor) : hexOf(v.split(')').pop()) || [INK, 1]; }
+        return hexOf(v);
+      };
+      skipped = svg.querySelectorAll('text').length;
+      for (const el of svg.querySelectorAll('path, rect, circle, ellipse, line, polyline, polygon')) {
+        if (el.closest(skipIn)) continue;
+        const cs = getComputedStyle(el); if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        const g = (k) => parseFloat(el.getAttribute(k)) || 0; let d;
+        switch (el.nodeName) {
+          case 'path': d = el.getAttribute('d'); break;
+          case 'rect': { const x = g('x'), y = g('y'), w = g('width'), hh = g('height'); let rx = el.hasAttribute('rx') ? g('rx') : g('ry'), ry = el.hasAttribute('ry') ? g('ry') : rx; rx = Math.min(rx, w / 2); ry = Math.min(ry, hh / 2);
+            d = rx || ry ? `M${x + rx} ${y}H${x + w - rx}A${rx} ${ry} 0 0 1 ${x + w} ${y + ry}V${y + hh - ry}A${rx} ${ry} 0 0 1 ${x + w - rx} ${y + hh}H${x + rx}A${rx} ${ry} 0 0 1 ${x} ${y + hh - ry}V${y + ry}A${rx} ${ry} 0 0 1 ${x + rx} ${y}Z` : `M${x} ${y}h${w}v${hh}h${-w}Z`; break; }
+          case 'circle': case 'ellipse': { const cx = g('cx'), cy = g('cy'), rx = el.nodeName === 'circle' ? g('r') : g('rx'), ry = el.nodeName === 'circle' ? g('r') : g('ry');
+            d = `M${cx - rx} ${cy}A${rx} ${ry} 0 1 0 ${cx + rx} ${cy}A${rx} ${ry} 0 1 0 ${cx - rx} ${cy}Z`; break; }
+          case 'line': d = `M${g('x1')} ${g('y1')}L${g('x2')} ${g('y2')}`; break;
+          default: { const pts = (el.getAttribute('points') || '').trim().split(/[\s,]+/).map(parseFloat); if (pts.length < 4) continue; d = 'M' + pts.join(' ') + (el.nodeName === 'polygon' ? 'Z' : ''); }
+        }
+        if (!d || !/\d/.test(d)) continue;
+        const fill = paintOf(cs.fill), stroke = paintOf(cs.stroke); if (!fill && !stroke) continue;
+        let op = 1; for (let a = el; a && a !== svg; a = a.parentElement) op *= parseFloat(getComputedStyle(a).opacity) || 0;
+        if (op <= 0) continue;
+        const M = el.getCTM(); if (!M) continue;
+        let bb; try { bb = el.getBBox(); } catch { continue; }
+        const sw = stroke ? parseFloat(cs.strokeWidth) || 1 : 0, scale = Math.sqrt(Math.abs(M.a * M.d - M.b * M.c)) || 1, pad = sw * scale / 2;
+        const cs4 = [[bb.x, bb.y], [bb.x + bb.width, bb.y], [bb.x, bb.y + bb.height], [bb.x + bb.width, bb.y + bb.height]].map(([x, y]) => [M.a * x + M.c * y + M.e, M.b * x + M.d * y + M.f]);
+        const bx = Math.min(...cs4.map((q) => q[0])) - pad, by = Math.min(...cs4.map((q) => q[1])) - pad;
+        const bw = Math.max(Math.max(...cs4.map((q) => q[0])) + pad - bx, 0.5), bh = Math.max(Math.max(...cs4.map((q) => q[1])) + pad - by, 0.5);
+        const n = { id: nid(), type: 'svgp', d, m: [M.a, M.b, M.c, M.d, M.e, M.f].map(f), bx: f(bx), by: f(by), bw: f(bw), bh: f(bh),
+          fill: fill && fill[0], stroke: stroke && stroke[0], sw: f(sw) };
+        const fa = (fill ? fill[1] : 1) * (parseFloat(cs.fillOpacity) || 0) * op, sa = (stroke ? stroke[1] : 1) * (parseFloat(cs.strokeOpacity) || 0) * op;
+        if (fill && fa < 1) n.fillAlpha = f(fa); if (stroke && sa < 1) n.strokeAlpha = f(sa);
+        if (cs.fillRule === 'evenodd') n.rule = 'evenodd';
+        if (stroke) { if (cs.strokeLinecap !== 'butt') n.cap = cs.strokeLinecap; if (cs.strokeLinejoin !== 'miter') n.join = cs.strokeLinejoin; }
+        out.push(n);
+        if (out.length >= 4000) break;
+      }
+    } finally { host.remove(); }
+    return { shapes: out, vb, skipped };
+  }
+  // SVG text → one item (a single shape) or a group, scaled to a handy size.
+  function svgToNode(text, name = 'Imported artwork') {
+    const r = svgShapes(text); if (!r || !r.shapes.length) return null;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const n of r.shapes) { x0 = Math.min(x0, n.bx); y0 = Math.min(y0, n.by); x1 = Math.max(x1, n.bx + n.bw); y1 = Math.max(y1, n.by + n.bh); }
+    // Several shapes keep the artwork's own frame (its viewBox), so icons and illustrations line up as designed.
+    if (r.shapes.length > 1) { x0 = Math.min(x0, r.vb[0]); y0 = Math.min(y0, r.vb[1]); x1 = Math.max(x1, r.vb[0] + r.vb[2]); y1 = Math.max(y1, r.vb[1] + r.vb[3]); }
+    const big = Math.max(r.vb[2], r.vb[3]), k = big <= 64 ? 48 / big : Math.min(1, 360 / big);
+    for (const n of r.shapes) Object.assign(n, { x: (n.bx - x0) * k, y: (n.by - y0) * k, w: n.bw * k, h: n.bh * k });
+    const W2 = (x1 - x0) * k, H2 = (y1 - y0) * k;
+    const node = r.shapes.length === 1 ? Object.assign(r.shapes[0], { name }) : Grp(name, W2, H2, r.shapes);
+    return { node, skipped: r.skipped, count: r.shapes.length };
+  }
+  function importSVG(text, name, at) {
+    const r = svgToNode(text, name);
+    if (!r) { toast('That doesn’t look like SVG artwork. Copy the SVG code (it starts with <svg) and try again.'); return false; }
+    insertNode(r.node, name || 'artwork', at, true);
+    toast(`Imported ${name || 'artwork'} as ${r.count === 1 ? 'a vector' : r.count + ' vector shapes'}${r.skipped ? ` (${r.skipped} text ${r.skipped === 1 ? 'item' : 'items'} skipped)` : ''}. Tap a colour to recolour it.`, 'Undo', undo, 4500);
+    return true;
+  }
+  async function importSVGLink(url, at) {
+    try {
+      const res = await fetch(url); if (!res.ok) throw new Error(res.status);
+      const name = decodeURIComponent(url.split(/[?#]/)[0].split('/').pop().replace(/\.svg$/i, '')) || 'artwork';
+      return importSVG(await res.text(), name, at);
+    } catch { toast('Couldn’t download that link here (the site may not allow it). Open it, copy the SVG code and paste it instead.'); return false; }
+  }
+  const isSVGText = (t) => /<svg[\s>]/i.test(t || '');
+  const isSVGLink = (t) => /^https?:\/\/\S+\.svg(\?\S*)?$/i.test((t || '').trim());
+  function importFromText(t, at) {
+    if (isSVGText(t)) return importSVG(t, 'artwork', at);
+    if (isSVGLink(t)) { importSVGLink(t.trim(), at); return true; }
+    return false;
+  }
+  function importSVGFile(file, at) { file.text().then((t) => importSVG(t, file.name.replace(/\.svg$/i, '') || 'artwork', at)); }
+  const isSVGFile = (f) => f && (f.type === 'image/svg+xml' || /\.svg$/i.test(f.name || ''));
+
   // ---------- Images ----------
   function addImageFile(file, at) {
+    if (isSVGFile(file)) { importSVGFile(file, at); return; }
     const url = URL.createObjectURL(file), im = new Image();
     im.onload = () => {
       const k = Math.min(1, 1600 / Math.max(im.naturalWidth, im.naturalHeight));
@@ -2575,8 +2824,9 @@ body.tab-logo .design-only { display: none !important; }
   cv.addEventListener('dragover', (e) => e.preventDefault());
   cv.addEventListener('drop', (e) => {
     e.preventDefault();
-    const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/'));
-    if (f) addImageFile(f, toWorld(e.clientX, e.clientY));
+    const at = toWorld(e.clientX, e.clientY), f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/') || isSVGFile(x));
+    if (f) { addImageFile(f, at); return; }
+    const t = e.dataTransfer?.getData('text/plain') || e.dataTransfer?.getData('text/uri-list'); if (t) importFromText(t, at);
   });
 
   // ---------- Chrome ----------
@@ -2924,12 +3174,16 @@ body.tab-logo .design-only { display: none !important; }
       });
       body.append(h('section', {}, h('h3', {}, sec.cat), grid));
     }
-    body.append(h('p', { class: 'empty', id: 'libEmpty', hidden: true }, 'Nothing matches. Try “button”, “card” or “bar”.'));
+    body.append(h('p', { class: 'empty', id: 'libEmpty', hidden: true }, 'No ready-made components match. Try “button”, “card” or “bar”, or see the free icons below.'));
+    body.append(h('section', { class: 'free' }, h('h3', {}, 'Free icons'), h('p', { class: 'free-msg', id: 'freeMsg' }), h('div', { class: 'tiles icons', id: 'freeGrid' })));
+    freeQ = null;
     libBuilt = true; filterLib();
   }
   function filterLib() {
     const q = $('libSearch').value.trim().toLowerCase(); let any = false;
-    $('libBody').querySelectorAll('section').forEach((sec) => {
+    searchFree(q);
+    $('libBody').querySelectorAll(':scope > p.hint').forEach((t) => { t.hidden = !!q; });
+    $('libBody').querySelectorAll('section:not(.free)').forEach((sec) => {
       let shown = 0;
       sec.querySelectorAll('.tile').forEach((t) => { const ok = !q || t.dataset.q.includes(q); t.hidden = !ok; if (ok) shown++; });
       sec.hidden = !shown; if (shown) any = true;
@@ -2937,6 +3191,50 @@ body.tab-logo .design-only { display: none !important; }
     $('libEmpty').hidden = any;
   }
   $('libSearch').addEventListener('input', filterLib);
+  $('importBtn').addEventListener('click', (e) => {
+    e.stopPropagation(); const box = $('importBox'); box.hidden = !box.hidden; $('importBtn').setAttribute('aria-expanded', String(!box.hidden));
+    if (!box.hidden) $('svgText').focus();
+  });
+  $('svgAdd').addEventListener('click', () => {
+    const t = $('svgText').value.trim(); if (!t) { toast('Paste SVG code or a link to an .svg file first.'); return; }
+    if (importFromText(t)) $('svgText').value = ''; else toast('That isn’t SVG code or a link to an .svg file.');
+  });
+  $('svgFile').addEventListener('click', () => $('fileIn').click());
+
+  // Free icons: search the open-source icon sets on Iconify (no account, no key).
+  const ICONIFY = 'https://api.iconify.design';
+  let freeTimer = 0, freeQ = '', freeSeq = 0;
+  function searchFree(q) {
+    clearTimeout(freeTimer);
+    const grid = $('freeGrid'), msg = $('freeMsg'); if (!grid) return;
+    if (!q) { freeQ = ''; grid.replaceChildren(); msg.textContent = 'Type above to search 200,000+ free, open-source icons (Material, Lucide, Phosphor, Tabler…). Tap one to add it as a vector.'; return; }
+    if (q === freeQ) return;
+    msg.textContent = 'Searching free icons…';
+    freeTimer = setTimeout(async () => {
+      const seq = ++freeSeq; freeQ = q;
+      try {
+        const res = await fetch(`${ICONIFY}/search?query=${encodeURIComponent(q)}&limit=48`); if (!res.ok) throw new Error(res.status);
+        const data = await res.json(); if (seq !== freeSeq) return;
+        const sets = data.collections || {};
+        grid.replaceChildren(...(data.icons || []).map((full) => {
+          const [prefix, name] = full.split(':'), set = sets[prefix] || {}, lic = set.license ? set.license.title : 'open licence';
+          return h('button', { class: 'tile', title: `${name} · ${set.name || prefix} · ${lic}`, onclick: () => addFreeIcon(prefix, name) },
+            h('img', { src: `${ICONIFY}/${prefix}/${name}.svg?height=48`, alt: '', loading: 'lazy' }), h('span', {}, name.replace(/-/g, ' ')), h('small', {}, set.name || prefix));
+        }));
+        msg.textContent = (data.icons || []).length ? 'Free icons from Iconify. Each set’s licence is shown when you point at an icon.' : `No free icons match “${q}”.`;
+      } catch {
+        if (seq !== freeSeq) return; freeQ = '';
+        grid.replaceChildren();
+        msg.textContent = 'Couldn’t reach the free icon library from here (offline, or blocked by this page). Use Import → paste SVG code instead.';
+      }
+    }, 350);
+  }
+  async function addFreeIcon(prefix, name) {
+    try {
+      const res = await fetch(`${ICONIFY}/${prefix}/${name}.svg`); if (!res.ok) throw new Error(res.status);
+      importSVG(await res.text(), name.replace(/-/g, ' '));
+    } catch { toast('Couldn’t download that icon here. Try again, or paste its SVG code with Import.'); }
+  }
   function toggleInsert(forceOpen) {
     const open = !$('insertPop').hidden; closePops(); if (open && !forceOpen) return;
     if (!libBuilt) buildLibrary();
@@ -2945,15 +3243,15 @@ body.tab-logo .design-only { display: none !important; }
   }
   $('insertBtn').addEventListener('click', (e) => { e.stopPropagation(); toggleInsert(); });
   $('libClose').addEventListener('click', closePops);
-  function insertNode(n, name) {
+  function insertNode(n, name, at, quiet) {
     checkpoint();
-    const c = toWorld((W - panelW()) / 2, (H - 20) / 2);
+    const c = at || toWorld((W - panelW()) / 2, (H - 20) / 2);
     let x = Math.round(c.x - n.w / 2), y = Math.round(c.y - n.h / 2);
     if (lastInsert && Math.abs(lastInsert.x - x) < 2 && Math.abs(lastInsert.y - y) < 2) { x = lastInsert.nx + 24; y = lastInsert.ny + 24; }
     lastInsert = { x: Math.round(c.x - n.w / 2), y: Math.round(c.y - n.h / 2), nx: x, ny: y };
     if (n.type === 'line') setLineEnds(n, lineEnds(n).map(([px, py]) => [px - n.x + x, py - n.y + y])); else { n.x = x; n.y = y; }
     S.nodes.push(n); closePops(); setTool('select'); S.sel = new Set([n.id]); changed();
-    toast(n.type === 'group' ? `Added ${name}. Drag to move it. Double-tap a part to edit it.` : `Added ${name}.`, null, null, 3500);
+    if (!quiet) toast(n.type === 'group' ? `Added ${name}. Drag to move it. Double-tap a part to edit it.` : `Added ${name}.`, null, null, 3500);
   }
 
   // ---------- Layers panel ----------
@@ -2961,6 +3259,7 @@ body.tab-logo .design-only { display: none !important; }
     if (n.name) return n.name;
     if (n.type === 'text') return n.text.split('\n')[0].slice(0, 32) || 'Text';
     if (n.type === 'icon') return (ICON_LABEL[n.icon] || 'Icon') + ' icon';
+    if (n.type === 'svgp') return 'Vector shape';
     if (n.type === 'polygon') return n.sides === 4 ? 'Diamond' : 'Polygon';
     if (n.type === 'line') return n.head ? 'Arrow' : 'Line';
     if (n.type === 'path') return 'Vector';
@@ -3284,6 +3583,7 @@ body.tab-logo .design-only { display: none !important; }
       case 'vec': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.pw)} ${f(n.h / n.ph)})"${op}>` + n.layers.map((L) => { let d = ''; for (const A of L.rings) { d += `M${f(A[0][0])} ${f(A[0][1])}`; for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; d += `C${f(a[4])} ${f(a[5])} ${f(b[2])} ${f(b[3])} ${f(b[0])} ${f(b[1])}`; } d += 'Z'; } return `<path d="${d}" fill="${L.fill}" fill-rule="evenodd"/>`; }).join('') + '</g>';
       case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * 1.25 + n.size * 0.95)}" font-family="-apple-system, system-ui, sans-serif" font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
       case 'icon': return `<path d="${ICONS[n.icon]}" transform="translate(${x} ${y}) scale(${f(n.w / 24)})" ${paint(null, n.color, n.sw || 1.8)}${op}/>`;
+      case 'svgp': return `<path d="${n.d.replace(/"/g, '')}" transform="translate(${x} ${y}) scale(${f(n.w / n.bw)} ${f(n.h / n.bh)}) translate(${f(-n.bx)} ${f(-n.by)}) matrix(${n.m.map(f).join(' ')})" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${n.rule === 'evenodd' ? ' fill-rule="evenodd"' : ''}${op}/>`;
       case 'image': return `<image href="${n.src}" x="${x}" y="${y}" width="${f(n.w)}" height="${f(n.h)}"${op}/>`;
       case 'group': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.gw)} ${f(n.h / n.gh)})"${op}>${n.children.map((c) => svgOf(c, 0, 0)).join('')}</g>`;
     }

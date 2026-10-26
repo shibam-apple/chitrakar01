@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.7** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.8** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -572,6 +572,39 @@ hovering Pencil), and the first point grows a ring when a tap would close the
 shape. The selection bar shows **Undo point · Close shape · Done**. Finished
 paths are ordinary vector paths: Edit points, point types, Style and Effects all
 apply. Shortcut: **N**.
+
+### 3.23 More ready-made UI elements
+
+Insert gains a **Sections** category for websites and more everyday parts, so a
+screen can be assembled from a few taps:
+
+| Category | New elements |
+|---|---|
+| Buttons | Button group, Continue with email, Loading button |
+| Controls | Filter chips, Progress ring, Range slider |
+| Inputs | Login form, Code input (6 digits), Comment box |
+| Content | Product card, Profile header, Chat bubbles, Table, Accordion, Timeline, Empty state, Bar chart, Line chart, Calendar, Music player, Video player, Testimonial, Loading skeleton |
+| Sections (web) | Hero, Feature grid, Call to action, Footer, Cookie banner |
+
+Everything is an ordinary group: double-tap a part to change its text or colour.
+
+### 3.24 Import from the internet (free)
+
+Like Figma's community, but with no account: bring in icons and illustrations
+other people have shared for free, as **editable vectors** (not pictures).
+
+| Way in | What happens |
+|---|---|
+| **Free icons** (Insert → Free icons) | Search over 200,000 open-source icons (Iconify: Material, Lucide, Phosphor, Tabler, Heroicons…). Tap one to add it as a vector. Each icon shows its set; licences are open (MIT, Apache, CC BY) |
+| **Paste SVG** | Copy SVG code from any site (SVG Repo, unDraw, Heroicons, Figma's "Copy as SVG") and press ⌘V, or paste it into **Insert → Import → Paste SVG code** (easier on iPad) |
+| **SVG file or link** | Open or drop a `.svg` file; or paste a link to one |
+
+Imported artwork keeps each shape's fill, outline, opacity and transforms. Many
+shapes arrive as a group; tapping a colour swatch recolours its main colour, and
+double-tapping picks one shape. Scripts, links and embedded web content inside
+an SVG are removed for safety. Text inside an SVG is skipped (it would need the
+original font). If the icon library can't be reached (offline, or blocked by
+the page hosting the prototype), the panel says so and points to Paste SVG.
 
 ---
 
