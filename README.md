@@ -10,6 +10,21 @@ Priorities: **ease of use**, then **efficiency** (low power, tiny bundle), then
 
 Status: specification and interactive UI prototype.
 
+## Website
+
+The app is published as a website from the `main` branch by
+`.github/workflows/pages.yml` (GitHub Pages):
+**https://shibam-apple.github.io/chitrakar01/**
+
+The build (`scripts/build-site.mjs`) minifies the prototype into one file
+(about 73 KB gzipped), adds an app manifest and icons so it can be added to the
+iPad Home Screen, and a service worker so it opens offline without touching the
+network. Build it locally with:
+
+```sh
+npm install --no-save esbuild@0.24.2 && node scripts/build-site.mjs   # → dist/
+```
+
 ## Try the UI prototype
 
 `prototype/index.html` is a single-file interactive prototype of the interface.

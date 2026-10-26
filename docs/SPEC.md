@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.11** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.12** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -393,28 +393,38 @@ operations.
 
 ### 3.14 Visual design system (app chrome)
 
+The app's own interface follows **Pro UI** (§3.25, §3.28), softened for a
+contemporary feel: the same type, colour discipline and hairlines, with round
+shapes instead of square ones.
+
 | Token | Light | Dark | Use |
 |---|---|---|---|
-| `--chrome` | #ffffff | #1e1f27 | Bars, panels |
-| `--chrome-2` | #f1f1f6 | #2a2b35 | Hover, inputs, segmented controls |
-| `--line` | #dcdde7 | #393b49 | Borders, dividers |
-| `--fg` / `--fg-2` | #1b1c26 / #5e6174 | #ececf3 / #a4a7b9 | Text, secondary text and icons |
-| `--accent` | #3d47c9 (indigo) | #8f97ff | Active tool, selection, focus |
-| `--accent-soft` | #e6e8fb | #2d3060 | Open panel, selected row |
-| `--canvas` | #e9e9ef | #d9d9e0 | Canvas around frames (stays light: designs keep true colours) |
+| `--chrome` | #ffffff | #1b1b1c | Bars, panels |
+| `--chrome-2` | #f1f1f0 | #2a2a2c | Hover, inputs, segmented controls |
+| `--line` | #e3e3e1 | #353538 | Hairline borders, dividers |
+| `--fg` / `--fg-2` | #111111 / #5d5e61 | #f2f2f0 / #a7a9ac | Text, secondary text and icons |
+| `--accent` | #111111 (ink) | #f2f2f0 | Active tool, pressed controls, toggles |
+| `--accent-soft` | #ececea | #333336 | Open panel, selected row |
+| `--signal` | #e03c31 (signal red) | #ff5446 | The one main action: "Make it a vector", primary buttons |
+| `--select` | #2d63d8 (flight blue) | #6f9bff | Selection outlines and handles on the canvas, focus ring |
+| `--canvas` | #ecebe8 | #d6d5d1 | Canvas around frames (stays light: designs keep true colours) |
 | Smart guide | #e5487d | same | Snap lines only |
 
-- **Type:** system font (San Francisco on Apple devices), no download. Scale:
-  11 (labels), 12–13 (secondary), 14–15 (body), 22 (sheet titles). Uppercase
-  section labels with 0.04 em letter spacing.
-- **Spacing:** 4 pt grid; panels 14 pt padding; 48 pt targets in panels and bars (§3.12).
-- **Shape:** 14 pt radius for bars and panels, 10 pt for buttons, 8 pt for chips.
-- **Elevation:** one level only (1 px border + small soft shadow); no blur or
-  frosted chrome, for battery reasons (§5.2).
+- **Type:** Helvetica Neue (system font where missing), no download. Scale:
+  11 (labels, bold capitals, 0.08 em tracking), 12–13 (secondary), 14–15 (body),
+  22 (sheet titles).
+- **Colour rule:** ink black marks what is active; signal red appears at most
+  once on screen, for the main action; blue is only for selection.
+- **Shape:** 22 pt radius for bars and panels, 28 pt for the dock, 18 pt for
+  tools, full pills for buttons, chips, tabs and segmented controls; 12–20 pt
+  for tiles and cards.
+- **Spacing:** 4 pt grid; panels 18 pt padding; 48 pt targets (§3.12).
+- **Elevation:** one level only: a hairline plus a light, wide shadow. No blur
+  or frosted chrome, for battery reasons (§5.2).
 - **Icons:** 24 pt grid, 1.8 pt round strokes, always paired with a text label
   in the dock and selection bar.
-- **States:** active = accent fill; open = accent tint; disabled = 35 % opacity;
-  visible keyboard focus ring.
+- **States:** active = ink fill; open = soft tint; disabled = 35 % opacity;
+  visible focus ring in flight blue.
 - **Motion:** only the toggle thumb animates (150 ms); nothing animates while
   idle; `prefers-reduced-motion` turns it off.
 
@@ -812,6 +822,12 @@ Efficiency is a feature, enforced by budgets in CI (§10).
 1. **Event-driven rendering only.** No continuous animation loop. A render is
    scheduled with one `requestAnimationFrame` when something is dirty, and
    nothing is scheduled otherwise.
+   *Measured in the prototype: 0 frames while idle.*
+1a. **Draft frames while the view moves.** During a pan, zoom or pinch, blur
+   and background blur come from a per-zoom cache (panning only moves the
+   finished bitmap) or are skipped, and one full-quality frame is drawn 140 ms
+   after the view stops. The dot grid is a single pattern fill. *Measured:
+   panning the example went from 14.4 ms to 1.6 ms per frame.*
 2. **Coalesce input.** Pointer events are buffered and processed once per
    frame. Use `getCoalescedEvents()` for full Pencil resolution where
    supported.
