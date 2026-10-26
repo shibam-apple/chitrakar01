@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.9** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.11** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -648,6 +648,11 @@ banner, Systems list, Data table, Orbit card, Title block, Pro sidebar, and a
 complete **Pro dashboard** screen (iPad landscape). Pro UI colours are also a
 row in the Color menu.
 
+**Standards manual:** `docs/pro-ui-manual.html` is the Pro UI graphics standards
+manual: principles, colour (with proportions), type scale, grid and spacing,
+placement rules, components, do / don't pairs and brand applications, laid out
+like a printed standards manual with lettered captions.
+
 ### 3.26 Edit points on imported artwork
 
 Imported SVG shapes (§3.24) can be point-edited like anything drawn in
@@ -661,6 +666,56 @@ Chitrakar: tap **Edit points**, or double-tap the shape.
 - Curves, arcs and straight segments are all converted exactly to cubic
   curves. Each point gets the type that matches its handles: corner, smooth or
   free.
+
+### 3.27 Brand kit
+
+In the Logo tab, **Preview → Make brand kit** applies the logo on the artboard
+to a set of templates beside it, following fixed placement rules the way a
+standards manual does. Tapping it again after changing the logo rebuilds the kit.
+
+| Template | Size | Rule |
+|---|---|---|
+| a) App icon | 512 × 512 | Brand colour field, corner radius 22.5 %; logo reversed (white), 62 % of the width, centred |
+| b) Social avatar | 400 × 400 circle | Brand colour; logo reversed, 56 %, centred |
+| c) Patch | 320 × 134 (12 : 5) | White, 2 pt field-grey edge, 8 pt corners; logo in its own colours, 60 % of the height, centred |
+| d) Business card, front | 700 × 400 (3.5 × 2 in) | Logo top left inside a 48 pt margin, 72 pt tall; name, role, hairline rule, contact line |
+| e) Business card, back | 700 × 400 | Brand colour; logo reversed, 50 %, centred |
+| f) Letterhead | 595 × 842 (A4) | Logo top left, 56 pt tall, 48 pt margins; address top right; rule under the header; footer rule |
+| g) Slide | 1280 × 720 (16 : 9) | Logo top left, 72 pt tall, 64 pt margins; title and subtitle; brand colour band at the foot |
+| h) Apparel | 600 × 640 | Royal-blue jacket; white patch on the wearer's right chest, as in the 1975 manual's uniform page |
+
+The brand colour is the colour the logo uses most (white aside). Each template
+has a caption under it stating its rule. Everything is ordinary, editable items.
+
+### 3.28 Pro UI 1975: a UI kit from the principles of NASA's 1975 graphics standards
+
+A complete UI kit, built **in Chitrakar itself** as an editable document, the
+way a design team keeps its kit file. **New → Pro UI kit** adds the kit's sheets
+to the canvas; every component is also in **Insert → Pro UI 1975**.
+
+It takes its rules from the principles of the 1975 NASA Graphics Standards
+Manual (Danne & Blackburn) and applies them to screens. No NASA marks, names or
+artwork are used.
+
+| Principle (from the manual) | In the kit |
+|---|---|
+| One typeface, few weights | Helvetica (falling back to Arial), Regular and Bold; flush left, ragged right; text items gain a **Typeface** choice (System / Helvetica) |
+| One strong accent | Red marks the single most important thing on a screen. Everything else is black, greys and white; royal blue only for large fields |
+| Flat, honest surfaces | No shadows, gradients, blur or glass. Edges are 1 pt rules |
+| Square geometry | Corners 0–2 pt. Controls are rectangles; the knob of a toggle is a square |
+| The grid decides | 12 columns, 48 pt margins, 24 pt gutters, 8 pt baseline |
+| Space is structure | Group by distance first, rules second, boxes last |
+| Signage clarity | Navigation reads like wayfinding: white on black, arrows, one line per destination |
+| Fixed placement | Section number in red above a bold title and a full-width rule; captions lettered a), b), c) |
+
+**Sheets:** Cover · Principles · Colour · Typography · Grid · Controls ·
+Navigation & signage · Data & feedback · Sample screen (Mission archive, iPad
+landscape).
+
+**Components:** primary / secondary / text / disabled buttons, text field,
+select, checkbox, radio, toggle, segmented control, tabs, chips, top bar,
+signage directory, breadcrumb, pagination, rule table, stat block, bar chart,
+segmented progress, notice and critical banners, dialog, sample screen.
 
 ---
 

@@ -98,7 +98,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .pop.wide { width: 360px; }
 .pop h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
 .pop h4 { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
-.pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 300px; }
+.pop p.hint, #preview p.hint { margin: 0; font-size: 12px; line-height: 1.45; color: var(--fg-2); max-width: 300px; }
 #viewPop { width: 360px; }
 .zoomrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; }
 .zoomrow button { height: 52px; border-radius: 12px; background: var(--chrome-2); font-size: 24px; }
@@ -482,7 +482,7 @@ body.tab-logo .design-only { display: none !important; }
   const PRO_SWATCHES = [P_INK, P_RED, P_ROYAL, P_FLIGHT, P_STEEL, P_GREY, WH];
   const PRESETS = [
     { name: 'iPhone', w: 393, h: 852 }, { name: 'iPad', w: 820, h: 1180 },
-    { name: 'Desktop', w: 1440, h: 900 }, { name: 'Blank', w: 0, h: 0 }, { name: 'Logo', w: 512, h: 512, logo: true },
+    { name: 'Desktop', w: 1440, h: 900 }, { name: 'Blank', w: 0, h: 0 }, { name: 'Logo', w: 512, h: 512, logo: true }, { name: 'Pro UI kit', w: 1194, h: 834, kit: true },
   ];
   const SHADOWS = [null, { y: 2, b: 10, a: 0.14 }, { y: 8, b: 24, a: 0.18 }, { y: 18, b: 48, a: 0.26 }];
   const SHAPE_TYPES = new Set(['rect', 'ellipse', 'triangle', 'polygon', 'star']);
@@ -846,7 +846,8 @@ body.tab-logo .design-only { display: none !important; }
     ctx.restore();
   }
 
-  const FONT = (n) => `${n.weight || 500} ${n.size}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif`;
+  const FAMILY = { system: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif', helvetica: '"Helvetica Neue", Helvetica, Arial, sans-serif' };
+  const FONT = (n) => `${n.weight || 500} ${n.size}px ${FAMILY[n.font] || FAMILY.system}`;
   const paths = new Map();
   const svgPaths = new Map();
   const svgPath2D = (d) => { let p = svgPaths.get(d); if (!p) { if (svgPaths.size > 4000) svgPaths.clear(); p = new Path2D(d); svgPaths.set(d, p); } return p; };
@@ -1330,7 +1331,129 @@ body.tab-logo .design-only { display: none !important; }
     },
   };
 
+  // ---------- Pro UI 1975 (§3.28): a UI kit from the principles of the 1975 NASA graphics standards ----------
+  // Helvetica, one red accent, flat surfaces, square corners, 1 pt rules, a 12-column grid with 48 pt margins.
+  const K_RED = '#e03c31', K_BLK = '#111111', K_G1 = '#58595b', K_G2 = '#a7a9ac', K_G3 = '#d1d3d4', K_G4 = '#efefef', K_BLUE = '#1d3e9a';
+  const HV = (text, size, weight, color, pos, o = {}) => Tx(text, size, weight, color, pos, { font: 'helvetica', ...o });
+  const HVR = (text, size, weight, color, right, cy) => { const t = HV(text, size, weight, color, { x: 0, cy }); t.x = right - t.w; return t; };
+  const cap = (text, x, y, color = K_G1) => HV(text.toUpperCase(), 11, 700, color, { x, y });
+  const K = {
+    primary: (label = 'Launch') => Grp('Button · primary', 176, 48, [R(0, 0, 176, 48, { r: 2, fill: K_RED }), HV(label, 16, 700, WH, { x: 20, cy: 24 }), I('arrowRight', 136, 12, 24, WH, { sw: 2 })]),
+    secondary: (label = 'Simulate') => Grp('Button · secondary', 176, 48, [R(0, 0, 176, 48, { r: 2, fill: WH, stroke: K_BLK, sw: 1.5 }), HV(label, 16, 700, K_BLK, { x: 20, cy: 24 }), I('arrowRight', 136, 12, 24, K_BLK, { sw: 2 })]),
+    text: () => { const t = HV('View archive', 16, 700, K_BLK, { x: 0, cy: 12 }); return Grp('Button · text', Math.ceil(t.w + 30), 30, [t, I('arrowRight', t.w + 6, 1, 22, K_BLK, { sw: 2 }), Ln(0, 29, t.w, 29, K_BLK, 1.5)]); },
+    disabled: () => Grp('Button · disabled', 176, 48, [R(0, 0, 176, 48, { r: 2, fill: K_G4 }), HV('Unavailable', 16, 700, K_G2, { x: 20, cy: 24 })]),
+    field: (label = 'Call sign', value = 'Orion 7') => Grp('Text field', 320, 68, [cap(label, 0, 0), R(0, 20, 320, 48, { fill: WH, stroke: K_BLK, sw: 1 }), HV(value, 17, 400, K_BLK, { x: 16, cy: 44 })]),
+    select: () => Grp('Select', 320, 68, [cap('Launch site', 0, 0), R(0, 20, 320, 48, { fill: WH, stroke: K_BLK, sw: 1 }), HV('Pad 39A', 17, 400, K_BLK, { x: 16, cy: 44 }), I('chevronDown', 284, 32, 24, K_BLK, { sw: 2 })]),
+    checkbox: () => { const t = HV('Record telemetry', 16, 400, K_BLK, { x: 36, cy: 12 }); return Grp('Checkbox', Math.ceil(t.x + t.w), 24, [R(0, 0, 24, 24, { fill: K_BLK }), I('check', 3, 3, 18, WH, { sw: 2.6 }), t]); },
+    radio: () => { const t = HV('Low orbit', 16, 400, K_BLK, { x: 36, cy: 12 }); return Grp('Radio', Math.ceil(t.x + t.w), 24, [E(0, 0, 24, 24, { fill: WH, stroke: K_BLK, sw: 1.5 }), E(6, 6, 12, 12, { fill: K_BLK }), t]); },
+    toggle: (on = true) => Grp(on ? 'Toggle · on' : 'Toggle · off', 56, 28, [R(0, 0, 56, 28, { fill: on ? K_BLK : K_G3 }), R(on ? 30 : 2, 2, 24, 24, { fill: WH })]),
+    segmented: () => Grp('Segmented control', 360, 40, [R(0, 0, 360, 40, { fill: WH, stroke: K_BLK, sw: 1 }), R(0, 0, 120, 40, { fill: K_BLK }), Ln(240, 0, 240, 40, K_BLK),
+      HV('Live', 15, 700, WH, { x: 16, cy: 20 }), HV('Replay', 15, 700, K_BLK, { x: 136, cy: 20 }), HV('Log', 15, 700, K_BLK, { x: 256, cy: 20 })]),
+    tabs: () => { let x = 0; const kids = [Ln(0, 39, 400, 39, K_G3)]; ['Overview', 'Telemetry', 'Crew', 'Files'].forEach((l, i) => { const t = HV(l, 15, i ? 400 : 700, i ? K_G1 : K_BLK, { x, cy: 18 }); kids.push(t); if (!i) kids.push(R(x, 36, t.w, 3, { fill: K_BLK })); x += t.w + 32; }); return Grp('Tabs', 400, 40, kids); },
+    chips: () => { let x = 0; const kids = []; ['All', 'Ascent', 'Orbit', 'Return'].forEach((l, i) => { const t = HV(l, 14, 700, i ? K_BLK : WH, { x: x + 14, cy: 16 }), w = Math.ceil(t.w + 28); kids.unshift(R(x, 0, w, 32, i ? { fill: WH, stroke: K_BLK, sw: 1 } : { fill: K_BLK })); kids.push(t); x += w + 8; }); return Grp('Chips', x - 8, 32, kids); },
+    topBar: (w = 1098) => Grp('Top bar', w, 64, [R(0, 0, w, 64, { fill: K_BLK }), HV('Pro UI', 18, 700, WH, { x: 24, cy: 32 }),
+      ...['Archive', 'Flights', 'Crew', 'Reports'].flatMap((l, i) => { const x = 200 + i * 120, t = HV(l, 15, i ? 400 : 700, i ? K_G2 : WH, { x, cy: 32 }); return i ? [t] : [t, R(x, 58, t.w, 3, { fill: WH })]; }),
+      HVR('26 Oct 2026', 14, 400, K_G2, w - 24, 32)]),
+    signage: (w = 520) => Grp('Signage directory', w, 256, [R(0, 0, w, 256, { fill: K_BLK }),
+      ...[['Launch control', '2'], ['Mission archive', '1'], ['Crew quarters', '3'], ['Exit', 'G']].flatMap(([d, lv], i) => { const y = i * 64;
+        return [...(i ? [Ln(0, y, w, y, '#3a3a3a')] : []), I('arrowRight', 24, y + 20, 24, WH, { sw: 2.4 }), HV(d, 20, 700, WH, { x: 68, cy: y + 32 }), HVR(lv, 20, 400, K_G2, w - 24, y + 32)]; })]),
+    breadcrumb: () => { let x = 0; const kids = ['Archive', '/', '1975', '/', 'Records'].map((s2, i, a) => { const t = HV(s2, 14, i === a.length - 1 ? 700 : 400, i === a.length - 1 ? K_BLK : K_G1, { x, cy: 10 }); x += t.w + 8; return t; }); return Grp('Breadcrumb', Math.ceil(x), 20, kids); },
+    pagination: () => Grp('Pagination', 236, 36, ['‹', '1', '2', '3', '›'].flatMap((l, i) => [R(i * 50, 0, 36, 36, i === 1 ? { fill: K_BLK } : { fill: WH, stroke: K_G3 }), HV(l, 15, 700, i === 1 ? WH : K_BLK, { cx: i * 50 + 18, cy: 18 })])),
+    table: (w = 640) => Grp('Rule table', w, 280, [cap('Record', 0, 0), cap('Date', w * 0.44, 0), cap('Duration', w * 0.64, 0), cap('Status', w * 0.82, 0), Ln(0, 24, w, 24, K_BLK, 1.5),
+      ...[['Ascent test 01', '12 Mar', '00:41', 'Complete', K_BLK], ['Orbit trial 02', '04 Apr', '92:10', 'Review', K_RED], ['Return test 03', '19 May', '01:15', 'Complete', K_BLK], ['Systems check 04', '02 Jun', '00:20', 'Scheduled', K_G2], ['Systems check 05', '30 Jun', '00:20', 'Scheduled', K_G2]]
+        .flatMap(([a, d, du, st, c], i) => { const y = 24 + i * 50; return [HV(a, 15, 500, K_BLK, { x: 0, cy: y + 25 }), HV(d, 15, 400, K_G1, { x: w * 0.44, cy: y + 25 }), HV(du, 15, 400, K_G1, { x: w * 0.64, cy: y + 25 }),
+          R(w * 0.82, y + 21, 8, 8, { fill: c }), HV(st, 15, 400, K_BLK, { x: w * 0.82 + 16, cy: y + 25 }), Ln(0, y + 50, w, y + 50, K_G3)]; })]),
+    stat: (label = 'Altitude', value = '408', unit = 'km') => { const v = HV(value, 40, 700, K_BLK, { x: 0, y: 30 }); return Grp('Stat block', 200, 84, [Ln(0, 0, 200, 0, K_BLK, 2), cap(label, 0, 12), v, HV(unit, 15, 400, K_G1, { x: v.w + 6, y: 52 })]); },
+    bars: (w = 420, h = 220) => { const vals = [42, 58, 50, 71, 64, 80, 96], bw = (w - 6 * 12) / 7;
+      return Grp('Bar chart', w, h, [HV('Flights per year', 13, 700, K_BLK, { x: 0, y: 0 }), Ln(0, h - 24, w, h - 24, K_BLK, 1),
+        ...vals.flatMap((v, i) => { const bh = v / 100 * (h - 64); return [R(i * (bw + 12), h - 24 - bh, bw, bh, { fill: i === vals.length - 1 ? K_RED : K_BLK }), HV(String(1969 + i), 11, 400, K_G1, { cx: i * (bw + 12) + bw / 2, y: h - 18 })]; })]); },
+    progress: () => Grp('Segmented progress', 476, 40, [...Array.from({ length: 10 }, (_, i) => R(i * 48, 0, 44, 8, { fill: i < 6 ? K_BLK : K_G3 })), HV('6 of 10 checks complete', 13, 400, K_G1, { x: 0, y: 20 })]),
+    notice: (w = 640) => Grp('Notice banner', w, 60, [R(0, 0, w, 60, { fill: K_BLK }), cap('Notice', 20, 11, K_G2), HV('Archive sync completes at 18:00.', 15, 400, WH, { x: 20, y: 31 })]),
+    critical: (w = 640) => Grp('Critical banner', w, 60, [R(0, 0, w, 60, { fill: K_RED }), cap('Critical', 20, 11, WH), HV('Telemetry link lost. Reconnecting to ground station 2.', 15, 400, WH, { x: 20, y: 31 })]),
+    dialog: (w = 420) => Grp('Dialog', w, 224, [R(0, 0, w, 224, { fill: WH, stroke: K_BLK, sw: 1 }), R(0, 0, w, 6, { fill: K_BLK }), HV('Delete this record?', 24, 700, K_BLK, { x: 24, y: 30 }),
+      HV('The flight log and its telemetry will be\nremoved from the archive.', 15, 400, K_G1, { x: 24, y: 72 }), at(K.secondary('Cancel'), w - 24 - 176 * 2 - 12, 152), at(K.primary('Delete'), w - 24 - 176, 152)]),
+    screen: () => {
+      const W2 = 1194, H2 = 834, list = ['Ascent test 01', 'Orbit trial 02', 'Return test 03', 'Systems check 04', 'Systems check 05', 'Crew rotation 06'];
+      return Grp('Mission archive', W2, H2, [R(0, 0, W2, H2, { fill: WH }), K.topBar(W2), R(0, 64, 400, H2 - 64, { fill: K_G4 }),
+        ...list.flatMap((t, i) => { const y = 64 + i * 88, sel = i === 1; return [...(sel ? [R(0, y, 400, 88, { fill: WH }), R(0, y, 4, 88, { fill: K_BLK })] : []), HV(t, 17, 700, K_BLK, { x: 48, y: y + 24 }),
+          HV(['12 Mar 1975 · 00:41', '04 Apr 1975 · 92:10', '19 May 1975 · 01:15', '02 Jun 1975 · 00:20', '30 Jun 1975 · 00:20', '14 Jul 1975 · 03:00'][i], 13, 400, K_G1, { x: 48, y: y + 50 }), Ln(0, y + 88, 400, y + 88, K_G3)]; }),
+        HV('03', 13, 700, K_RED, { x: 448, y: 104 }), HV('Orbit trial 02', 48, 700, K_BLK, { x: 448, y: 124 }), Ln(448, 200, 1146, 200, K_BLK),
+        at(K.stat('Altitude', '408', 'km'), 448, 224), at(K.stat('Period', '92', 'min'), 688, 224), at(K.stat('Orbits', '61', 'total'), 928, 224),
+        HV('A 92-hour orbital trial to test life support and the new\ntelemetry link. Four crew. All primary objectives met;\none thermal reading flagged for review.', 17, 400, K_BLK, { x: 448, y: 340 }),
+        at(K.bars(460, 220), 448, 470), at(K.secondary('Export'), 778, 744), at(K.primary('Open record'), 970, 744),
+        HV('a) Mission archive · iPad landscape · 12 columns, 48 pt margins', 12, 400, K_G1, { x: 448, y: 804 })]);
+    },
+  };
+  // The kit as a document: nine sheets laid out on the canvas, each a frame of editable items.
+  function makeKit75() {
+    checkpoint();
+    const M = 48, SW = 1194, SH = 834, items = [];
+    let x0 = 0, y0 = 0; if (S.nodes.length) { const u = union(S.nodes.filter((n) => !n.hidden)); x0 = u.x + u.w + 400; y0 = u.y; }
+    const head = (no, title) => [HV(no, 13, 700, K_RED, { x: M, y: 56 }), HV(title, 40, 700, K_BLK, { x: M, y: 76 }), Ln(M, 148, SW - M, 148, K_BLK, 1)];
+    const sheet = (i, name, build) => {
+      const fx = x0 + (i % 3) * (SW + 160), fy = y0 + Math.floor(i / 3) * (SH + 200);
+      items.push({ id: nid(), type: 'frame', name: `Pro UI 1975 · ${name}`, x: fx, y: fy, w: SW, h: SH });
+      for (const n of build()) { n.x += fx; n.y += fy; items.push(n); }
+    };
+    const capt = (text, x, y) => HV(text, 12, 400, K_G1, { x, y });
+    sheet(0, 'Cover', () => [R(0, 0, SW, SH, { fill: K_RED }), HV('Pro UI', 120, 700, WH, { x: M, y: 80 }), HV('Graphics standards\nfor interfaces', 40, 700, WH, { x: M, y: 240 }),
+      Ln(M, 660, SW - M, 660, WH, 1), HV('Chitrakar', 15, 700, WH, { x: M, y: 684 }), HV('1975 edition · October 2026', 15, 400, WH, { x: M, y: 706 }),
+      HV('Based on the principles of the 1975 NASA Graphics\nStandards Manual. No NASA marks are used.', 13, 400, WH, { x: 640, y: 684 })]);
+    const P = [['One typeface', 'Helvetica, Regular and Bold.\nFlush left, ragged right.\nNever centred, never stretched.'], ['One accent', 'Red marks the single most\nimportant thing on a screen.\nEverything else is black and grey.'],
+      ['Flat surfaces', 'No shadows, gradients or glass.\nEdges are drawn with 1 pt rules.'], ['Square corners', 'Corners are 0 to 2 pt.\nShape comes from the grid,\nnot from rounding.'],
+      ['The grid decides', '12 columns, 48 pt margins,\n24 pt gutters, 8 pt baseline.\nEverything snaps to it.'], ['Space is structure', 'Group by distance first,\nrules second, boxes last.']];
+    sheet(1, 'Principles', () => [R(0, 0, SW, SH, { fill: WH }), ...head('01', 'Principles'), ...P.flatMap(([t, b], i) => { const x = M + (i % 3) * 366, y = 200 + Math.floor(i / 3) * 260;
+      return [Ln(x, y, x + 342, y, K_BLK, 1), HV(String(i + 1), 40, 700, K_BLK, { x, y: y + 16 }), HV(t, 20, 700, K_BLK, { x, y: y + 80 }), HV(b, 15, 400, K_G1, { x, y: y + 112 })]; })]);
+    const C = [['Red', K_RED, 'The one accent'], ['Black', K_BLK, 'Text, bars, rules'], ['Grey 1', K_G1, 'Secondary text'], ['Grey 2', K_G2, 'Disabled, captions'], ['Grey 3', K_G3, 'Hairlines'], ['Grey 4', K_G4, 'Panels'], ['Royal blue', K_BLUE, 'Large fields only'], ['White', WH, 'The page']];
+    const prop = [['White', WH, 58], ['Black', K_BLK, 20], ['Greys', K_G3, 14], ['Blue', K_BLUE, 6], ['Red', K_RED, 2]];
+    sheet(2, 'Colour', () => { let px = M; return [R(0, 0, SW, SH, { fill: WH }), ...head('02', 'Colour'),
+      ...C.flatMap(([nm, c, use], i) => { const x = M + i * 138; return [R(x, 196, 120, 120, c === WH ? { fill: WH, stroke: K_G3, sw: 1 } : { fill: c }), HV(nm, 15, 700, K_BLK, { x, y: 332 }), HV(c.toUpperCase(), 13, 400, K_G1, { x, y: 354 }), HV(use, 12, 400, K_G1, { x, y: 374 })]; }),
+      cap('Proportion on a typical screen', M, 460), ...prop.flatMap(([nm, c, pc]) => { const w = (SW - 2 * M) * pc / 100, x = px; px += w;
+        return [R(x, 484, w, 56, c === WH ? { fill: WH, stroke: K_G3, sw: 1 } : { fill: c }), HV(`${nm} ${pc}%`, 12, 400, K_G1, { x, y: 552 })]; }),
+      capt('a) If two things are red, neither is important. Royal blue is for large fields such as a jacket or a cover, never for small text.', M, 620)]; });
+    const T = [['Display', 64, 700, '64 / 80 · Bold', 'Mission archive'], ['Title', 40, 700, '40 / 50 · Bold', 'Orbit trial 02'], ['Heading', 24, 700, '24 / 30 · Bold', 'Systems overview'],
+      ['Body', 17, 400, '17 / 21 · Regular', 'Telemetry is recorded every second and kept for ten years.'], ['Caption', 13, 400, '13 / 16 · Regular', 'a) Figure captions are lettered and sit below their figure.'], ['Label', 11, 700, '11 / 14 · Bold, capitals', 'CALL SIGN']];
+    sheet(3, 'Typography', () => { let y = 196; return [R(0, 0, SW, SH, { fill: WH }), ...head('03', 'Typography'),
+      ...T.flatMap(([nm, sz, wt, spec, sample]) => { const yy = y; y += Math.max(56, sz * 1.25 + 28); return [HV(nm, 15, 700, K_BLK, { x: M, y: yy }), HV(spec, 13, 400, K_G1, { x: M, y: yy + 20 }), HV(sample, sz, wt, K_BLK, { x: 300, y: yy }), Ln(M, y - 12, SW - M, y - 12, K_G3)]; }),
+      capt('a) One family: Helvetica (Arial where Helvetica is missing). Two weights. Flush left, ragged right.', M, 760)]; });
+    sheet(4, 'Grid', () => { const col = (SW - 2 * M - 11 * 24) / 12, out = [R(0, 0, SW, SH, { fill: WH }), ...head('04', 'Grid')];
+      for (let i = 0; i < 12; i++) out.push(R(M + i * (col + 24), 188, col, 560, { fill: K_RED, fillAlpha: 0.08 }), HV(String(i + 1), 11, 700, K_G1, { x: M + i * (col + 24) + 4, y: 196 }));
+      for (let y = 236; y <= 748; y += 24) out.push(Ln(M, y, SW - M, y, K_G4));
+      out.push(capt(`a) 12 columns of ${Math.round(col * 10) / 10} pt · 24 pt gutters · 48 pt margins · 8 pt baseline (rules shown every 24 pt). Text and controls start on a column edge.`, M, 772));
+      return out; });
+    sheet(5, 'Controls', () => [R(0, 0, SW, SH, { fill: WH }), ...head('05', 'Controls'),
+      at(K.primary(), M, 196), at(K.secondary(), M + 208, 196), at(K.text(), M + 416, 205), at(K.disabled(), M + 624, 196),
+      capt('a) Primary: red, once per screen', M, 256), capt('b) Secondary: 1.5 pt black edge', M + 208, 256), capt('c) Text: underlined, with arrow', M + 416, 256), capt('d) Disabled: grey 4 field', M + 624, 256),
+      at(K.field(), M, 312), at(K.select(), M + 352, 312), at(K.checkbox(), M + 704, 332), at(K.radio(), M + 704, 368),
+      capt('e) Labels sit above fields, in capitals', M, 392), capt('f) Select', M + 352, 392), capt('g) Square check, round radio', M + 704, 408),
+      at(K.toggle(true), M, 460), at(K.toggle(false), M + 72, 460), at(K.segmented(), M + 208, 454), at(K.tabs(), M + 624, 454),
+      capt('h) Toggle: the knob is a square', M, 508), capt('i) Segmented control', M + 208, 508), capt('j) Tabs: 3 pt bar under the active tab', M + 624, 508),
+      at(K.chips(), M, 568), at(K.pagination(), M + 352, 566), at(K.breadcrumb(), M + 624, 574),
+      capt('k) Chips', M, 616), capt('l) Pagination', M + 352, 616), capt('m) Breadcrumb', M + 624, 616)]);
+    sheet(6, 'Navigation & signage', () => [R(0, 0, SW, SH, { fill: WH }), ...head('06', 'Navigation & signage'),
+      at(K.topBar(SW - 2 * M), M, 196), capt('a) Top bar: black band, white type, the current place underlined', M, 272),
+      at(K.signage(520), M, 316), capt('b) Signage directory: one line per destination, arrow first, level last', M, 584),
+      at(K.breadcrumb(), M + 600, 324), capt('c) Breadcrumb', M + 600, 356), at(K.pagination(), M + 600, 404), capt('d) Pagination', M + 600, 452),
+      HV('Navigation reads like wayfinding\nin a building: say where it goes,\npoint the way, keep it short.', 20, 700, K_BLK, { x: M + 600, y: 500 })]);
+    sheet(7, 'Data & feedback', () => [R(0, 0, SW, SH, { fill: WH }), ...head('07', 'Data & feedback'),
+      at(K.table(640), M, 196), capt('a) Rule table: no fills, a 1.5 pt rule under the header', M, 486),
+      at(K.progress(), M, 530), at(K.notice(640), M, 600), at(K.critical(640), M, 672), capt('b) Notice in black; critical is the one red', M, 744),
+      at(K.stat('Altitude', '408', 'km'), 736, 196), at(K.stat('Crew', '4', 'aboard'), 946, 196),
+      at(K.bars(410, 200), 736, 312), at(K.dialog(410), 736, 540), capt('c) Stat blocks, bar chart (latest bar red), dialog', 736, 780)]);
+    sheet(8, 'Sample screen', () => [K.screen()]);
+    S.nodes.push(...items); S.sel.clear(); changed();
+    fit(items.filter((n) => n.type === 'frame'));
+    toast('Added the Pro UI 1975 kit: 9 sheets. Every part is editable, and its components are in Insert → Pro UI 1975.', 'Undo', undo, 6000);
+  }
+
   const LIB = [
+    { cat: 'Pro UI 1975', items: [
+      ['Button · primary', () => K.primary()], ['Button · secondary', () => K.secondary()], ['Button · text', K.text], ['Button · disabled', K.disabled],
+      ['Text field (1975)', () => K.field()], ['Select (1975)', K.select], ['Checkbox (1975)', K.checkbox], ['Radio (1975)', K.radio], ['Toggle · on', () => K.toggle(true)], ['Toggle · off', () => K.toggle(false)],
+      ['Segmented control (1975)', K.segmented], ['Tabs (1975)', K.tabs], ['Chips (1975)', K.chips], ['Top bar (1975)', () => K.topBar(960)], ['Signage directory', () => K.signage()],
+      ['Breadcrumb (1975)', K.breadcrumb], ['Pagination', K.pagination], ['Rule table', () => K.table()], ['Stat block', () => K.stat()], ['Bar chart (1975)', () => K.bars()],
+      ['Segmented progress', K.progress], ['Notice banner', () => K.notice()], ['Critical banner', () => K.critical()], ['Dialog (1975)', () => K.dialog()], ['Mission archive screen', K.screen],
+    ] },
     { cat: 'Pro UI · Controls', items: [
       ['Pro button', PRO.button], ['Pro secondary button', PRO.secondary], ['Pro quiet button', PRO.quiet], ['Pro segmented control', PRO.segmented],
       ['Pro toggle row', PRO.toggleRow], ['Pro text field', PRO.field], ['Status light', () => PRO.status()], ['Patch badge', PRO.patch], ['Patch badge (blue)', PRO.patchBlue],
@@ -3242,6 +3365,9 @@ body.tab-logo .design-only { display: none !important; }
       h('div', { class: 'row' }, h('span', {}, 'Size'), h('div', { class: 'stepper' },
         holdBtn('Smaller', '−', () => step(-1), done), sizeOut, holdBtn('Bigger', '+', () => step(1), done))),
       h('div', { class: 'chips' }, [12, 14, 16, 20, 24, 32, 48, 64].map((s) => h('button', { class: 'chipb', 'aria-pressed': String(Math.round(n.size) === s), onclick: () => setAll((t) => { t.size = s; }) }, String(s)))),
+      h('h4', {}, 'Typeface'),
+      h('div', { class: 'seg' }, [['system', 'System'], ['helvetica', 'Helvetica']].map(([f, l]) =>
+        h('button', { 'aria-pressed': String((n.font || 'system') === f), onclick: () => setAll((t) => { if (f === 'system') delete t.font; else t.font = f; }) }, l))),
       h('h4', {}, 'Weight'),
       h('div', { class: 'seg' }, [[400, 'Regular'], [500, 'Medium'], [600, 'Semibold'], [700, 'Bold']].map(([w, l]) =>
         h('button', { 'aria-pressed': String((n.weight || 500) === w), onclick: () => setAll((t) => { t.weight = w; }) }, l))),
@@ -3653,13 +3779,14 @@ body.tab-logo .design-only { display: none !important; }
     Object.assign(s.style, p.w ? { width: p.w * k + 'px', height: p.h * k + 'px' } : { width: '60px', height: '44px', borderStyle: 'dashed' });
     return h('button', { class: 'card', onclick: () => {
       if (p.logo) { $('sheetWrap').hidden = true; switchTab('logo'); return; }
+      if (p.kit) { $('sheetWrap').hidden = true; if (S.tab !== 'design') switchTab('design'); makeKit75(); return; }
       checkpoint();
       S.nodes = []; S.sel.clear();
       if (p.w) S.nodes.push({ id: nid(), type: 'frame', x: 0, y: 0, w: p.w, h: p.h, name: p.name });
       $('docName').textContent = p.name + ' design';
       $('sheetWrap').hidden = true; setTool('draw'); fit(S.nodes); changed();
       toast(`New ${p.name === 'Blank' ? 'blank canvas' : p.name + ' design'}. Undo brings back the previous one.`, 'Undo', undo);
-    } }, s, h('b', {}, p.name), h('small', {}, p.logo ? 'Logo tab' : p.w ? `${p.w} × ${p.h}` : 'Infinite canvas'));
+    } }, s, h('b', {}, p.name), h('small', {}, p.kit ? '9 sheets' : p.logo ? 'Logo tab' : p.w ? `${p.w} × ${p.h}` : 'Infinite canvas'));
   }));
   $('newBtn').addEventListener('click', () => { closePops(); $('sheetWrap').hidden = false; cards.firstChild.focus(); });
   $('sheetCancel').addEventListener('click', () => { $('sheetWrap').hidden = true; });
@@ -3754,9 +3881,60 @@ body.tab-logo .design-only { display: none !important; }
       h('h4', {}, 'On light'), h('div', { class: 'pv-row' }, fig(96, '#ffffff', '96'), fig(48, '#ffffff', '48'), fig(32, '#ffffff', '32'), fig(16, '#ffffff', '16')),
       h('h4', {}, 'On dark (reversed)'), h('div', { class: 'pv-row' }, fig(96, '#1b1c26', '96', 0, true), fig(48, '#1b1c26', '48', 0, true), fig(32, '#1b1c26', '32', 0, true), fig(16, '#1b1c26', '16', 0, true)),
       h('h4', {}, 'As an app icon'), h('div', { class: 'pv-row' }, fig(72, '#ffffff', 'Home screen', 16), fig(40, '#ffffff', 'Settings', 9)),
+      h('h4', {}, 'Brand kit'), h('p', { class: 'hint' }, 'Put this logo on an app icon, patch, business card, letterhead, slide and jacket, each laid out by a fixed rule.'),
       h('div', { class: 'pv-actions' },
-        h('button', { class: 'chipb primary', onclick: () => copyBoardSVG(F) }, 'Copy SVG'),
+        h('button', { class: 'chipb primary', onclick: () => brandKit(F) }, S.nodes.some((n) => n.kit === F.id) ? 'Update brand kit' : 'Make brand kit'),
+        h('button', { class: 'chipb', onclick: () => copyBoardSVG(F) }, 'Copy SVG'),
         h('button', { class: 'chipb', onclick: () => saveBoardComponent(F) }, 'Save to My components')));
+  }
+  // ---------- Brand kit (§3.27): the logo applied to templates by fixed placement rules ----------
+  function tintDeep(n, c) {
+    if (n.children) n.children.forEach((k) => tintDeep(k, c));
+    if (n.type === 'vec') n.layers.forEach((L) => { L.fill = c; });
+    for (const k of ['fill', 'stroke']) if (n[k]) n[k] = c;
+    if (n.color) n.color = c;
+  }
+  function brandKit(F) {
+    const art = inBoard(F); if (!art.length) { toast('Draw your logo on the artboard first, then make the brand kit.'); return; }
+    checkpoint();
+    S.nodes = S.nodes.filter((n) => n.kit !== F.id);
+    const u = union(art), count = new Map();
+    const tally = (n) => { if (n.children) n.children.forEach(tally); else for (const v of n.type === 'vec' ? n.layers.map((L) => L.fill) : [n.fill, n.stroke, n.color]) if (v && v.toLowerCase() !== '#ffffff') count.set(v, (count.get(v) || 0) + 1); };
+    art.forEach(tally);
+    const brand = [...count].sort((a, b) => b[1] - a[1])[0]?.[0] || P_ROYAL;
+    const out = [], add = (n, ox, oy) => { n.x += ox; n.y += oy; n.kit = F.id; out.push(n); return n; };
+    // The logo fitted into a box (centred, or flush left), optionally reversed to one colour.
+    const logo = (bx, by, bw, bh, tint, left) => {
+      const k = Math.min(bw / u.w, bh / u.h), w = u.w * k, hh = u.h * k;
+      const kids = art.map((n) => { const c = reid(clone(n)); c.x = n.x - u.x; c.y = n.y - u.y; if (tint) tintDeep(c, tint); return c; });
+      return { id: nid(), type: 'group', name: 'Logo', x: left ? bx : bx + (bw - w) / 2, y: by + (bh - hh) / 2, w, h: hh, gw: u.w, gh: u.h, children: kids };
+    };
+    const frame = (name, x, y, w, h, caption, build) => {
+      add({ id: nid(), type: 'frame', name: `Brand kit · ${name}`, x: 0, y: 0, w, h }, x, y);
+      for (const n of build(w, h)) add(n, x, y);
+      add(Tx(caption, 13, 500, P_STEEL, { x: 0, y: h + 16 }), x, y);
+    };
+    const x0 = F.x + F.w + 200, rA = F.y, rB = rA + 512 + 180, rC = rB + 400 + 180;
+    frame('App icon', x0, rA, 512, 512, 'a) App icon. Logo reversed, 62 % of the width, centred; corners 22.5 %.', (w) => [R(0, 0, w, w, { r: w * 0.225, fill: brand }), logo(w * 0.19, w * 0.19, w * 0.62, w * 0.62, WH)]);
+    frame('Social avatar', x0 + 672, rA, 400, 400, 'b) Social avatar. Logo reversed, 56 %, centred in the circle.', (w) => [E(0, 0, w, w, { fill: brand }), logo(w * 0.22, w * 0.22, w * 0.56, w * 0.56, WH)]);
+    frame('Patch', x0 + 1232, rA, 320, 134, 'c) Patch. White, 12 : 5; logo in its own colours, 60 % of the height.', (w, h) => [R(0, 0, w, h, { r: 8, fill: WH, stroke: P_GREY, sw: 2 }), logo(24, h * 0.2, w - 48, h * 0.6)]);
+    frame('Business card, front', x0, rB, 700, 400, 'd) Business card, front. Logo top left in the 48 pt margin, 72 pt tall.', () => [R(0, 0, 700, 400, { fill: WH }), logo(48, 48, 280, 72, null, true),
+      Tx('Your Name', 26, 700, P_INK, { x: 48, y: 236 }), Tx('Designer', 16, 400, MUT, { x: 48, y: 274 }), Ln(48, 318, 652, 318, P_GREY), Tx('hello@yourbrand.com   ·   +1 555 0100', 14, 500, P_INK, { x: 48, y: 334 })]);
+    frame('Business card, back', x0 + 860, rB, 700, 400, 'e) Business card, back. Brand colour; logo reversed, 50 %, centred.', () => [R(0, 0, 700, 400, { fill: brand }), logo(175, 100, 350, 200, WH)]);
+    frame('Letterhead', x0, rC, 595, 842, 'f) Letterhead (A4). Logo top left, 56 pt tall; 48 pt margins.', () => [R(0, 0, 595, 842, { fill: WH }), logo(48, 48, 220, 56, null, true),
+      TxR('Your Brand Ltd', 11, 700, P_INK, 547, 56), TxR('12 Orbit Way, Bengaluru', 11, 400, MUT, 547, 72), TxR('yourbrand.com', 11, 400, MUT, 547, 88), Ln(48, 128, 547, 128, P_INK),
+      Tx('26 October 2026', 12, 500, MUT, { x: 48, y: 156 }), ...[0, 1, 2, 3, 4, 5, 6, 7].map((i) => R(48, 200 + i * 26, i === 7 ? 260 : 499, 10, { r: 5, fill: P_MIST })),
+      Ln(48, 780, 547, 780, P_GREY), Tx('Your Brand Ltd · Registered in India', 10, 500, P_STEEL, { x: 48, y: 794 })]);
+    frame('Slide', x0 + 755, rC, 1280, 720, 'g) Slide (16 : 9). Logo top left, 72 pt tall; 64 pt margins; brand band at the foot.', () => [R(0, 0, 1280, 720, { fill: WH }), logo(64, 56, 320, 72, null, true),
+      Tx('Presentation title', 64, 800, P_INK, { x: 64, y: 292 }), Tx('Subtitle · 26 October 2026', 24, 400, MUT, { x: 64, y: 386 }), R(0, 680, 1280, 40, { fill: brand })]);
+    frame('Apparel', x0 + 2195, rC, 600, 640, 'h) Apparel. White patch on the wearer’s right chest, about 4 cm wide.', () => {
+      const jk = [[230, 80], [120, 112], [36, 236], [104, 276], [150, 232], [150, 600], [450, 600], [450, 232], [496, 276], [564, 236], [480, 112], [370, 80], [300, 132]];
+      const body = Pth(jk.map(([x, y]) => [x, y, x, y, x, y, 1]), { closed: true, color: P_ROYAL, fill: P_ROYAL, sw: 2, name: 'Jacket' }); body.closed = true; setPathWorld(body, pathWorld(body));
+      return [R(0, 0, 600, 640, { fill: '#f4f5f7' }), body, Ln(300, 132, 300, 600, '#16307a', 2), R(184, 200, 84, 36, { r: 4, fill: WH }), logo(190, 204, 72, 28)];
+    });
+    S.nodes.push(...out); S.sel.clear(); changed();
+    fit([F, ...out.filter((n) => n.type === 'frame')]);
+    toast('Brand kit made: 8 templates beside your logo. Change the logo and tap Update brand kit to refresh them.', 'Undo', undo, 6000);
   }
   function togglePreview() {
     const pv = $('preview'); pv.hidden = !pv.hidden;
@@ -3777,7 +3955,7 @@ body.tab-logo .design-only { display: none !important; }
       case 'stroke': { const sx = n.w / n.pw, sy = n.h / n.ph; let d = ''; for (let i = 0; i < n.pts.length; i += 3) d += (i ? 'L' : 'M') + f(n.x + n.pts[i] * sx - ox) + ' ' + f(n.y + n.pts[i + 1] * sy - oy); return `<path d="${d}" ${paint(null, n.color, n.sw)}${op}/>`; }
       case 'path': { const A = pathWorld(n); let d = `M${f(A[0][0] - ox)} ${f(A[0][1] - oy)}`; for (const [a, b] of segments(A, n.closed)) d += `C${f(a[4] - ox)} ${f(a[5] - oy)} ${f(b[2] - ox)} ${f(b[3] - oy)} ${f(b[0] - ox)} ${f(b[1] - oy)}`; if (n.closed) d += 'Z'; return `<path d="${d}" ${paint(n.fill && n.closed ? n.fill : null, n.color, n.sw)}${op}/>`; }
       case 'vec': return `<g transform="translate(${x} ${y}) scale(${f(n.w / n.pw)} ${f(n.h / n.ph)})"${op}>` + n.layers.map((L) => { let d = ''; for (const A of L.rings) { d += `M${f(A[0][0])} ${f(A[0][1])}`; for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; d += `C${f(a[4])} ${f(a[5])} ${f(b[2])} ${f(b[3])} ${f(b[0])} ${f(b[1])}`; } d += 'Z'; } return `<path d="${d}" fill="${L.fill}" fill-rule="evenodd"/>`; }).join('') + '</g>';
-      case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * 1.25 + n.size * 0.95)}" font-family="-apple-system, system-ui, sans-serif" font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
+      case 'text': return n.text.split('\n').map((line, i) => `<text x="${x}" y="${f(y + i * n.size * 1.25 + n.size * 0.95)}" font-family="${n.font === 'helvetica' ? 'Helvetica Neue, Helvetica, Arial, sans-serif' : '-apple-system, system-ui, sans-serif'}" font-size="${f(n.size)}" font-weight="${n.weight || 500}" fill="${n.color}"${op}>${line.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</text>`).join('');
       case 'icon': return `<path d="${ICONS[n.icon]}" transform="translate(${x} ${y}) scale(${f(n.w / 24)})" ${paint(null, n.color, n.sw || 1.8)}${op}/>`;
       case 'svgp': return `<path d="${n.d.replace(/"/g, '')}" transform="translate(${x} ${y}) scale(${f(n.w / n.bw)} ${f(n.h / n.bh)}) translate(${f(-n.bx)} ${f(-n.by)}) matrix(${n.m.map(f).join(' ')})" ${paint(n.fill, n.stroke, n.sw, n.fillAlpha ?? 1, n.strokeAlpha ?? 1)}${n.rule === 'evenodd' ? ' fill-rule="evenodd"' : ''}${op}/>`;
       case 'image': return `<image href="${n.src}" x="${x}" y="${y}" width="${f(n.w)}" height="${f(n.h)}"${op}/>`;
