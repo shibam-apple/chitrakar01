@@ -85,7 +85,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none;
 }
 #dock::-webkit-scrollbar { display: none; }
-.tool { width: 62px; height: 56px; border-radius: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--fg-2); flex: none; }
+.tool { width: 64px; height: 60px; border-radius: 11px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; color: var(--fg-2); flex: none; }
 .tool:hover { background: var(--chrome-2); color: var(--fg); }
 .tool[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); }
 .tool[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
@@ -93,28 +93,32 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .dot { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--chrome); box-shadow: 0 0 0 1px var(--line); }
 
 /* Popovers */
-.pop { position: fixed; z-index: 8; padding: 12px; display: flex; flex-direction: column; gap: 10px; min-width: 220px; max-width: calc(100vw - 32px); max-height: calc(100% - 120px); overflow-y: auto; }
-.pop.wide { width: 324px; }
+.pop { position: fixed; z-index: 8; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 220px; max-width: calc(100vw - 32px); max-height: calc(100% - 120px); overflow-y: auto; }
+.pop.wide { width: 340px; }
 .pop h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
 .pop h4 { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
-.pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 280px; }
+.pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 300px; }
+#viewPop { width: 340px; }
+.zoomrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; }
+.zoomrow button { height: 52px; border-radius: 12px; background: var(--chrome-2); font-size: 24px; }
+.zoomrow output { text-align: center; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* On narrow screens, popovers become bottom sheets with thumb-sized controls. */
 .pop.sheet { left: max(16px, env(safe-area-inset-left, 0px)) !important; right: max(16px, env(safe-area-inset-right, 0px)); top: auto !important; bottom: calc(env(safe-area-inset-bottom, 0px) + 92px); width: auto !important; max-height: 55%; transform: none !important; }
 .swatches { display: flex; gap: 4px; flex-wrap: wrap; }
-.sw { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; flex: none; }
-.sw i { width: 24px; height: 24px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); }
+.sw { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; flex: none; }
+.sw i { width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15); }
 .sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
-.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; min-height: 44px; }
-.toggle { width: 48px; height: 28px; border-radius: 999px; background: var(--line); position: relative; flex: none; }
-.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .15s; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px; min-height: 48px; }
+.toggle { width: 52px; height: 32px; border-radius: 999px; background: var(--line); position: relative; flex: none; }
+.toggle::after { content: ""; position: absolute; top: 3px; left: 3px; width: 26px; height: 26px; box-shadow: 0 1px 2px rgba(0,0,0,.2); border-radius: 50%; background: #fff; transition: transform .15s; }
 .toggle[aria-checked="true"] { background: var(--accent); }
 .toggle[aria-checked="true"]::after { transform: translateX(20px); }
 .opt { text-align: left; padding: 10px 12px; border-radius: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
 .opt small { color: var(--fg-2); font-size: 12px; }
 .opt[aria-pressed="true"] { background: var(--accent-soft); }
 .opt:hover { background: var(--chrome-2); }
-.kinds { display: grid; grid-template-columns: repeat(4, 64px); gap: 4px; }
-.kind { height: 64px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--fg-2); }
+.kinds { display: grid; grid-template-columns: repeat(4, 72px); gap: 4px; }
+.kind { height: 72px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--fg-2); }
 .kind:hover { background: var(--chrome-2); color: var(--fg); }
 .kind[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
 
@@ -125,26 +129,34 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .preset.soft i { box-shadow: 0 2px 5px rgba(16,18,40,.25); border-color: transparent; }
 .preset.lifted i { box-shadow: 0 6px 12px rgba(16,18,40,.35); border-color: transparent; }
 .preset.glass i { background: linear-gradient(135deg, #8f97ff, #f2b45a); border-color: rgba(255,255,255,.8); }
-.fx-row { display: grid; grid-template-columns: 88px minmax(0, 1fr) 40px; align-items: center; gap: 8px; min-height: 40px; font-size: 13px; }
-.fx-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-2); font-size: 12px; }
-.fx-row input[type="range"] { width: 100%; accent-color: var(--accent); height: 28px; margin: 0; }
+.fx-row { display: grid; grid-template-columns: 92px minmax(0, 1fr) 44px; align-items: center; gap: 8px; min-height: 52px; font-size: 14px; }
+.fx-row output { text-align: right; font-variant-numeric: tabular-nums; color: var(--fg-2); font-size: 13px; }
+/* Touch-sized sliders: 8 pt track, 28 pt thumb, filled to the value (--p is set by script). */
+input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 40px; margin: 0; background: transparent; touch-action: none; cursor: pointer; --p: 50%; }
+input[type="range"]::-webkit-slider-runnable-track { height: 8px; border-radius: 4px; background: linear-gradient(to right, var(--accent) var(--p), var(--line) var(--p)); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 28px; height: 28px; margin-top: -10px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,.12); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+input[type="range"]::-moz-range-track { height: 8px; border-radius: 4px; background: var(--line); }
+input[type="range"]::-moz-range-progress { height: 8px; border-radius: 4px; background: var(--accent); }
+input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius: 50%; background: #fff; border: 1px solid rgba(0,0,0,.12); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
 .seg { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); background: var(--chrome-2); border-radius: 9px; padding: 2px; gap: 2px; }
 .fx-row .seg { grid-column: 2 / 4; }
-.seg button { height: 32px; border-radius: 7px; font-size: 11.5px; font-weight: 600; color: var(--fg-2); padding: 0; }
+.seg button { height: 40px; border-radius: 7px; font-size: 12.5px; font-weight: 600; color: var(--fg-2); padding: 0; }
 .seg button[aria-pressed="true"] { background: var(--chrome); color: var(--fg); box-shadow: 0 1px 2px var(--shadow); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-.chipb { min-width: 40px; height: 34px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chipb { min-width: 48px; height: 40px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .chipb[aria-pressed="true"] { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
 .icons { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
 .icons.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
-.ib { height: 54px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--fg-2); }
+.ib { height: 58px; border-radius: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10.5px; font-weight: 600; color: var(--fg-2); }
 .ib:hover:not(:disabled) { background: var(--chrome-2); color: var(--fg); }
 .ib:disabled { opacity: 0.3; cursor: default; }
 .xywh { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
 .xywh label { display: flex; flex-direction: column; gap: 3px; font-size: 11px; font-weight: 600; color: var(--fg-2); }
-.xywh input { height: 36px; border: 1px solid var(--line); border-radius: 8px; background: var(--chrome-2); color: var(--fg); font: inherit; font-size: 14px; padding: 0 6px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
+.xywh .scrub { cursor: ew-resize; touch-action: none; padding: 2px 0; }
+.xywh .scrub::after { content: " ↔"; opacity: .5; }
+.xywh input { height: 44px; border: 1px solid var(--line); border-radius: 8px; background: var(--chrome-2); color: var(--fg); font: inherit; font-size: 14px; padding: 0 6px; width: 100%; min-width: 0; font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
 .stepper { display: flex; align-items: center; gap: 4px; }
-.stepper button { width: 40px; height: 36px; border-radius: 8px; background: var(--chrome-2); font-size: 18px; }
+.stepper button { width: 48px; height: 44px; border-radius: 8px; background: var(--chrome-2); font-size: 18px; }
 .stepper output { min-width: 40px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
 
 /* Insert library */
@@ -176,14 +188,14 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .lay-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 6px 6px 14px; border-bottom: 1px solid var(--line); }
 .lay-head b { font-size: 14px; }
 #layerList { overflow-y: auto; padding: 4px 6px 10px; display: flex; flex-direction: column; gap: 1px; overscroll-behavior: contain; }
-.layer { display: grid; grid-template-columns: 26px 20px minmax(0, 1fr) 34px 34px; align-items: center; gap: 4px; min-height: 40px; border-radius: 8px; font-size: 13px; cursor: default; }
+.layer { display: grid; grid-template-columns: 28px 20px minmax(0, 1fr) 40px 40px; align-items: center; gap: 4px; min-height: 48px; border-radius: 8px; font-size: 13px; cursor: default; }
 .layer:hover { background: var(--chrome-2); }
 .layer.on { background: var(--accent-soft); color: var(--accent); }
 .layer.off .name, .layer.off svg.s { opacity: 0.4; }
 .layer .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .layer .name input { width: 100%; font: inherit; border: 1px solid var(--accent); border-radius: 6px; padding: 2px 4px; background: var(--chrome); color: var(--fg); -webkit-user-select: text; user-select: text; }
-.layer .grip { height: 40px; display: grid; place-items: center; color: var(--fg-2); cursor: grab; touch-action: none; }
-.layer .mini { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; color: var(--fg-2); opacity: 0.55; }
+.layer .grip { height: 48px; display: grid; place-items: center; color: var(--fg-2); cursor: grab; touch-action: none; }
+.layer .mini { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--fg-2); opacity: 0.55; }
 .layer .mini[aria-pressed="true"] { opacity: 1; color: var(--accent); }
 .layer:hover .mini { opacity: 1; }
 .layer.frame { grid-template-columns: 20px minmax(0, 1fr); padding-left: 8px; font-weight: 600; margin-top: 8px; }
@@ -196,9 +208,9 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 #ctx { position: fixed; z-index: 6; display: flex; align-items: center; gap: 2px; padding: 4px; max-width: calc(100vw - 32px); overflow-x: auto; scrollbar-width: none; }
 #ctx::-webkit-scrollbar { display: none; }
 #ctx .swatches { flex-wrap: nowrap; gap: 0; }
-#ctx .sw { width: 34px; height: 34px; }
-#ctx .sw i { width: 20px; height: 20px; }
-#ctx .btn { min-width: 40px; height: 40px; padding: 0 8px; }
+#ctx .sw { width: 36px; height: 36px; }
+#ctx .sw i { width: 24px; height: 24px; }
+#ctx .btn { min-width: 48px; height: 48px; padding: 0 10px; }
 #ctx .danger { color: var(--danger); }
 
 /* Toast */
@@ -233,7 +245,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 .sheet-foot { display: flex; justify-content: flex-end; }
 
 @media (max-width: 560px) {
-  .tool { width: 52px; font-size: 10px; }
+  .tool { width: 56px; font-size: 10px; }
   .doc span, #layersBtn span { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .toggle::after { transition: none; } }
@@ -263,7 +275,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     <button class="btn label" id="layersBtn" title="Layers" aria-expanded="false">
       <svg class="i" viewBox="0 0 24 24"><path d="m12 4 9 5-9 5-9-5z"/><path d="m3 14 9 5 9-5"/></svg><span>Layers</span>
     </button>
-    <button class="btn" id="zoom" title="Zoom to fit (⌘0)" aria-label="Zoom to fit">100%</button>
+    <button class="btn" id="zoom" title="Zoom and view options" aria-label="Zoom and view options" aria-expanded="false">100%</button>
   </div>
 </header>
 
@@ -302,6 +314,10 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     <span>Turn rough drawings into clean shapes</span>
     <button class="toggle" id="autoShape" role="switch" aria-checked="true" aria-label="Turn rough drawings into clean shapes"></button>
   </div>
+  <div class="row">
+    <span>Vectorize drawings when I lift the Pencil</span>
+    <button class="toggle" id="autoVector" role="switch" aria-checked="false" aria-label="Vectorize drawings when I lift the Pencil"></button>
+  </div>
 </div>
 <div id="shapePop" class="bar pop" hidden>
   <h3>Shapes</h3>
@@ -318,6 +334,8 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 <div id="textPop" class="bar pop wide" hidden></div>
 <div id="fxPop" class="bar pop wide" hidden></div>
 <div id="arrangePop" class="bar pop wide" hidden></div>
+<div id="cornersPop" class="bar pop wide" hidden></div>
+<div id="viewPop" class="bar pop" hidden></div>
 
 <div id="insertPop" class="bar pop" hidden role="dialog" aria-label="Insert UI components">
   <div class="lib-head">
@@ -424,6 +442,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     stroke: '<path d="M4 20l4-1 11-11-3-3L5 16z"/>', group: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/><path d="M10.5 7H17v6.5"/>',
     icon: `<path d="${STAR_D}"/>`, image: '<path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5"/>', triangle: '<path d="M12 4.5 20 19H4z"/>',
     polygon: '<path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/>', star: `<path d="${STAR_D}"/>`,
+    path: '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="19.5" cy="5.5" r="1.6"/>',
   };
 
   // ---------- State ----------
@@ -431,6 +450,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     nodes: [], sel: new Set(), cam: { x: 0, y: 0, z: 1 },
     tool: 'draw', shapeKind: 'rect', color: INK, autoShape: true,
     pencil: false, finger: 'move', tips: {}, hover: null, hoverId: null,
+    wheel: 'auto', autoVector: false, peHover: null,
   };
   const KEY = 'chitrakar.prototype.v2', LIBKEY = 'chitrakar.mylib.v1';
   const store = {
@@ -468,8 +488,8 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   function save() { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 800); }
   function flush() {
     clearTimeout(saveTimer); saveTimer = 0;
-    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind } = S;
-    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind }) && !saveWarned) {
+    const { nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector } = S;
+    if (!store.set({ nodes, cam, color, autoShape, pencil, finger, tips, shapeKind, wheel, autoVector }) && !saveWarned) {
       saveWarned = true;
       toast('Couldn’t save in this browser: its storage is full. Large images use the most space.', null, null, 7000);
     }
@@ -532,7 +552,8 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     if (S.hoverId && !S.sel.has(S.hoverId) && !G) {
       const hn = byId(S.hoverId); if (hn) ctx.strokeRect(hn.x, hn.y, hn.w, hn.h);
     }
-    if (S.sel.size && !editing) {
+    if (PE) drawPointEditor(z);
+    else if (S.sel.size && !editing) {
       const ns = selected();
       for (const n of ns) {
         if (n.locked) { ctx.setLineDash([4 / z, 4 / z]); ctx.strokeRect(n.x, n.y, n.w, n.h); ctx.setLineDash([]); }
@@ -545,6 +566,16 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
         if (n.type === 'line') {
           for (const [hx, hy] of lineEnds(n)) { ctx.beginPath(); ctx.arc(hx, hy, hs * 0.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
         } else for (const [hx, hy] of corners(n)) { ctx.fillRect(hx - hs / 2, hy - hs / 2, hs, hs); ctx.strokeRect(hx - hs / 2, hy - hs / 2, hs, hs); }
+        const rh = radiusHandle(n);
+        if (rh) {
+          ctx.beginPath(); ctx.arc(rh[0], rh[1], 5 / z, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+          if (G && G.kind === 'radius') {
+            ctx.font = `600 ${12 / z}px -apple-system, system-ui, sans-serif`; ctx.textBaseline = 'middle';
+            const label = `Radius ${Math.round(n.r || 0)}`;
+            ctx.lineWidth = 4 / z; ctx.strokeStyle = '#ffffff'; ctx.strokeText(label, rh[0] + 10 / z, rh[1] - 12 / z);
+            ctx.fillStyle = T.accent; ctx.fillText(label, rh[0] + 10 / z, rh[1] - 12 / z);
+          }
+        }
       }
     }
     if (G && G.guides && G.guides.length) {
@@ -563,6 +594,25 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       ctx.strokeStyle = S.tool === 'erase' ? T.fg2 : S.color; ctx.lineWidth = 1.5 / z; ctx.stroke();
     }
     placeContextBar();
+  }
+
+  function drawPointEditor(z) {
+    const n = byId(PE.id); if (!n) return;
+    const A = pathWorld(n), r = 6 / z;
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 1 / z; tracePath(A, n.closed); ctx.stroke();
+    const a = PE.i != null ? A[PE.i] : null;
+    if (a && !a[6]) {
+      ctx.beginPath(); ctx.moveTo(a[2], a[3]); ctx.lineTo(a[0], a[1]); ctx.lineTo(a[4], a[5]); ctx.stroke();
+      ctx.fillStyle = T.accent;
+      for (const [hx, hy] of [[a[2], a[3]], [a[4], a[5]]]) { ctx.beginPath(); ctx.arc(hx, hy, r * 0.75, 0, Math.PI * 2); ctx.fill(); }
+    }
+    A.forEach((q, i) => {
+      ctx.beginPath();
+      if (q[6]) ctx.rect(q[0] - r, q[1] - r, r * 2, r * 2); else ctx.arc(q[0], q[1], r, 0, Math.PI * 2);
+      ctx.fillStyle = i === PE.i ? T.accent : '#ffffff'; ctx.fill();
+      ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke();
+      if (S.peHover === i && i !== PE.i) { ctx.beginPath(); ctx.arc(q[0], q[1], r * 1.8, 0, Math.PI * 2); ctx.lineWidth = 1 / z; ctx.stroke(); }
+    });
   }
 
   // ---------- Effects: opacity, shadow, layer blur, background blur ----------
@@ -699,6 +749,14 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
         break;
       }
       case 'stroke': drawInk(n.pts, n.x, n.y, n.w / n.pw, n.h / n.ph, n.sw, n.color, n.pen); break;
+      case 'path': {
+        const A = pathWorld(n); if (A.length < 2) break;
+        tracePath(A, n.closed);
+        const a = ctx.globalAlpha;
+        if (n.fill && n.closed) { ctx.globalAlpha = a * (n.fillAlpha ?? 1); ctx.fillStyle = n.fill; ctx.fill(); ctx.globalAlpha = a; }
+        if (n.sw > 0) { ctx.strokeStyle = n.color; ctx.lineWidth = n.sw; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); }
+        break;
+      }
       case 'text': {
         ctx.fillStyle = n.color; ctx.font = FONT(n); ctx.textBaseline = 'top';
         n.text.split('\n').forEach((line, i) => ctx.fillText(line, n.x, n.y + i * n.size * 1.25));
@@ -764,7 +822,95 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       }
       return m === 1 && Math.hypot(x - n.x, y - n.y) <= tol + n.sw;
     }
+    if (n.type === 'path') {
+      if (n.fill && n.closed) return true;
+      const P = samplePath(pathWorld(n), n.closed, 8);
+      for (let i = 1; i < P.length; i++) if (segDist(x, y, P[i - 1][0], P[i - 1][1], P[i][0], P[i][1]) <= tol + n.sw) return true;
+      return false;
+    }
     return true;
+  }
+
+  // ---------- Vector paths ----------
+  // Anchors are [x, y, inX, inY, outX, outY, corner], relative to the node's box and scaled by w/pw, h/ph like strokes.
+  function pathWorld(n) {
+    const sx = n.w / n.pw, sy = n.h / n.ph;
+    return n.a.map(([x, y, ix, iy, ox, oy, c]) => [n.x + x * sx, n.y + y * sy, n.x + ix * sx, n.y + iy * sy, n.x + ox * sx, n.y + oy * sy, c]);
+  }
+  const bez = (p0, p1, p2, p3, t) => { const u = 1 - t; return u * u * u * p0 + 3 * u * u * t * p1 + 3 * u * t * t * p2 + t * t * t * p3; };
+  function segments(A, closed) {
+    const out = []; for (let i = 0; i < A.length - 1; i++) out.push([A[i], A[i + 1], i]);
+    if (closed && A.length > 2) out.push([A[A.length - 1], A[0], A.length - 1]);
+    return out;
+  }
+  function samplePath(A, closed, k = 12) {
+    const pts = [[A[0][0], A[0][1]]];
+    for (const [a, b] of segments(A, closed)) for (let j = 1; j <= k; j++) { const t = j / k; pts.push([bez(a[0], a[4], b[2], b[0], t), bez(a[1], a[5], b[3], b[1], t)]); }
+    return pts;
+  }
+  function setPathWorld(n, A) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of samplePath(A, n.closed)) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    const w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1), r2 = (v) => Math.round(v * 100) / 100;
+    Object.assign(n, { x: x0, y: y0, w, h, pw: w, ph: h, a: A.map(([x, y, ix, iy, ox, oy, c]) => [r2(x - x0), r2(y - y0), r2(ix - x0), r2(iy - y0), r2(ox - x0), r2(oy - y0), c ? 1 : 0]) });
+  }
+  function tracePath(A, closed) {
+    ctx.beginPath(); ctx.moveTo(A[0][0], A[0][1]);
+    for (const [a, b] of segments(A, closed)) ctx.bezierCurveTo(a[4], a[5], b[2], b[3], b[0], b[1]);
+    if (closed) ctx.closePath();
+  }
+  // Catmull-Rom style handles through the points; corner points get no handles.
+  function smoothHandles(A, closed, only) {
+    const n = A.length;
+    for (let i = 0; i < n; i++) {
+      if (only != null && !only.includes(i)) continue;
+      const a = A[i];
+      if (a[6]) { a[2] = a[0]; a[3] = a[1]; a[4] = a[0]; a[5] = a[1]; continue; }
+      const p = A[closed ? (i - 1 + n) % n : Math.max(0, i - 1)], q = A[closed ? (i + 1) % n : Math.min(n - 1, i + 1)];
+      const tx = (q[0] - p[0]) / 6, ty = (q[1] - p[1]) / 6;
+      a[2] = a[0] - tx; a[3] = a[1] - ty; a[4] = a[0] + tx; a[5] = a[1] + ty;
+      if (!closed && i === 0) { a[2] = a[0]; a[3] = a[1]; }
+      if (!closed && i === n - 1) { a[4] = a[0]; a[5] = a[1]; }
+    }
+  }
+  function rdp(P, eps) {
+    if (P.length < 3) return P;
+    const a = P[0], b = P[P.length - 1]; let dmax = 0, idx = 0;
+    for (let i = 1; i < P.length - 1; i++) { const d = segDist(P[i][0], P[i][1], a[0], a[1], b[0], b[1]); if (d > dmax) { dmax = d; idx = i; } }
+    if (dmax <= eps) return [a, b];
+    return [...rdp(P.slice(0, idx + 1), eps).slice(0, -1), ...rdp(P.slice(idx), eps)];
+  }
+  // Ink → vector: simplify, mark sharp turns as corners, fit smooth curves through the rest.
+  function vectorize(st) {
+    const sx = st.w / st.pw, sy = st.h / st.ph, P = []; let pr = 0;
+    for (let i = 0; i < st.pts.length; i += 3) { P.push([st.x + st.pts[i] * sx, st.y + st.pts[i + 1] * sy]); pr += st.pts[i + 2]; }
+    pr /= P.length || 1;
+    const diag = Math.hypot(st.w, st.h);
+    let closed = P.length > 8 && Math.hypot(P[0][0] - P[P.length - 1][0], P[0][1] - P[P.length - 1][1]) < Math.max(st.sw * 3, diag * 0.08);
+    let Q = rdp(P, Math.max(1, st.sw * 0.6));
+    if (closed && Q.length > 3) Q = Q.slice(0, -1); else closed = false;
+    if (Q.length < 2) Q = [P[0], P[P.length - 1]];
+    const A = Q.map(([x, y]) => [x, y, x, y, x, y, 0]), m = A.length;
+    for (let i = 0; i < m; i++) {
+      if (!closed && (i === 0 || i === m - 1)) continue;
+      const p = A[(i - 1 + m) % m], q = A[(i + 1) % m], a = A[i];
+      let t = Math.abs(Math.atan2(q[1] - a[1], q[0] - a[0]) - Math.atan2(a[1] - p[1], a[0] - p[0]));
+      if (t > Math.PI) t = 2 * Math.PI - t;
+      if (t > 1.0) a[6] = 1;
+    }
+    smoothHandles(A, closed);
+    const n = { id: st.id, type: 'path', closed, color: st.color, sw: st.pen ? st.sw * (0.3 + 1.4 * pr) : st.sw, fill: null };
+    for (const k of ['name', 'opacity', 'shadow', 'blur', 'hidden', 'locked']) if (st[k] != null) n[k] = st[k];
+    setPathWorld(n, A);
+    return { n, before: P.length, after: m };
+  }
+  function pathSVG(n) {
+    const A = pathWorld(n), pad = n.sw, ox = n.x - pad, oy = n.y - pad, f = (v) => Math.round(v * 100) / 100;
+    let d = `M${f(A[0][0] - ox)} ${f(A[0][1] - oy)}`;
+    for (const [a, b] of segments(A, n.closed)) d += ` C${f(a[4] - ox)} ${f(a[5] - oy)} ${f(b[2] - ox)} ${f(b[3] - oy)} ${f(b[0] - ox)} ${f(b[1] - oy)}`;
+    if (n.closed) d += ' Z';
+    const w = f(n.w + pad * 2), hh = f(n.h + pad * 2);
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${hh}" viewBox="0 0 ${w} ${hh}"><path d="${d}" fill="${n.fill && n.closed ? n.fill : 'none'}" stroke="${n.color}" stroke-width="${f(n.sw)}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
   // Everything under a point, topmost first. Hidden, locked and invisible items are skipped.
   function hitAll(x, y) {
@@ -883,7 +1029,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   function setColor(n, c) {
     if (n.type === 'group') { const p = primary(n); if (p) setColor(p, c); else n.children.forEach((k) => { if (k.color) k.color = c; }); return; }
     if (isShape(n)) { if (n.fill) n.fill = c; else n.stroke = c; }
-    else if (n.type !== 'frame' && n.type !== 'image') n.color = c;
+    else if (n.type !== 'frame' && n.type !== 'image') { n.color = c; if (n.type === 'path' && n.fill) n.fill = c; }
   }
   const fxTarget = (n) => isShape(n) ? n : n.type === 'group' ? primary(n) : null;
 
@@ -1030,9 +1176,19 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     toast('Apple Pencil detected. Your fingers now move the canvas and select things.', null, null, 5500);
   }
 
+  // Corner-radius handle: sits just inside the top-left corner of a selected rectangle or image.
+  const RADIUS_GAP = 20;
+  function radiusHandle(n) {
+    if (S.sel.size !== 1 || !n || n.locked || PE || (n.type !== 'rect' && n.type !== 'image')) return null;
+    const z = S.cam.z; if (Math.min(n.w, n.h) * z < 48) return null;
+    const off = Math.min((n.r || 0) + RADIUS_GAP / z, Math.min(n.w, n.h) / 2);
+    return [n.x + off, n.y + off];
+  }
   function handleAt(p, touch) {
     if (S.sel.size !== 1) return null;
     const n = selected()[0]; if (!n || n.locked) return null;
+    const rh = radiusHandle(n);
+    if (rh && Math.hypot(p.x - rh[0], p.y - rh[1]) < (touch ? 14 : 9) / S.cam.z) return { n, radius: true };
     // On small items the handles shrink, so a tap in the middle still picks or moves the item.
     const base = (touch ? 24 : 14) / S.cam.z, hs = n.type === 'line' ? base : Math.max(6 / S.cam.z, Math.min(base, Math.min(n.w, n.h) / 3));
     if (n.type === 'line') {
@@ -1044,7 +1200,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   }
   function startHandle(id, hd) {
     const n = hd.n;
-    G = hd.end != null ? { kind: 'lineEnd', id, n, end: hd.end, moved: false }
+    G = hd.radius ? { kind: 'radius', id, n, moved: false } : hd.end != null ? { kind: 'lineEnd', id, n, end: hd.end, moved: false }
       : { kind: 'resize', id, n, ax: hd.ax, ay: hd.ay, orig: { w: n.w, h: n.h, size: n.size }, moved: false };
   }
 
@@ -1058,6 +1214,9 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pinch) { pinch.maxN = Math.max(pinch.maxN, touches.size); return; }
       if (touches.size >= 2) { cancelGesture(); startPinch(e.timeStamp); return; }
+    }
+    if (PE && !G && !(e.pointerType === 'mouse' && (e.button === 1 || spaceDown))) { capture(e.pointerId); peDown(e, p); updateUI(); requestRender(); return; }
+    if (e.pointerType === 'touch') {
       if (fingersNavigate()) {
         // A finger can resize, drag or (with two fingers) scale what is already selected; otherwise it pans.
         const hd = handleAt(p, true);
@@ -1077,6 +1236,88 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     S.hover = null;
     startTool(e, p);
   });
+
+  // ---------- Edit points ----------
+  let PE = null;               // { id, i, t } while editing a vector's points
+  function enterPoints(n) {
+    if (!n || n.type !== 'path') return;
+    closePops(); setTool('select');
+    PE = { id: n.id, i: null, t: 0 }; S.sel = new Set([n.id]);
+    updateUI(); requestRender();
+    tipOnce('points', 'Drag points to reshape. Tap the line to add a point. Double-tap a point to switch between corner and smooth.', 6500);
+  }
+  function exitPoints() { PE = null; S.peHover = null; updateUI(); requestRender(); }
+  function nearestOnPath(A, closed, p) {
+    let best = null;
+    for (const [a, b, i] of segments(A, closed)) for (let j = 0; j <= 24; j++) {
+      const t = j / 24, x = bez(a[0], a[4], b[2], b[0], t), y = bez(a[1], a[5], b[3], b[1], t), d = Math.hypot(p.x - x, p.y - y);
+      if (!best || d < best.d) best = { d, seg: i, t };
+    }
+    return best;
+  }
+  function splitAt(A, i, t) {      // de Casteljau split of segment i; returns the new point's index
+    const a = A[i], b = A[(i + 1) % A.length], L = (u, v) => u + (v - u) * t;
+    const p01 = [L(a[0], a[4]), L(a[1], a[5])], p12 = [L(a[4], b[2]), L(a[5], b[3])], p23 = [L(b[2], b[0]), L(b[3], b[1])];
+    const p012 = [L(p01[0], p12[0]), L(p01[1], p12[1])], p123 = [L(p12[0], p23[0]), L(p12[1], p23[1])], m = [L(p012[0], p123[0]), L(p012[1], p123[1])];
+    a[4] = p01[0]; a[5] = p01[1]; b[2] = p23[0]; b[3] = p23[1];
+    A.splice(i + 1, 0, [m[0], m[1], p012[0], p012[1], p123[0], p123[1], 0]);
+    return i + 1;
+  }
+  function peDown(e, p) {
+    const n = byId(PE.id); if (!n) { exitPoints(); return; }
+    const A = pathWorld(n), tol = (e.pointerType === 'touch' ? 24 : 12) / S.cam.z, id = e.pointerId;
+    const near = (x, y) => Math.hypot(p.x - x, p.y - y) < tol;
+    const a = PE.i != null ? A[PE.i] : null;
+    if (a && !a[6]) {
+      if ((a[4] !== a[0] || a[5] !== a[1]) && near(a[4], a[5])) { G = { kind: 'peHandle', id, which: 'out', moved: false }; return; }
+      if ((a[2] !== a[0] || a[3] !== a[1]) && near(a[2], a[3])) { G = { kind: 'peHandle', id, which: 'in', moved: false }; return; }
+    }
+    let bi = -1, bd = tol;
+    A.forEach((q, i) => { const d = Math.hypot(p.x - q[0], p.y - q[1]); if (d < bd) { bd = d; bi = i; } });
+    if (bi >= 0) {
+      if (PE.i === bi && e.timeStamp - PE.t < 400) { PE.t = 0; toggleCorner(); return; }
+      PE.i = bi; PE.t = e.timeStamp;
+      G = { kind: 'peAnchor', id, start: p, A0: A.map((q) => q.slice()), moved: false };
+      return;
+    }
+    const hitSeg = nearestOnPath(A, n.closed, p);
+    if (hitSeg && hitSeg.d < tol + n.sw / 2) {
+      checkpoint();
+      PE.i = splitAt(A, hitSeg.seg, hitSeg.t); PE.t = e.timeStamp; setPathWorld(n, A);
+      G = { kind: 'peAnchor', id, start: p, A0: pathWorld(n).map((q) => q.slice()), moved: false, noCheckpoint: true };
+      save(); return;
+    }
+    exitPoints();
+  }
+  function toggleCorner() {
+    const n = byId(PE && PE.id); if (!n || PE.i == null) return;
+    checkpoint(); const A = pathWorld(n); A[PE.i][6] = A[PE.i][6] ? 0 : 1; smoothHandles(A, n.closed, [PE.i]); setPathWorld(n, A); changed();
+  }
+  function deletePoint() {
+    const n = byId(PE && PE.id); if (!n || PE.i == null) return;
+    const A = pathWorld(n); if (A.length <= 2) return;
+    checkpoint(); A.splice(PE.i, 1); if (n.closed && A.length < 3) n.closed = false;
+    PE.i = null; setPathWorld(n, A); changed();
+  }
+  function toggleClosed() {
+    const n = byId(PE && PE.id); if (!n) return;
+    checkpoint(); n.closed = !n.closed;
+    const A = pathWorld(n); smoothHandles(A, n.closed, [0, A.length - 1]); setPathWorld(n, A); changed();
+  }
+  function vectorizeSel() {
+    const ss = selected().filter((n) => n.type === 'stroke'); if (!ss.length) return;
+    checkpoint(); let b = 0, a = 0;
+    for (const st of ss) { const r = vectorize(st); b += r.before; a += r.after; S.nodes[S.nodes.indexOf(st)] = r.n; }
+    changed();
+    if (ss.length === 1) toast(`Vectorized: ${b} points → ${a}.`, 'Edit points', () => enterPoints(byId(ss[0].id)), 5000);
+    else toast(`Vectorized ${ss.length} drawings: ${b} points → ${a}.`, 'Undo', undo, 5000);
+  }
+  function copySVG() {
+    const n = selected().find((m) => m.type === 'path'); if (!n) return;
+    const text = pathSVG(n);
+    if (!navigator.clipboard) { toast('The clipboard isn’t available here.'); return; }
+    navigator.clipboard.writeText(text).then(() => toast('Copied the SVG.', null, null, 2000), () => toast('Couldn’t copy here. Open the prototype in its own browser tab and try again.'));
+  }
 
   function startTool(e, p) {
     const id = e.pointerId, z = S.cam.z;
@@ -1147,6 +1388,12 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     const p = toWorld(e.clientX, e.clientY);
     if (!G && e.buttons === 0 && e.pointerType !== 'touch') {
       if (e.pointerType === 'pen' && !S.pencil) enablePencil();
+      if (PE) {
+        const n = byId(PE.id), tol = 12 / S.cam.z; let hi = null;
+        if (n) pathWorld(n).forEach((q, i) => { if (Math.hypot(p.x - q[0], p.y - q[1]) < tol) hi = i; });
+        if (hi !== S.peHover) { S.peHover = hi; requestRender(); }
+        return;
+      }
       // Hover: Pencil (on supported iPads) and mouse preview what a tap will pick.
       const hv = S.tool === 'select' || (e.pointerType === 'pen' && S.tool !== 'draw' && S.tool !== 'erase') ? hit(p.x, p.y) : null;
       const hid = hv ? hv.id : null;
@@ -1184,6 +1431,31 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
         G.guides = sn.guides;
         for (const it of G.items) { it.n.x = it.x + sn.dx; it.n.y = it.y + sn.dy; }
         break;
+      }
+      case 'radius': {
+        if (!G.moved) { G.moved = true; checkpoint(); }
+        const n = G.n, avg = ((p.x - n.x) + (p.y - n.y)) / 2;
+        n.r = Math.round(Math.max(0, Math.min(avg - RADIUS_GAP / z, Math.min(n.w, n.h) / 2)));
+        break;
+      }
+      case 'peAnchor': {
+        const n = byId(PE && PE.id); if (!n) break;
+        const dx = p.x - G.start.x, dy = p.y - G.start.y;
+        if (!G.moved) { if (Math.hypot(dx, dy) * z < 3) return; G.moved = true; if (!G.noCheckpoint) checkpoint(); }
+        const A = G.A0.map((a) => a.slice()), a = A[PE.i];
+        for (const k of [0, 2, 4]) { a[k] += dx; a[k + 1] += dy; }
+        setPathWorld(n, A); break;
+      }
+      case 'peHandle': {
+        const n = byId(PE && PE.id); if (!n) break;
+        if (!G.moved) { G.moved = true; checkpoint(); }
+        const A = pathWorld(n), a = A[PE.i], [hk, ok] = G.which === 'out' ? [4, 2] : [2, 4];
+        a[hk] = p.x; a[hk + 1] = p.y;
+        if (!a[6]) {   // smooth point: the opposite handle mirrors, keeping its length
+          const lo = Math.hypot(a[ok] - a[0], a[ok + 1] - a[1]), lh = Math.hypot(p.x - a[0], p.y - a[1]) || 1;
+          a[ok] = a[0] - (p.x - a[0]) * lo / lh; a[ok + 1] = a[1] - (p.y - a[1]) * lo / lh;
+        }
+        setPathWorld(n, A); break;
       }
       case 'lineEnd': {
         if (!G.moved) { G.moved = true; checkpoint(); }
@@ -1254,7 +1526,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
         if (g.moved) save();
         else if (g.tapCandidate && !cancelled) tapPick(p, e.timeStamp, e.clientX, e.clientY);
         break;
-      case 'resize': case 'lineEnd': if (g.moved) save(); break;
+      case 'resize': case 'lineEnd': case 'radius': case 'peAnchor': case 'peHandle': if (g.moved) save(); break;
       case 'marquee': {
         const r = rectOf(g.x0, g.y0, g.x1, g.y1);
         if (r.w * z > 4 || r.h * z > 4) for (const n of S.nodes) if (!n.hidden && !n.locked && n.x >= r.x && n.y >= r.y && n.x + n.w <= r.x + r.w && n.y + n.h <= r.y + r.h) S.sel.add(n.id);
@@ -1274,9 +1546,9 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     const quick = t - lastTap.t < 400, near = Math.hypot(sx - lastTap.sx, sy - lastTap.sy) < 24;
     if (!hits.length) { if (S.sel.size) S.sel.clear(); else if (S.tool === 'text') createText(p); lastTap = { id: null, t, sx, sy }; return; }
     const prev = lastTap.id && near && S.sel.has(lastTap.id) ? hits.find((n) => n.id === lastTap.id) : null;
-    if (prev && quick && (prev.type === 'text' || prev.type === 'group')) {
+    if (prev && quick && (prev.type === 'text' || prev.type === 'group' || prev.type === 'path')) {
       lastTap = { id: null, t: 0, sx: -99, sy: -99 };
-      if (prev.type === 'text') editText(prev); else enterGroup(prev, p);
+      if (prev.type === 'text') editText(prev); else if (prev.type === 'path') enterPoints(prev); else enterGroup(prev, p);
       return;
     }
     let pick = hits[0];
@@ -1312,7 +1584,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
         const i = S.nodes.findIndex((n) => n.id === shape.id);
         if (i >= 0) { checkpoint(); S.nodes[i] = stroke; changed(); }
       });
-    } else S.nodes.push(stroke);
+    } else S.nodes.push(S.autoVector ? vectorize(stroke).n : stroke);
     save();
   }
 
@@ -1323,7 +1595,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 
   function cancelGesture() {
     if (!G) return;
-    if (['move', 'resize', 'lineEnd'].includes(G.kind) && G.moved) S.nodes = JSON.parse(past.pop());
+    if (['move', 'resize', 'lineEnd', 'radius', 'peAnchor', 'peHandle'].includes(G.kind) && G.moved) S.nodes = JSON.parse(past.pop());
     if (G.kind === 'erase') { if (G.any) S.nodes = JSON.parse(past.pop()); else past.pop(); }
     G = null; requestRender();
   }
@@ -1369,10 +1641,17 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     const z = clampZ(S.cam.z * f), w = toWorld(sx, sy);
     S.cam = { x: sx - w.x * z, y: sy - w.y * z, z }; updateZoomLabel(); requestRender();
   }
+  // Mouse wheel zooms around the pointer; trackpad swipes pan; pinch (ctrl + wheel) always zooms.
+  // A mouse wheel reports line/page units, or whole vertical steps of 40 px or more.
+  const isMouseWheel = (e) => e.deltaMode !== 0 || (e.deltaX === 0 && Number.isInteger(e.deltaY) && Math.abs(e.deltaY) >= 40);
   cv.addEventListener('wheel', (e) => {
     e.preventDefault();
-    if (e.ctrlKey || e.metaKey) zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.01));
-    else { S.cam.x -= e.deltaX; S.cam.y -= e.deltaY; requestRender(); }
+    const k = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? H : 1, dx = e.deltaX * k, dy = e.deltaY * k, mouse = isMouseWheel(e);
+    const zoom = !e.shiftKey && (S.wheel === 'zoom' || (S.wheel === 'auto' && mouse));
+    if (e.ctrlKey || e.metaKey) zoomAt(e.clientX, e.clientY, Math.exp(-dy * 0.01));
+    else if (zoom) zoomAt(e.clientX, e.clientY, mouse ? Math.pow(1.1, -Math.sign(dy) * Math.min(3, Math.max(1, Math.abs(dy) / 100))) : Math.exp(-dy * 0.006));
+    else if (e.shiftKey && !dx) { S.cam.x -= dy; requestRender(); }
+    else { S.cam.x -= dx; S.cam.y -= dy; requestRender(); }
     save();
   }, { passive: false });
   document.addEventListener('gesturestart', (e) => e.preventDefault());
@@ -1553,6 +1832,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     toast(`Saved “${name}” to Insert → My components.`, 'Open Insert', () => toggleInsert(true), 5000);
   }
   function setTool(t) {
+    if (PE && t !== 'select') PE = null;
     S.tool = t; if (!['select', 'draw', 'shape'].includes(t)) S.sel.clear(); S.hover = null; S.hoverId = null; updateUI(); requestRender();
   }
 
@@ -1569,6 +1849,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     if (mod && k === 'g') { e.preventDefault(); e.shiftKey ? ungroup() : groupSel(); return; }
     if (mod && k === 'a') { e.preventDefault(); S.sel = new Set(S.nodes.filter((n) => !n.hidden && !n.locked).map((n) => n.id)); setTool('select'); return; }
     if (mod && k === '0') { e.preventDefault(); fit(S.nodes); return; }
+    if (mod && k === '1') { e.preventDefault(); zoomAt((W - panelW()) / 2, H / 2, 1 / S.cam.z); return; }
     if (mod && (k === '=' || k === '+')) { e.preventDefault(); zoomAt(W / 2, H / 2, 1.25); return; }
     if (mod && k === '-') { e.preventDefault(); zoomAt(W / 2, H / 2, 0.8); return; }
     if (mod && e.key === ']') { e.preventDefault(); reorder(e.shiftKey ? 'front' : 'forward'); return; }
@@ -1576,11 +1857,14 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     if (mod) return;
     const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
     if (arrows[k] && S.sel.size) { e.preventDefault(); const s = e.shiftKey ? 10 : 1; nudge(arrows[k][0] * s, arrows[k][1] * s); return; }
+    if (PE && (k === 'backspace' || k === 'delete')) { e.preventDefault(); if (PE.i != null) deletePoint(); return; }
+    if (PE && (k === 'escape' || k === 'enter')) { exitPoints(); return; }
     if (k === 'backspace' || k === 'delete') { e.preventDefault(); del(); return; }
     if (k === 'escape') { S.sel.clear(); closePops(); $('sheetWrap').hidden = true; updateUI(); requestRender(); return; }
     if (k === 'enter' && S.sel.size === 1) {
       const n = selected()[0];
       if (n.type === 'text') editText(n);
+      else if (n.type === 'path') enterPoints(n);
       else if (n.type === 'group') { const map = ungroupNodes([n]); S.sel = new Set([...map.values()].map((m) => m.id)); changed(); }
       return;
     }
@@ -1640,7 +1924,12 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   }));
   $('undoBtn').addEventListener('click', undo);
   $('redoBtn').addEventListener('click', redo);
-  $('zoom').addEventListener('click', () => fit(S.nodes));
+  $('zoom').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = !$('viewPop').hidden; closePops(); if (open) return;
+    $('viewPop').replaceChildren(...buildView()); $('viewPop').hidden = false; $('zoom').setAttribute('aria-expanded', 'true');
+    position($('viewPop'), $('zoom'), 'below');
+  });
 
   function buildKinds() {
     $('kinds').replaceChildren(...SHAPE_KINDS.map((s) => h('button', {
@@ -1662,18 +1951,21 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   function position(pop, anchor, pref) {
     pop.classList.toggle('sheet', W < 600 && pop.classList.contains('wide'));
     if (pop.classList.contains('sheet')) return;
+    // Open on the side with more room and never cover the button that opened it; scroll inside if needed.
+    pop.style.maxHeight = '';
     const a = anchor.getBoundingClientRect(), r = pop.getBoundingClientRect();
     const left = Math.min(Math.max(16, a.left + a.width / 2 - r.width / 2), W - r.width - 16);
-    let top = pref === 'above' ? a.top - r.height - 10 : a.bottom + 10;
-    if (pref === 'auto' && top + r.height > H - 96) top = a.top - r.height - 10;
-    top = Math.min(Math.max(70, top), H - r.height - 16);
-    pop.style.left = left + 'px'; pop.style.top = top + 'px';
+    const below = H - a.bottom - 26, above = a.top - 80;
+    const up = pref === 'above' || (pref === 'auto' && below < r.height && above > below);
+    const hgt = Math.max(120, Math.min(r.height, up ? above : below));
+    pop.style.maxHeight = hgt + 'px';
+    pop.style.left = left + 'px'; pop.style.top = (up ? a.top - 10 - hgt : a.bottom + 10) + 'px';
   }
-  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop'];
+  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop', 'cornersPop'];
   let openSel = null;               // { id, label, build }
   function closePops() {
-    for (const id of ['colorPop', 'pencilPop', 'shapePop', 'insertPop', ...SEL_POPS]) $(id).hidden = true;
-    $('insertBtn').setAttribute('aria-expanded', 'false');
+    for (const id of ['colorPop', 'pencilPop', 'shapePop', 'insertPop', 'viewPop', ...SEL_POPS]) $(id).hidden = true;
+    $('insertBtn').setAttribute('aria-expanded', 'false'); $('zoom').setAttribute('aria-expanded', 'false');
     ctxBar.querySelectorAll('[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
     openSel = null;
   }
@@ -1699,13 +1991,14 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     $('colorPop').hidden = false; position($('colorPop'), $('colorBtn'), 'above');
   });
   $('autoShape').addEventListener('click', () => { S.autoShape = !S.autoShape; save(); updateUI(); });
+  $('autoVector').addEventListener('click', () => { S.autoVector = !S.autoVector; save(); updateUI(); });
   $('pencilChip').addEventListener('click', (e) => {
     e.stopPropagation(); const open = !$('pencilPop').hidden; closePops();
     if (!open) { $('pencilPop').hidden = false; position($('pencilPop'), $('pencilChip'), 'below'); }
   });
   $('pencilPop').querySelectorAll('[data-finger]').forEach((b) => b.addEventListener('click', () => { S.finger = b.dataset.finger; save(); updateUI(); closePops(); }));
   document.addEventListener('pointerdown', (e) => {
-    if (!e.target.closest('.pop') && !e.target.closest('#dock') && !e.target.closest('#pencilChip') && !e.target.closest('#ctx') && !e.target.closest('#layers')) closePops();
+    if (!e.target.closest('.pop') && !e.target.closest('#dock') && !e.target.closest('#pencilChip') && !e.target.closest('#zoom') && !e.target.closest('#ctx') && !e.target.closest('#layers')) closePops();
   });
 
   // ---------- Popover building blocks ----------
@@ -1715,8 +2008,9 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   function sliderRow(label, min, max, step, value, fmt, apply) {
     const id = 'r' + (uid++), out = h('output', {}, fmt(value));
     const inp = h('input', { type: 'range', id, min, max, step });
-    inp.value = value;
-    inp.addEventListener('input', () => { editBegin(); const v = +inp.value; apply(v); out.textContent = fmt(v); requestRender(); });
+    const fill = () => inp.style.setProperty('--p', ((+inp.value - min) / ((max - min) || 1) * 100) + '%');
+    inp.value = value; fill();
+    inp.addEventListener('input', () => { editBegin(); const v = +inp.value; apply(v); out.textContent = fmt(v); fill(); requestRender(); });
     inp.addEventListener('change', editEnd);
     return h('div', { class: 'fx-row' }, h('label', { for: id }, label), inp, out);
   }
@@ -1729,13 +2023,48 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       h('button', { class: 'toggle', role: 'switch', 'aria-checked': String(!!on), 'aria-label': label, onclick: () => { checkpoint(); apply(!on); changed(); refreshSelPop(); } }));
   }
   const fxNodes = () => selected().filter((n) => n.type !== 'frame');
+  // A button that repeats while held (one undo step per hold).
+  function holdBtn(label, text, step, done) {
+    let t1 = 0, t2 = 0, active = false;
+    const stop = () => { if (!active) return; active = false; clearTimeout(t1); clearInterval(t2); done(); };
+    const b = h('button', { 'aria-label': label }, text);
+    b.addEventListener('pointerdown', (e) => { e.preventDefault(); active = true; checkpoint(); step(); t1 = setTimeout(() => { t2 = setInterval(step, 70); }, 400); });
+    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+    b.addEventListener('click', (e) => { if (e.detail === 0) { checkpoint(); step(); done(); } });
+    return b;
+  }
+  const cornerTargets = () => fxNodes().map((n) => n.type === 'image' ? n : fxTarget(n)).filter((t) => t && (t.type === 'rect' || t.type === 'image'));
+  function buildCorners() {
+    const rs = cornerTargets(), r0 = rs[0];
+    if (!r0) return [h('h3', {}, 'Corners'), h('p', { class: 'hint' }, 'Select a rectangle, image or button to round its corners.')];
+    const max = Math.max(1, Math.round(Math.min(r0.w, r0.h) / 2)), cur = Math.min(Math.round(r0.r || 0), max);
+    const set = (f) => { checkpoint(); rs.forEach(f); changed(); refreshSelPop(); };
+    return [h('h3', {}, 'Corners'),
+      h('div', { class: 'chips' }, [['Square', 0], ['Small', 8], ['Medium', 16], ['Large', 24], ['Round', -1]].map(([l, v]) =>
+        h('button', { class: 'chipb', 'aria-pressed': String(v < 0 ? cur >= max : cur === v), onclick: () => set((r) => { const m = Math.min(r.w, r.h) / 2; r.r = v < 0 ? m : Math.min(v, m); }) }, l))),
+      sliderRow('Radius', 0, max, 1, cur, String, (v) => rs.forEach((r) => { r.r = Math.min(v, Math.min(r.w, r.h) / 2); })),
+      h('p', { class: 'hint' }, 'You can also drag the round handle inside the top-left corner of a selected rectangle.')];
+  }
+  function buildView() {
+    const z = h('output', {}, Math.round(S.cam.z * 100) + '%');
+    const zb = (txt, f, label) => h('button', { 'aria-label': label, onclick: () => { zoomAt((W - panelW()) / 2, H / 2, f); z.textContent = Math.round(S.cam.z * 100) + '%'; save(); } }, txt);
+    return [h('h3', {}, 'View'),
+      h('div', { class: 'zoomrow' }, zb('−', 1 / 1.25, 'Zoom out'), z, zb('+', 1.25, 'Zoom in')),
+      h('div', { class: 'chips' },
+        h('button', { class: 'chipb', onclick: () => { fit(S.nodes); closePops(); } }, 'Fit everything'),
+        h('button', { class: 'chipb', disabled: !S.sel.size, onclick: () => { fit(selected()); closePops(); } }, 'Fit selection'),
+        h('button', { class: 'chipb', onclick: () => { zoomAt((W - panelW()) / 2, H / 2, 1 / S.cam.z); save(); closePops(); } }, '100%')),
+      h('h4', {}, 'Mouse wheel'),
+      h('div', { class: 'seg' }, [['auto', 'Auto'], ['zoom', 'Always zoom'], ['scroll', 'Always scroll']].map(([v, l]) =>
+        h('button', { 'aria-pressed': String(S.wheel === v), onclick: (e) => { S.wheel = v; save(); e.currentTarget.parentNode.querySelectorAll('button').forEach((b) => b.setAttribute('aria-pressed', String(b === e.currentTarget))); } }, l))),
+      h('p', { class: 'hint' }, 'Auto: a mouse wheel zooms, a trackpad swipe moves the canvas. Hold Shift to scroll sideways.')];
+  }
 
   // Style: fill, border, corners, sides, line width, arrow heads
   function buildStyle() {
     const ns = fxNodes();
     const shapes = ns.map(fxTarget).filter(Boolean);
-    const rects = [...shapes.filter((s) => s.type === 'rect'), ...ns.filter((n) => n.type === 'image')];
-    const lines = ns.filter((n) => ['line', 'stroke', 'icon'].includes(n.type));
+    const lines = ns.filter((n) => ['line', 'stroke', 'icon', 'path'].includes(n.type));
     const out = [h('h3', {}, 'Style')];
     if (shapes.length) {
       const s0 = shapes[0];
@@ -1749,29 +2078,26 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       if (polys.length) out.push(sliderRow('Sides', 3, 12, 1, polys[0].sides || 6, String, (v) => polys.forEach((s) => { s.sides = v; })));
       if (stars.length) out.push(sliderRow('Points', 3, 12, 1, stars[0].points || 5, String, (v) => stars.forEach((s) => { s.points = v; })));
     }
-    if (rects.length) {
-      const r0 = rects[0], max = Math.max(1, Math.round(Math.min(r0.w, r0.h) / 2));
-      out.push(sliderRow('Corners', 0, max, 1, Math.min(Math.round(r0.r || 0), max), String, (v) => rects.forEach((r) => { r.r = v; })));
-      out.push(h('div', { class: 'chips' }, [['Square', 0], ['Small', 8], ['Medium', 16], ['Round', 9999]].map(([l, v]) =>
-        h('button', { class: 'chipb', onclick: () => { checkpoint(); rects.forEach((r) => { r.r = v === 9999 ? Math.min(r.w, r.h) / 2 : v; }); changed(); refreshSelPop(); } }, l))));
-    }
+    const closedPaths = ns.filter((n) => n.type === 'path' && n.closed);
+    if (closedPaths.length) out.push(toggleRow('Fill', closedPaths.every((n) => n.fill), (on) => closedPaths.forEach((n) => { n.fill = on ? n.color : null; })));
     if (lines.length) {
       out.push(sliderRow(lines.every((l) => l.type === 'icon') ? 'Line weight' : 'Width', 0.5, 24, 0.5, lines[0].sw || 2, String, (v) => lines.forEach((l) => { l.sw = v; })));
       const ls = lines.filter((l) => l.type === 'line');
       if (ls.length) out.push(toggleRow('Arrow head', ls.every((l) => l.head), (on) => ls.forEach((l) => { l.head = on; })));
     }
-    if (out.length === 1) out.push(h('p', { class: 'hint' }, 'Nothing to style here. Try Effects.'));
+    if (out.length === 1) out.push(h('p', { class: 'hint' }, 'Nothing to style here. Try Corners or Effects.'));
     return out;
   }
   function buildText() {
     const ts = fxNodes().filter((n) => n.type === 'text'), n = ts[0];
     const setAll = (f) => { checkpoint(); for (const t of ts) { f(t); measure(t); } changed(); refreshSelPop(); };
+    const sizeOut = h('output', {}, String(Math.round(n.size)));
+    const step = (d) => { for (const t of ts) { t.size = Math.max(6, Math.round(t.size) + d); measure(t); } sizeOut.textContent = String(Math.round(ts[0].size)); requestRender(); };
+    const done = () => { changed(); refreshSelPop(); };
     return [
       h('h3', {}, 'Text'),
       h('div', { class: 'row' }, h('span', {}, 'Size'), h('div', { class: 'stepper' },
-        h('button', { 'aria-label': 'Smaller', onclick: () => setAll((t) => { t.size = Math.max(6, Math.round(t.size) - 1); }) }, '−'),
-        h('output', {}, String(Math.round(n.size))),
-        h('button', { 'aria-label': 'Bigger', onclick: () => setAll((t) => { t.size = Math.round(t.size) + 1; }) }, '+'))),
+        holdBtn('Smaller', '−', () => step(-1), done), sizeOut, holdBtn('Bigger', '+', () => step(1), done))),
       h('div', { class: 'chips' }, [12, 14, 16, 20, 24, 32, 48, 64].map((s) => h('button', { class: 'chipb', 'aria-pressed': String(Math.round(n.size) === s), onclick: () => setAll((t) => { t.size = s; }) }, String(s)))),
       h('h4', {}, 'Weight'),
       h('div', { class: 'seg' }, [[400, 'Regular'], [500, 'Medium'], [600, 'Semibold'], [700, 'Bold']].map(([w, l]) =>
@@ -1829,15 +2155,34 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       h('button', { class: 'chipb', onclick: () => { distribute('h'); refreshSelPop(); } }, 'Space evenly ↔'), h('button', { class: 'chipb', onclick: () => { distribute('v'); refreshSelPop(); } }, 'Space evenly ↕')));
     if (one) {
       const f = frameOf(one), ox = f ? f.x : 0, oy = f ? f.y : 0;
-      const field = (k, v, apply, disabled) => h('label', {}, k, h('input', { type: 'number', inputmode: 'decimal', value: String(Math.round(v * 10) / 10), disabled: !!disabled,
-        onchange: (e) => { const val = parseFloat(e.target.value); if (!isFinite(val)) return; checkpoint(); apply(val); changed(); refreshSelPop(); } }));
+      // Drag a field's label sideways to scrub its value (Shift for ×10), or tap the field to type.
+      const field = (k, v, apply, disabled) => {
+        const inp = h('input', { type: 'number', inputmode: 'decimal', value: String(Math.round(v * 10) / 10), disabled: !!disabled,
+          onchange: (e) => { const val = parseFloat(e.target.value); if (!isFinite(val)) return; checkpoint(); apply(val); changed(); refreshSelPop(); } });
+        const lab = h('span', { class: disabled ? null : 'scrub', title: disabled ? null : 'Drag sideways to change' }, k);
+        if (!disabled) lab.addEventListener('pointerdown', (e) => {
+          e.preventDefault();
+          const x0 = e.clientX, v0 = parseFloat(inp.value) || 0; let started = false;
+          try { lab.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+          const mv = (ev) => {
+            const d = Math.round((ev.clientX - x0) / 2) * (ev.shiftKey ? 10 : 1);
+            if (!d && !started) return;
+            if (!started) { checkpoint(); started = true; }
+            apply(v0 + d); inp.value = String(Math.round((v0 + d) * 10) / 10); requestRender();
+          };
+          const up = () => { lab.removeEventListener('pointermove', mv); lab.removeEventListener('pointerup', up); lab.removeEventListener('pointercancel', up); if (started) { changed(); refreshSelPop(); } };
+          lab.addEventListener('pointermove', mv); lab.addEventListener('pointerup', up); lab.addEventListener('pointercancel', up);
+        });
+        return h('label', {}, lab, inp);
+      };
       const sizeLocked = one.type === 'text';
       out.push(h('h4', {}, f ? `Position in “${f.name}” and size` : 'Position and size'),
         h('div', { class: 'xywh' },
           field('X', one.x - ox, (v) => { const dx = v + ox - one.x; if (one.type === 'frame') shiftContents(one, dx, 0, one.x, one.y); one.x += dx; }),
           field('Y', one.y - oy, (v) => { const dy = v + oy - one.y; if (one.type === 'frame') shiftContents(one, 0, dy, one.x, one.y); one.y += dy; }),
           field('W', one.w, (v) => { v = Math.max(1, v); if (keepsAspect(one)) one.h *= v / one.w; one.w = v; }, sizeLocked),
-          field('H', one.h, (v) => { v = Math.max(1, v); if (keepsAspect(one)) one.w *= v / one.h; one.h = v; }, sizeLocked)));
+          field('H', one.h, (v) => { v = Math.max(1, v); if (keepsAspect(one)) one.w *= v / one.h; one.h = v; }, sizeLocked),
+          one.type === 'rect' || one.type === 'image' ? field('R', one.r || 0, (v) => { one.r = Math.max(0, Math.min(v, Math.min(one.w, one.h) / 2)); }) : null));
     }
     out.push(toggleRow('Lock (can’t be moved or picked by tapping)', ns.every((n) => n.locked), (on) => ns.forEach((n) => { n.locked = on; })));
     return out;
@@ -1919,6 +2264,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
     if (n.type === 'icon') return (ICON_LABEL[n.icon] || 'Icon') + ' icon';
     if (n.type === 'polygon') return n.sides === 4 ? 'Diamond' : 'Polygon';
     if (n.type === 'line') return n.head ? 'Arrow' : 'Line';
+    if (n.type === 'path') return 'Vector';
     return { rect: 'Rectangle', ellipse: 'Ellipse', stroke: 'Drawing', triangle: 'Triangle', star: 'Star', image: 'Image', group: 'Group', frame: 'Frame' }[n.type] || n.type;
   }
   let drag = null;
@@ -1994,14 +2340,33 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
       const b = h('button', { class: 'btn ' + (text ? 'label ' : '') + extra, title: label, 'aria-label': label, html: svg(d) + (text ? `<span>${text}</span>` : '') });
       b.addEventListener('click', (e) => { e.stopPropagation(); fn(b); }); frag.append(b); return b;
     };
+    if (PE) {
+      const n = byId(PE.id), A = n ? pathWorld(n) : [], a = PE.i != null ? A[PE.i] : null;
+      frag.append(h('span', { class: 'btn label', style: 'cursor:default' }, 'Editing points'), h('span', { class: 'sep' }));
+      if (a) {
+        btn(a[6] ? 'Make the point smooth' : 'Make the point a corner', a[6] ? '<path d="M4 18c4-12 12-12 16 0"/>' : '<path d="M4 18 12 6l8 12"/>', toggleCorner, '', a[6] ? 'Smooth' : 'Corner');
+        btn('Delete point', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', deletePoint, 'danger', 'Delete point').disabled = A.length <= 2;
+      }
+      if (n) btn(n.closed ? 'Open path' : 'Close path', n.closed ? '<path d="M5 17a7 7 0 1 1 14 0"/>' : '<circle cx="12" cy="12" r="7"/>', toggleClosed, '', n.closed ? 'Open path' : 'Close path');
+      btn('Done editing points', '<path d="M5 12.5l4.5 4.5L19 7"/>', exitPoints, '', 'Done');
+      ctxBar.replaceChildren(frag); return;
+    }
     if (items.length) {
       frag.append(h('div', { class: 'swatches' }, swatchButtons(colorOf(items[0]), (c) => { checkpoint(); for (const n of fxNodes()) setColor(n, c); changed(); refreshSelPop(); })),
         h('span', { class: 'sep' }));
-      if (items.some((n) => fxTarget(n) || ['line', 'stroke', 'icon', 'image'].includes(n.type)))
+      if (cornerTargets().length)
+        btn('Corners: round the corners', '<path d="M4 20V12a8 8 0 0 1 8-8h8"/>', (b) => openSelPop('cornersPop', b, buildCorners), '', 'Corners');
+      if (items.some((n) => fxTarget(n) || ['line', 'stroke', 'icon', 'image', 'path'].includes(n.type)))
         btn('Style: fill, border, corners', '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>', (b) => openSelPop('stylePop', b, buildStyle), '', 'Style');
       if (items.some((n) => n.type === 'text'))
         btn('Text size and weight', '<path d="M4 18 9 6l5 12M5.8 14h6.4M16 12h5M18.5 9.5v5"/>', (b) => openSelPop('textPop', b, buildText), '', 'Text');
       btn('Effects: shadow, blur, opacity', '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>', (b) => openSelPop('fxPop', b, buildFx), '', 'Effects');
+    }
+    if (items.some((n) => n.type === 'stroke'))
+      btn('Vectorize: turn drawing into an editable vector', '<path d="M4.5 18.5c3-9 11-3 15-13"/><rect x="2.5" y="16.5" width="4" height="4" rx="1"/><rect x="17.5" y="3.5" width="4" height="4" rx="1"/>', vectorizeSel, '', 'Vectorize');
+    if (items.length === 1 && items[0].type === 'path') {
+      btn('Edit points', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => enterPoints(items[0]), '', 'Edit points');
+      btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
     }
     btn('Arrange: order, align, position', '<rect x="4" y="4" width="9" height="9" rx="1.5"/><rect x="11" y="11" width="9" height="9" rx="1.5" fill="currentColor" stroke="none" opacity=".35"/>', (b) => openSelPop('arrangePop', b, buildArrange), '', 'Arrange');
     if (items.some((n) => n.type === 'group')) {
@@ -2043,15 +2408,18 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   let lastSelKey = '';
   function updateUI() {
     for (const id of [...S.sel]) { const n = byId(id); if (!n || n.hidden) S.sel.delete(id); }
+    if (PE && (!byId(PE.id) || !S.sel.has(PE.id))) { PE = null; S.peHover = null; }
     dock.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === S.tool)));
     $('colorDot').style.background = S.color;
     $('autoShape').setAttribute('aria-checked', String(S.autoShape));
+    $('autoVector').setAttribute('aria-checked', String(S.autoVector));
     $('undoBtn').disabled = !past.length; $('redoBtn').disabled = !future.length;
     $('pencilChip').hidden = !S.pencil;
     $('pencilPop').querySelectorAll('[data-finger]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.finger === S.finger)));
-    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.locked}`).join(',');
+    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.locked}`).join(',') + (PE ? 'pe' : '');
     if (key !== lastSelKey) { lastSelKey = key; if (S.sel.size) buildContextBar(); }
     if (!S.sel.size && openSel) closePops();
+    if (PE) buildContextBar();
     updateZoomLabel(); buildLayers();
   }
 
@@ -2135,7 +2503,7 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
   if (saved && Array.isArray(saved.nodes)) {
     Object.assign(S, {
       nodes: saved.nodes, cam: saved.cam || S.cam, color: saved.color || S.color, autoShape: saved.autoShape !== false,
-      pencil: !!saved.pencil, finger: saved.finger || 'move',
+      pencil: !!saved.pencil, finger: saved.finger || 'move', wheel: saved.wheel || 'auto', autoVector: !!saved.autoVector,
       tips: saved.tips || { coach: saved.coachSeen ? 1 : 0, glass: saved.glassTipSeen ? 1 : 0 },
     });
     if (saved.shapeKind) pickShape(saved.shapeKind);

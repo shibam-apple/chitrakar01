@@ -237,7 +237,7 @@ a button recolours the button, not its label.
 
 | Input | Behaviour |
 |---|---|
-| **Mouse wheel** | **Zooms** around the pointer by default. Hold Shift to scroll sideways, Space + drag to pan. Can be switched to "Scroll" in the View menu |
+| **Mouse wheel** | **Zooms** around the pointer by default. Hold Shift to scroll sideways, Space + drag to pan. The View menu can switch it to "Scroll" |
 | **Trackpad** | Two-finger swipe pans; pinch zooms around the pointer (unchanged by the wheel setting) |
 | **Touch** | Pinch zooms around the fingers; two-finger drag pans |
 | **Keyboard** | ⌘+ / ⌘− zoom around the centre, ⌘0 zoom to fit, ⌘1 actual size |
@@ -245,13 +245,13 @@ a button recolours the button, not its label.
 Telling a mouse wheel from a trackpad: wheel events in line or page units, or
 whole-number vertical steps of 40 px or more with no sideways movement, count as
 a mouse wheel. Everything else counts as a trackpad. If the guess is wrong, the
-View menu setting lets people pick.
+View menu setting overrides it.
 
 **View menu** (tap the zoom percentage in the top bar):
 
 - Large − and + buttons, and the current zoom.
 - **Fit everything**, **Fit selection**, **100 %**.
-- **Mouse wheel:** Zoom / Scroll (saved per device).
+- **Mouse wheel:** Auto (wheel zooms, trackpad swipes pan) / Always zoom / Always scroll, saved per device.
 
 Zoom range stays 10 %–3200 %. Each wheel notch zooms by about 10 %, and the
 point under the cursor stays put.
