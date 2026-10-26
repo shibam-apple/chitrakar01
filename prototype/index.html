@@ -242,7 +242,21 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 .card .shape { background: var(--chrome-2); border: 1.5px solid var(--fg-2); border-radius: 6px; max-width: 100%; }
 .card b { font-size: 14px; }
 .card small { font-size: 12px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
-.sheet-foot { display: flex; justify-content: flex-end; }
+.sheet-foot { display: flex; justify-content: space-between; gap: 8px; }
+.vgrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.vchip { border: 1px solid var(--line); border-radius: 12px; padding: 10px 6px; min-height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; text-align: center; }
+.vchip b { font-size: 13px; font-weight: 600; }
+.vchip small { font-size: 11px; color: var(--fg-2); }
+.vchip:hover { border-color: var(--accent); }
+.vchip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.chipb.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; padding: 0 22px; }
+.vrow { display: flex; align-items: center; gap: 6px; }
+.vrow .swatches { flex-wrap: nowrap; gap: 0; }
+.vrow .sw { width: 34px; height: 34px; }
+.vrow .sw i { width: 22px; height: 22px; }
+.vdot { width: 20px; height: 20px; border-radius: 6px; flex: none; box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
+.mini2 { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: var(--fg-2); flex: none; }
+.mini2:hover { background: var(--chrome-2); }
 
 @media (max-width: 560px) {
   .tool { width: 56px; font-size: 10px; }
@@ -335,6 +349,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 <div id="fxPop" class="bar pop wide" hidden></div>
 <div id="arrangePop" class="bar pop wide" hidden></div>
 <div id="cornersPop" class="bar pop wide" hidden></div>
+<div id="vectorPop" class="bar pop wide" hidden></div>
 <div id="viewPop" class="bar pop" hidden></div>
 
 <div id="insertPop" class="bar pop" hidden role="dialog" aria-label="Insert UI components">
@@ -370,7 +385,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     <h2 id="sheetTitle">What are you designing?</h2>
     <p>Pick a size to start with. You can draw more frames any time.</p>
     <div class="cards" id="cards"></div>
-    <div class="sheet-foot"><button class="btn" id="sheetCancel">Cancel</button></div>
+    <div class="sheet-foot"><button class="btn label" id="sheetExample">Open the example</button><button class="btn" id="sheetCancel">Cancel</button></div>
   </div>
 </div>
 
@@ -443,6 +458,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     icon: `<path d="${STAR_D}"/>`, image: '<path d="M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5"/>', triangle: '<path d="M12 4.5 20 19H4z"/>',
     polygon: '<path d="M12 3.5l7.4 4.25v8.5L12 20.5l-7.4-4.25v-8.5z"/>', star: `<path d="${STAR_D}"/>`,
     path: '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="1.6"/><circle cx="19.5" cy="5.5" r="1.6"/>',
+    vec: '<path d="M5 19c0-6 3-9 7-9s7 3 7 9z"/><circle cx="12" cy="6" r="2.5"/>',
   };
 
   // ---------- State ----------
@@ -749,6 +765,12 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         break;
       }
       case 'stroke': drawInk(n.pts, n.x, n.y, n.w / n.pw, n.h / n.ph, n.sw, n.color, n.pen); break;
+      case 'vec': {
+        ctx.save(); ctx.translate(n.x, n.y); ctx.scale(n.w / n.pw, n.h / n.ph);
+        for (const L of n.layers) { ctx.fillStyle = L.fill; ctx.fill(vecPath(L), 'evenodd'); }
+        ctx.restore();
+        break;
+      }
       case 'path': {
         const A = pathWorld(n); if (A.length < 2) break;
         tracePath(A, n.closed);
@@ -821,6 +843,12 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         if (segDist(x, y, n.x + p[(i - 1) * st] * sx, n.y + p[(i - 1) * st + 1] * sy, n.x + p[i * st] * sx, n.y + p[i * st + 1] * sy) <= tol + n.sw) return true;
       }
       return m === 1 && Math.hypot(x - n.x, y - n.y) <= tol + n.sw;
+    }
+    if (n.type === 'vec') {
+      const lx = (x - n.x) * n.pw / n.w, ly = (y - n.y) * n.ph / n.h;
+      ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.lineWidth = 2 * tol * n.pw / n.w;
+      const inside = n.layers.some((L) => { const pp = vecPath(L); return ctx.isPointInPath(pp, lx, ly, 'evenodd') || ctx.isPointInStroke(pp, lx, ly); });
+      ctx.restore(); return inside;
     }
     if (n.type === 'path') {
       if (n.fill && n.closed) return true;
@@ -1023,10 +1051,12 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   // A component's "main" shape: its first visible shape (the button background, the card surface…).
   const primary = (g) => g.children.find((c) => isShape(c) && !invisible(c)) || null;
   function colorOf(n) {
+    if (n.type === 'vec') return n.layers.length ? n.layers[n.layers.length - 1].fill : null;
     if (n.type === 'group') { const p = primary(n); return p ? colorOf(p) : (n.children.find((c) => c.color) || {}).color; }
     return isShape(n) ? (n.fill || n.stroke) : n.color;
   }
   function setColor(n, c) {
+    if (n.type === 'vec') { if (n.layers.length) n.layers[n.layers.length - 1].fill = c; return; }   // the darkest colour: the lines
     if (n.type === 'group') { const p = primary(n); if (p) setColor(p, c); else n.children.forEach((k) => { if (k.color) k.color = c; }); return; }
     if (isShape(n)) { if (n.fill) n.fill = c; else n.stroke = c; }
     else if (n.type !== 'frame' && n.type !== 'image') { n.color = c; if (n.type === 'path' && n.fill) n.fill = c; }
@@ -1190,7 +1220,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const rh = radiusHandle(n);
     if (rh && Math.hypot(p.x - rh[0], p.y - rh[1]) < (touch ? 14 : 9) / S.cam.z) return { n, radius: true };
     // On small items the handles shrink, so a tap in the middle still picks or moves the item.
-    const base = (touch ? 24 : 14) / S.cam.z, hs = n.type === 'line' ? base : Math.max(6 / S.cam.z, Math.min(base, Math.min(n.w, n.h) / 3));
+    // Handles never reach the middle third of an item; very small items are resized by pinching or after zooming in.
+    const base = (touch ? 24 : 14) / S.cam.z, hs = n.type === 'line' ? base : Math.min(base, Math.min(n.w, n.h) / 3);
+    if (n.type !== 'line' && hs < 4 / S.cam.z) return null;
     if (n.type === 'line') {
       const i = lineEnds(n).findIndex(([hx, hy]) => Math.hypot(p.x - hx, p.y - hy) < hs);
       return i >= 0 ? { n, end: i } : null;
@@ -1236,6 +1268,254 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     S.hover = null;
     startTool(e, p);
   });
+
+  // ---------- Vectorize artwork (image trace) ----------
+  // Rasterize → separate tones (Otsu or k-means) → stack colours light to dark → trace pixel-edge outlines
+  // → drop specks → soften the staircase → simplify → corners + smooth Bézier curves → compound shapes per colour.
+  const TRACE = {
+    lineart: { mode: 'bw', threshold: 0, detail: 60, noise: 8, blur: 0 },
+    sketch: { mode: 'bw', threshold: 0, detail: 40, noise: 16, blur: 1 },
+    logo: { mode: 'color', colors: 3, detail: 55, noise: 12 },
+    poster: { mode: 'color', colors: 6, detail: 55, noise: 10 },
+    detailed: { mode: 'color', colors: 16, detail: 75, noise: 4 },
+  };
+  let TR = null;        // live trace session: { src, srcIds, preset, opts, resultId, keep, info, timer }
+  const vecCache = new WeakMap();
+  function vecPath(L) {
+    let p = vecCache.get(L); if (p) return p;
+    p = new Path2D();
+    for (const A of L.rings) {
+      p.moveTo(A[0][0], A[0][1]);
+      for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; p.bezierCurveTo(a[4], a[5], b[2], b[3], b[0], b[1]); }
+      p.closePath();
+    }
+    vecCache.set(L, p); return p;
+  }
+  function rasterize(nodes, maxSide) {
+    const b = union(nodes), pad = Math.max(2, Math.max(b.w, b.h) * 0.02);
+    const bx = b.x - pad, by = b.y - pad, bw = b.w + pad * 2, bh = b.h + pad * 2;
+    let k = maxSide / Math.max(bw, bh);
+    if (nodes.length === 1 && nodes[0].type === 'image') { const im = imageEl(nodes[0].src); if (im.naturalWidth) k = Math.min(k, Math.max(1, im.naturalWidth / nodes[0].w)); }
+    k = Math.min(k, 4);
+    const c = document.createElement('canvas'); c.width = Math.max(2, Math.round(bw * k)); c.height = Math.max(2, Math.round(bh * k));
+    const prev = ctx; ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.setTransform(k, 0, 0, k, -bx * k, -by * k);
+    for (const n of nodes) drawItem({ ...n, hidden: false });
+    ctx = prev;
+    return { c, x: bx, y: by, k };
+  }
+  function otsu(lum) {
+    const hist = new Float64Array(256), N = lum.length;
+    for (let i = 0; i < N; i++) hist[Math.min(255, lum[i] | 0)]++;
+    let sum = 0; for (let t = 0; t < 256; t++) sum += t * hist[t];
+    let sB = 0, wB = 0, best = 0, th = 128;
+    for (let t = 0; t < 256; t++) {
+      wB += hist[t]; if (!wB) continue; const wF = N - wB; if (!wF) break;
+      sB += t * hist[t]; const v = wB * wF * (sB / wB - (sum - sB) / wF) ** 2;
+      if (v > best) { best = v; th = t; }
+    }
+    return th + 0.5;
+  }
+  function boxBlur(a, w, h, r) {
+    const t = new Float32Array(a.length);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let s = 0, c = 0; for (let d = -r; d <= r; d++) { const xx = x + d; if (xx >= 0 && xx < w) { s += a[y * w + xx]; c++; } } t[y * w + x] = s / c; }
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { let s = 0, c = 0; for (let d = -r; d <= r; d++) { const yy = y + d; if (yy >= 0 && yy < h) { s += t[yy * w + x]; c++; } } a[y * w + x] = s / c; }
+  }
+  const hex = (r, g, b) => '#' + [r, g, b].map((v) => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
+  function traceCanvas(c, o) {
+    const w = c.width, h = c.height, N = w * h, d = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    const R = new Float32Array(N), Gc = new Float32Array(N), B = new Float32Array(N), A = new Uint8Array(N), lum = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      const a = d[i * 4 + 3] / 255;
+      R[i] = d[i * 4] * a + 255 * (1 - a); Gc[i] = d[i * 4 + 1] * a + 255 * (1 - a); B[i] = d[i * 4 + 2] * a + 255 * (1 - a);
+      A[i] = a > 0.5 ? 1 : 0; lum[i] = 0.299 * R[i] + 0.587 * Gc[i] + 0.114 * B[i];
+    }
+    const masks = [];
+    if (o.mode === 'bw') {
+      if (o.blur) boxBlur(lum, w, h, o.blur);
+      const t = o.threshold || otsu(lum), m = new Uint8Array(N); let sr = 0, sg = 0, sb = 0, cnt = 0;
+      for (let i = 0; i < N; i++) if (lum[i] < t) { m[i] = 1; sr += R[i]; sg += Gc[i]; sb += B[i]; cnt++; }
+      if (cnt) masks.push({ fill: hex(sr / cnt * 0.8, sg / cnt * 0.8, sb / cnt * 0.8), m });
+    } else {
+      const k = o.colors, step = Math.max(1, Math.floor(N / 24000)), sample = [];
+      for (let i = 0; i < N; i += step) if (A[i]) sample.push(i);
+      if (!sample.length) return [];
+      sample.sort((a, b) => lum[a] - lum[b]);
+      const C = []; for (let j = 0; j < k; j++) { const i = sample[Math.min(sample.length - 1, Math.floor((j + 0.5) / k * sample.length))]; C.push([R[i], Gc[i], B[i]]); }
+      const near = (i) => { let bi = 0, bd = Infinity; for (let j = 0; j < C.length; j++) { const dr = R[i] - C[j][0], dg = Gc[i] - C[j][1], db = B[i] - C[j][2], dd = dr * dr + dg * dg + db * db; if (dd < bd) { bd = dd; bi = j; } } return bi; };
+      for (let it = 0; it < 10; it++) {
+        const acc = C.map(() => [0, 0, 0, 0]);
+        for (const i of sample) { const j = near(i), q = acc[j]; q[0] += R[i]; q[1] += Gc[i]; q[2] += B[i]; q[3]++; }
+        acc.forEach((q, j) => { if (q[3]) C[j] = [q[0] / q[3], q[1] / q[3], q[2] / q[3]]; });
+      }
+      const lab = new Uint8Array(N).fill(255), borderCount = new Array(k).fill(0);
+      for (let i = 0; i < N; i++) if (A[i]) lab[i] = near(i);
+      // Background = the most common colour along the outer edge of the visible pixels.
+      const edge = (i) => { const l = lab[i]; if (l !== 255) borderCount[l]++; return l !== 255; };
+      for (let y = 0; y < h; y++) { for (let x = 0; x < w; x++) if (edge(y * w + x)) break; for (let x = w - 1; x >= 0; x--) if (edge(y * w + x)) break; }
+      for (let x = 0; x < w; x++) { for (let y = 0; y < h; y++) if (edge(y * w + x)) break; for (let y = h - 1; y >= 0; y--) if (edge(y * w + x)) break; }
+      const bg = borderCount.indexOf(Math.max(...borderCount));
+      const order = C.map((c, j) => j).sort((a, b) => (0.299 * C[b][0] + 0.587 * C[b][1] + 0.114 * C[b][2]) - (0.299 * C[a][0] + 0.587 * C[a][1] + 0.114 * C[a][2]));
+      const rank = []; order.forEach((j, r) => { rank[j] = r; });
+      const skipBg = (l) => o.ignoreBg && l === bg && borderCount[bg] > 0;
+      for (let r = 0; r < order.length; r++) {
+        const L = order[r]; if (skipBg(L)) continue;
+        const m = new Uint8Array(N); let any = false;
+        for (let i = 0; i < N; i++) { const l = lab[i]; if (l !== 255 && !skipBg(l) && rank[l] >= r) { m[i] = 1; any = true; } }
+        if (any) masks.push({ fill: hex(...C[L]), m });
+      }
+    }
+    const det = o.detail / 100, eps = 2.6 - 2.1 * det, corner = 1.5 - 0.7 * det;
+    const layers = [];
+    for (const { fill, m } of masks) { const rings = traceMask(m, w, h, o.noise, eps, corner); if (rings.length) layers.push({ fill, rings }); }
+    return layers;
+  }
+  function rdpIter(P, eps) {
+    const n = P.length; if (n < 3) return P.slice();
+    const keep = new Uint8Array(n); keep[0] = keep[n - 1] = 1; const st = [[0, n - 1]];
+    while (st.length) {
+      const [a, b] = st.pop(); let dm = 0, idx = -1;
+      for (let i = a + 1; i < b; i++) { const dd = segDist(P[i][0], P[i][1], P[a][0], P[a][1], P[b][0], P[b][1]); if (dd > dm) { dm = dd; idx = i; } }
+      if (dm > eps) { keep[idx] = 1; st.push([a, idx], [idx, b]); }
+    }
+    return P.filter((_, i) => keep[i]);
+  }
+  function rdpClosed(P, eps) {
+    let far = 0, dm = 0;
+    for (let i = 1; i < P.length; i++) { const dd = Math.hypot(P[i][0] - P[0][0], P[i][1] - P[0][1]); if (dd > dm) { dm = dd; far = i; } }
+    if (!far) return P.slice(0, 1);
+    const a = rdpIter(P.slice(0, far + 1), eps), b = rdpIter([...P.slice(far), P[0]], eps);
+    return [...a.slice(0, -1), ...b.slice(0, -1)];
+  }
+  // Follows pixel edges with the shape on the right, so outer edges and holes both come out as closed rings.
+  function traceMask(m, w, h, minArea, eps, cornerA) {
+    const W1 = w + 1, out = new Map();
+    const add = (a, b) => { const l = out.get(a); if (l) l.push(b); else out.set(a, [b]); };
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (!m[y * w + x]) continue;
+      if (y === 0 || !m[(y - 1) * w + x]) add(y * W1 + x, y * W1 + x + 1);
+      if (x === w - 1 || !m[y * w + x + 1]) add(y * W1 + x + 1, (y + 1) * W1 + x + 1);
+      if (y === h - 1 || !m[(y + 1) * w + x]) add((y + 1) * W1 + x + 1, (y + 1) * W1 + x);
+      if (x === 0 || !m[y * w + x - 1]) add((y + 1) * W1 + x, y * W1 + x);
+    }
+    const rings = [];
+    for (const [start, list] of out) {
+      while (list.length) {
+        const loop = [start]; let cur = list.pop(), dx = cur % W1 - start % W1, dy = ((cur / W1) | 0) - ((start / W1) | 0), guard = 0;
+        while (cur !== start && guard++ < 4e6) {
+          loop.push(cur);
+          const nx = out.get(cur); if (!nx || !nx.length) break;
+          const cx = cur % W1, cy = (cur / W1) | 0;
+          let pick = 0;
+          if (nx.length > 1) { const i = nx.findIndex((v) => v % W1 - cx === -dy && ((v / W1) | 0) - cy === dx); if (i >= 0) pick = i; }   // saddle: turn right
+          const nxt = nx.splice(pick, 1)[0];
+          dx = nxt % W1 - cx; dy = ((nxt / W1) | 0) - cy; cur = nxt;
+        }
+        if (cur !== start || loop.length < 4) continue;
+        const P0 = loop.map((v) => [v % W1, (v / W1) | 0]);
+        let area = 0; for (let i = 0; i < P0.length; i++) { const a = P0[i], b = P0[(i + 1) % P0.length]; area += a[0] * b[1] - b[0] * a[1]; }
+        if (Math.abs(area) / 2 < Math.max(1, minArea)) continue;
+        const P = P0.map((a, i) => { const b = P0[(i + 1) % P0.length]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; });   // soften the pixel staircase
+        const Q = rdpClosed(P, eps); if (Q.length < 3) continue;
+        const An = Q.map(([x, y]) => [x, y, x, y, x, y, 0]), n = An.length;
+        for (let i = 0; i < n; i++) {
+          const p = An[(i - 1 + n) % n], q = An[(i + 1) % n], a = An[i];
+          let t = Math.abs(Math.atan2(q[1] - a[1], q[0] - a[0]) - Math.atan2(a[1] - p[1], a[0] - p[0])); if (t > Math.PI) t = 2 * Math.PI - t;
+          if (t > cornerA) a[6] = 1;
+        }
+        smoothHandles(An, true);
+        rings.push(An);
+      }
+    }
+    return rings;
+  }
+  function makeVec(layers, ras) {
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const L of layers) for (const r of L.rings) for (const a of r) { x0 = Math.min(x0, a[0]); x1 = Math.max(x1, a[0]); y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[1]); }
+    const r2 = (v) => Math.round(v * 100) / 100, pw = Math.max(1, x1 - x0), ph = Math.max(1, y1 - y0);
+    return {
+      id: nid(), type: 'vec', name: 'Vector artwork', x: ras.x + x0 / ras.k, y: ras.y + y0 / ras.k, w: pw / ras.k, h: ph / ras.k, pw, ph,
+      layers: layers.map((L) => ({ fill: L.fill, rings: L.rings.map((r) => r.map((a) => [r2(a[0] - x0), r2(a[1] - y0), r2(a[2] - x0), r2(a[3] - y0), r2(a[4] - x0), r2(a[5] - y0), a[6]])) })),
+    };
+  }
+  function vecSVG(n) {
+    const f = (v) => Math.round(v * 100) / 100, sx = n.w / n.pw, sy = n.h / n.ph;
+    const body = n.layers.map((L) => {
+      let d = '';
+      for (const A of L.rings) {
+        d += `M${f(A[0][0] * sx)} ${f(A[0][1] * sy)}`;
+        for (let i = 0; i < A.length; i++) { const a = A[i], b = A[(i + 1) % A.length]; d += `C${f(a[4] * sx)} ${f(a[5] * sy)} ${f(b[2] * sx)} ${f(b[3] * sy)} ${f(b[0] * sx)} ${f(b[1] * sy)}`; }
+        d += 'Z';
+      }
+      return `<path d="${d}" fill="${L.fill}" fill-rule="evenodd"/>`;
+    }).join('');
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${f(n.w)}" height="${f(n.h)}" viewBox="0 0 ${f(n.w)} ${f(n.h)}">${body}</svg>`;
+  }
+  function startTrace(key) {
+    if (!TR) {
+      const src = fxNodes().filter((n) => !n.locked); if (!src.length) return;
+      TR = { srcIds: src.map((n) => n.id), src: clone(src), resultId: null, keep: false, opts: null };
+    }
+    TR.preset = key; TR.opts = { ...TRACE[key], ignoreBg: TR.opts ? TR.opts.ignoreBg : true };
+    runTrace(); refreshSelPop();
+  }
+  function retrace(now) { if (!TR) return; clearTimeout(TR.timer); TR.timer = setTimeout(runTrace, now ? 0 : 180); }
+  function runTrace() {
+    if (!TR) return;
+    const t0 = performance.now();
+    const ras = rasterize(TR.src, TR.preset === 'detailed' ? 900 : 700);
+    const layers = traceCanvas(ras.c, TR.opts);
+    if (!layers.length) { toast('Nothing to trace with these settings. Try a different Threshold or ignore fewer specks.'); return; }
+    const v = makeVec(layers, ras);
+    if (TR.resultId) {
+      v.id = TR.resultId;
+      const i = S.nodes.findIndex((n) => n.id === TR.resultId); if (i >= 0) S.nodes[i] = v; else S.nodes.push(v);
+    } else {
+      checkpoint(); TR.resultId = v.id;
+      const ids = new Set(TR.srcIds); let at = -1;
+      S.nodes.forEach((n, i) => { if (ids.has(n.id)) at = i; });
+      S.nodes.splice(at + 1, 0, v);
+      S.nodes = S.nodes.filter((n) => !ids.has(n.id));          // "Keep original" brings them back, hidden
+    }
+    const shapes = layers.reduce((a, L) => a + L.rings.length, 0), ms = Math.round(performance.now() - t0);
+    TR.info = `${shapes} shapes · ${layers.length} ${layers.length === 1 ? 'colour' : 'colours'} · traced in ${ms} ms`;
+    const el = $('traceInfo'); if (el) el.textContent = TR.info;
+    S.sel = new Set([TR.resultId]); save(); updateUI(); requestRender();
+  }
+  function applyKeep() {
+    const ids = new Set(TR.srcIds);
+    S.nodes = S.nodes.filter((n) => !ids.has(n.id));
+    if (TR.keep) { const i = S.nodes.findIndex((n) => n.id === TR.resultId); S.nodes.splice(Math.max(0, i), 0, ...TR.src.map((n) => ({ ...clone(n), hidden: true }))); }
+  }
+  function buildVectorize() {
+    const items = TR && TR.resultId ? TR.src : fxNodes(), allStrokes = items.length && items.every((n) => n.type === 'stroke');
+    const chip = (key, label, sub) => h('button', { class: 'vchip' + (TR && TR.preset === key ? ' on' : ''), onclick: () => startTrace(key) }, h('b', {}, label), h('small', {}, sub));
+    const out = [h('h3', {}, 'Vectorize'),
+      h('p', { class: 'hint' }, TR && TR.resultId ? 'Adjust and watch it update. Undo brings back the original.' : 'Turn drawings or images into clean vector artwork, like Image Trace. Pick a style:'),
+      h('div', { class: 'vgrid' },
+        chip('lineart', 'Line art', '1 colour'), chip('sketch', 'Sketch', 'Pencil drawings'), chip('logo', 'Logo', '3 colours'),
+        chip('poster', 'Poster', '6 colours'), chip('detailed', 'Detailed', '16 colours'),
+        allStrokes && !(TR && TR.resultId) ? h('button', { class: 'vchip', onclick: () => { closePops(); vectorizeSel(); } }, h('b', {}, 'Clean lines'), h('small', {}, 'Editable strokes')) : null)];
+    if (TR && TR.resultId) {
+      const o = TR.opts;
+      if (o.mode === 'color') out.push(sliderRow('Colours', 2, 16, 1, o.colors, String, (v) => { o.colors = v; retrace(); }));
+      else out.push(sliderRow('Threshold', 0, 254, 1, o.threshold, (v) => (v ? String(v) : 'Auto'), (v) => { o.threshold = v; retrace(); }));
+      out.push(sliderRow('Detail', 0, 100, 1, o.detail, String, (v) => { o.detail = v; retrace(); }),
+        sliderRow('Ignore specks', 0, 200, 1, o.noise, String, (v) => { o.noise = v; retrace(); }));
+      if (o.mode === 'color') out.push(toggleRow('Ignore white background', o.ignoreBg, (on) => { o.ignoreBg = on; runTrace(); }));
+      out.push(toggleRow('Keep original, hidden underneath', TR.keep, (on) => { TR.keep = on; applyKeep(); }));
+      out.push(h('p', { class: 'hint', id: 'traceInfo' }, TR.info || ''),
+        h('div', { class: 'row' }, h('span'), h('button', { class: 'chipb primary', onclick: () => closePops() }, 'Done')));
+    }
+    return out;
+  }
+  function separateColours() {
+    const v = selected().find((n) => n.type === 'vec' && n.layers.length > 1); if (!v) return;
+    checkpoint();
+    const parts = v.layers.map((L, j) => ({ ...clone(v), id: nid(), name: `Colour ${j + 1}`, layers: [clone(L)] }));
+    S.nodes.splice(S.nodes.indexOf(v), 1, ...parts); S.sel = new Set(parts.map((q) => q.id)); changed();
+    toast(`Separated into ${parts.length} items, one per colour.`, 'Undo', undo, 4000);
+  }
 
   // ---------- Edit points ----------
   let PE = null;               // { id, i, t } while editing a vector's points
@@ -1313,8 +1593,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     else toast(`Vectorized ${ss.length} drawings: ${b} points → ${a}.`, 'Undo', undo, 5000);
   }
   function copySVG() {
-    const n = selected().find((m) => m.type === 'path'); if (!n) return;
-    const text = pathSVG(n);
+    const n = selected().find((m) => m.type === 'path' || m.type === 'vec'); if (!n) return;
+    const text = n.type === 'vec' ? vecSVG(n) : pathSVG(n);
     if (!navigator.clipboard) { toast('The clipboard isn’t available here.'); return; }
     navigator.clipboard.writeText(text).then(() => toast('Copied the SVG.', null, null, 2000), () => toast('Couldn’t copy here. Open the prototype in its own browser tab and try again.'));
   }
@@ -1961,13 +2241,14 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     pop.style.maxHeight = hgt + 'px';
     pop.style.left = left + 'px'; pop.style.top = (up ? a.top - 10 - hgt : a.bottom + 10) + 'px';
   }
-  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop', 'cornersPop'];
+  const SEL_POPS = ['stylePop', 'textPop', 'fxPop', 'arrangePop', 'cornersPop', 'vectorPop'];
   let openSel = null;               // { id, label, build }
   function closePops() {
     for (const id of ['colorPop', 'pencilPop', 'shapePop', 'insertPop', 'viewPop', ...SEL_POPS]) $(id).hidden = true;
     $('insertBtn').setAttribute('aria-expanded', 'false'); $('zoom').setAttribute('aria-expanded', 'false');
     ctxBar.querySelectorAll('[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
     openSel = null;
+    if (TR) { clearTimeout(TR.timer); TR = null; }      // closing the Vectorize panel ends the trace session
   }
   function openSelPop(id, anchor, build) {
     const was = openSel && openSel.id === id; closePops(); if (was) return;
@@ -1979,9 +2260,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   function refreshSelPop() {
     if (!openSel) return;
     if (!S.sel.size || (!fxNodes().length && openSel.id !== 'arrangePop')) { closePops(); return; }
-    const pop = $(openSel.id), st = pop.scrollTop; pop.replaceChildren(...openSel.build()); pop.scrollTop = st;
+    const pop = $(openSel.id), st = pop.scrollTop, h0 = pop.scrollHeight; pop.replaceChildren(...openSel.build());
     const b = [...ctxBar.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === openSel.label);
     if (b) b.setAttribute('aria-expanded', 'true');
+    if (pop.scrollHeight !== h0) { placeContextBar(); position(pop, b || ctxBar, 'auto'); }   // grew or shrank: keep clear of the bar
+    pop.scrollTop = st;
   }
   function pickToolColor(c) { S.color = c; save(); updateUI(); $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor)); }
   $('colorBtn').addEventListener('click', (e) => {
@@ -2077,6 +2360,15 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       const polys = shapes.filter((s) => s.type === 'polygon'), stars = shapes.filter((s) => s.type === 'star');
       if (polys.length) out.push(sliderRow('Sides', 3, 12, 1, polys[0].sides || 6, String, (v) => polys.forEach((s) => { s.sides = v; })));
       if (stars.length) out.push(sliderRow('Points', 3, 12, 1, stars[0].points || 5, String, (v) => stars.forEach((s) => { s.points = v; })));
+    }
+    const vecs = ns.filter((n) => n.type === 'vec');
+    if (vecs.length === 1) {
+      const v = vecs[0];
+      out.push(h('h4', {}, `Colours (${v.layers.length})`));
+      v.layers.forEach((L, i) => out.push(h('div', { class: 'vrow' }, h('i', { class: 'vdot', style: `background:${L.fill}` }),
+        h('div', { class: 'swatches' }, swatchButtons(L.fill, (c) => { checkpoint(); L.fill = c; changed(); refreshSelPop(); })),
+        v.layers.length > 1 ? h('button', { class: 'mini2', 'aria-label': 'Remove this colour', title: 'Remove this colour', html: svg('<path d="M6 6l12 12M18 6 6 18"/>', 's'),
+          onclick: () => { checkpoint(); v.layers.splice(i, 1); changed(); refreshSelPop(); } }) : null)));
     }
     const closedPaths = ns.filter((n) => n.type === 'path' && n.closed);
     if (closedPaths.length) out.push(toggleRow('Fill', closedPaths.every((n) => n.fill), (on) => closedPaths.forEach((n) => { n.fill = on ? n.color : null; })));
@@ -2265,6 +2557,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     if (n.type === 'polygon') return n.sides === 4 ? 'Diamond' : 'Polygon';
     if (n.type === 'line') return n.head ? 'Arrow' : 'Line';
     if (n.type === 'path') return 'Vector';
+    if (n.type === 'vec') return 'Vector artwork';
     return { rect: 'Rectangle', ellipse: 'Ellipse', stroke: 'Drawing', triangle: 'Triangle', star: 'Star', image: 'Image', group: 'Group', frame: 'Frame' }[n.type] || n.type;
   }
   let drag = null;
@@ -2356,14 +2649,18 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         h('span', { class: 'sep' }));
       if (cornerTargets().length)
         btn('Corners: round the corners', '<path d="M4 20V12a8 8 0 0 1 8-8h8"/>', (b) => openSelPop('cornersPop', b, buildCorners), '', 'Corners');
-      if (items.some((n) => fxTarget(n) || ['line', 'stroke', 'icon', 'image', 'path'].includes(n.type)))
+      if (items.some((n) => fxTarget(n) || ['line', 'stroke', 'icon', 'image', 'path', 'vec'].includes(n.type)))
         btn('Style: fill, border, corners', '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 0 0 16z" fill="currentColor"/>', (b) => openSelPop('stylePop', b, buildStyle), '', 'Style');
       if (items.some((n) => n.type === 'text'))
         btn('Text size and weight', '<path d="M4 18 9 6l5 12M5.8 14h6.4M16 12h5M18.5 9.5v5"/>', (b) => openSelPop('textPop', b, buildText), '', 'Text');
       btn('Effects: shadow, blur, opacity', '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/><path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z"/>', (b) => openSelPop('fxPop', b, buildFx), '', 'Effects');
     }
-    if (items.some((n) => n.type === 'stroke'))
-      btn('Vectorize: turn drawing into an editable vector', '<path d="M4.5 18.5c3-9 11-3 15-13"/><rect x="2.5" y="16.5" width="4" height="4" rx="1"/><rect x="17.5" y="3.5" width="4" height="4" rx="1"/>', vectorizeSel, '', 'Vectorize');
+    if (items.length && !items.every((n) => n.type === 'vec' || n.type === 'path'))
+      btn('Vectorize: trace drawings and images into vector art', '<path d="M4.5 18.5c3-9 11-3 15-13"/><rect x="2.5" y="16.5" width="4" height="4" rx="1"/><rect x="17.5" y="3.5" width="4" height="4" rx="1"/>', (b) => openSelPop('vectorPop', b, buildVectorize), '', 'Vectorize');
+    if (items.length === 1 && items[0].type === 'vec') {
+      if (items[0].layers.length > 1) btn('Separate colours into their own items', '<rect x="3.5" y="3.5" width="8" height="8" rx="4"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', separateColours, '', 'Separate');
+      btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
+    }
     if (items.length === 1 && items[0].type === 'path') {
       btn('Edit points', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => enterPoints(items[0]), '', 'Edit points');
       btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
@@ -2440,6 +2737,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   }));
   $('newBtn').addEventListener('click', () => { closePops(); $('sheetWrap').hidden = false; cards.firstChild.focus(); });
   $('sheetCancel').addEventListener('click', () => { $('sheetWrap').hidden = true; });
+  $('sheetExample').addEventListener('click', () => {
+    checkpoint(); S.nodes = sample(); S.sel.clear(); $('docName').textContent = 'Example';
+    $('sheetWrap').hidden = true; setTool('select'); fit(S.nodes); changed();
+    toast('Opened the example. Undo brings back your design.', 'Undo', undo, 5000);
+  });
   $('sheetWrap').addEventListener('pointerdown', (e) => { if (e.target === $('sheetWrap')) $('sheetWrap').hidden = true; });
 
   // ---------- Example document (marked as an example in the doc name) ----------
@@ -2486,6 +2788,19 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     place(N, 'Settings row', X + 16, 560);
     place(N, 'Button', X + 116, 640);
     place(N, 'Tab bar', X, 852 - 83);
+    // A robot sketched with the Pencil, ready to vectorize
+    const RX = 2160;
+    N.push({ id: nid(), type: 'frame', x: RX, y: 0, w: 393, h: 852, name: 'Robot (sketch)' });
+    const circ = (cx, cy, r) => ink((u) => [cx + Math.cos(u * Math.PI * 2.06) * (r + Math.sin(u * 23) * 1), cy + Math.sin(u * Math.PI * 2.06) * (r + Math.sin(u * 23) * 1)], 48, INK, 2.8);
+    const seg = (x0, y0, x1, y1) => ink((u) => [x0 + (x1 - x0) * u + Math.sin(u * 9) * 1.1, y0 + (y1 - y0) * u + Math.cos(u * 7) * 1.1], 16, INK, 2.8);
+    seg(RX + 196, 150, RX + 196, 200); circ(RX + 196, 138, 11);
+    jag(RX + 116, 200, 160, 120); circ(RX + 160, 255, 17); circ(RX + 232, 255, 17); seg(RX + 160, 296, RX + 232, 296);
+    seg(RX + 182, 320, RX + 182, 340); seg(RX + 210, 320, RX + 210, 340);
+    jag(RX + 96, 340, 200, 210); jag(RX + 146, 380, 100, 60); circ(RX + 172, 486, 11); circ(RX + 220, 486, 11);
+    seg(RX + 96, 372, RX + 44, 470); seg(RX + 296, 372, RX + 348, 470); circ(RX + 38, 488, 17); circ(RX + 354, 488, 17);
+    jag(RX + 128, 550, 44, 108); jag(RX + 222, 550, 44, 108);
+    jag(RX + 112, 658, 72, 26); jag(RX + 208, 658, 72, 26);
+    text(RX + 24, 760, 'Select the robot, then tap Vectorize → Sketch.', 15, 500, MUT);
     return N;
   }
 
