@@ -334,6 +334,9 @@ body.tab-logo .design-only { display: none !important; }
   <button class="tool" data-tool="draw" title="Draw (P)">
     <svg class="i" viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="m14 7 3 3"/></svg>Draw
   </button>
+  <button class="tool" data-tool="pen" title="Pen: place points one by one (N)">
+    <svg class="i" viewBox="0 0 24 24"><path d="M12 21 6.5 12 12 3l5.5 9z"/><circle cx="12" cy="12.5" r="1.6"/><path d="M12 3v7.5"/></svg>Pen
+  </button>
   <button class="tool" data-tool="shape" id="shapeBtn" title="Shapes (R, O, L)">
     <svg class="i" viewBox="0 0 24 24" id="shapeIcon"><rect x="4" y="5" width="16" height="14" rx="1.5"/></svg>Shapes
   </button>
@@ -634,6 +637,7 @@ body.tab-logo .design-only { display: none !important; }
       const hn = byId(S.hoverId); if (hn) ctx.strokeRect(hn.x, hn.y, hn.w, hn.h);
     }
     if (PE) drawPointEditor(z);
+    else if (S.tool === 'pen') drawPen(z);
     else if (S.sel.size && !editing) {
       const ns = selected();
       for (const n of ns) {
@@ -677,6 +681,36 @@ body.tab-logo .design-only { display: none !important; }
     placeContextBar(); placeSuggest();
   }
 
+  // Pen: the path being built, its last handles, a dashed preview of the next segment, and close/continue hints.
+  function drawPen(z) {
+    const r = 6 / z, n = PEN && byId(PEN.id), hv = S.penHover;
+    const ring = (x, y) => { ctx.beginPath(); ctx.arc(x, y, r * 2, 0, Math.PI * 2); ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke(); };
+    if (!n) {
+      const q = hv && openEndAt(hv, 12 / z); if (q) { ring(q.x, q.y); return; }
+      const sp = hv && pathSpotAt(hv, 12 / z);
+      if (sp) { ctx.beginPath(); ctx.arc(sp.x, sp.y, r, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(sp.x - r * 0.55, sp.y); ctx.lineTo(sp.x + r * 0.55, sp.y); ctx.moveTo(sp.x, sp.y - r * 0.55); ctx.lineTo(sp.x, sp.y + r * 0.55); ctx.stroke(); }
+      return;
+    }
+    const A = pathWorld(n), l = A[A.length - 1];
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 1 / z;
+    if (A.length > 1) { tracePath(A, false); ctx.stroke(); }
+    if (hv && !G) {
+      ctx.save(); ctx.setLineDash([5 / z, 4 / z]); ctx.lineWidth = 1.2 / z; ctx.beginPath(); ctx.moveTo(l[0], l[1]);
+      ctx.bezierCurveTo(l[4], l[5], hv.x, hv.y, hv.x, hv.y); ctx.stroke(); ctx.restore();
+    }
+    const a = G && G.kind === 'penDrag' ? A[G.i] : l;
+    if (a && (a[4] !== a[0] || a[5] !== a[1])) {
+      ctx.beginPath(); ctx.moveTo(a[2], a[3]); ctx.lineTo(a[0], a[1]); ctx.lineTo(a[4], a[5]); ctx.lineWidth = 1 / z; ctx.stroke();
+      ctx.fillStyle = T.accent; for (const [hx, hy] of [[a[2], a[3]], [a[4], a[5]]]) { ctx.beginPath(); ctx.arc(hx, hy, r * 0.75, 0, Math.PI * 2); ctx.fill(); }
+    }
+    A.forEach((q, i) => {
+      ctx.beginPath(); if (q[6] === 1) ctx.rect(q[0] - r, q[1] - r, r * 2, r * 2); else ctx.arc(q[0], q[1], r, 0, Math.PI * 2);
+      ctx.fillStyle = i === A.length - 1 ? T.accent : '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke();
+    });
+    if (hv && A.length >= 3 && Math.hypot(hv.x - A[0][0], hv.y - A[0][1]) < 12 / z) ring(A[0][0], A[0][1]);
+  }
+
   function drawPointEditor(z) {
     const n = byId(PE.id), pd = n && peData(n); if (!pd) return;
     const A = pd.A, r = 6 / z;
@@ -696,6 +730,10 @@ body.tab-logo .design-only { display: none !important; }
       ctx.lineWidth = 1.5 / z; ctx.strokeStyle = T.accent; ctx.stroke();
       if (S.peHover === i && i !== PE.i) { ctx.beginPath(); ctx.arc(q[0], q[1], r * 1.8, 0, Math.PI * 2); ctx.lineWidth = 1 / z; ctx.stroke(); }
     });
+    if (S.peAdd && S.peHover == null) {       // a tap here adds a point
+      const [x, y] = S.peAdd; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.lineWidth = 1.5 / z; ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x - r * 0.55, y); ctx.lineTo(x + r * 0.55, y); ctx.moveTo(x, y - r * 0.55); ctx.lineTo(x, y + r * 0.55); ctx.stroke();
+    }
   }
 
   // ---------- Effects: opacity, shadow, layer blur, background blur ----------
@@ -1713,7 +1751,7 @@ body.tab-logo .design-only { display: none !important; }
     updateUI(); requestRender();
     tipOnce('points', 'Drag points to reshape. Tap the line to add a point. Double-tap a point to switch between corner and smooth.', 6500);
   }
-  function exitPoints() { PE = null; S.peHover = null; updateUI(); requestRender(); }
+  function exitPoints() { PE = null; S.peHover = null; S.peAdd = null; updateUI(); requestRender(); }
   function nearestOnPath(A, closed, p) {
     let best = null;
     for (const [a, b, i] of segments(A, closed)) for (let j = 0; j <= 24; j++) {
@@ -1803,6 +1841,119 @@ body.tab-logo .design-only { display: none !important; }
     navigator.clipboard.writeText(text).then(() => toast('Copied the SVG.', null, null, 2000), () => toast('Couldn’t copy here. Open the prototype in its own browser tab and try again.'));
   }
 
+  // ---------- Pen: place points one at a time ----------
+  let PEN = null;               // { id } of the path being drawn
+  const reverseAnchors = (A) => A.reverse().map(([x, y, ix, iy, ox, oy, c]) => [x, y, ox, oy, ix, iy, c]);
+  function openEndAt(p, tol) {          // the end of an open vector line under p, if any
+    for (let k = S.nodes.length - 1; k >= 0; k--) {
+      const n = S.nodes[k]; if (n.type !== 'path' || n.closed || n.hidden || n.locked) continue;
+      const A = pathWorld(n), f = A[0], l = A[A.length - 1];
+      if (Math.hypot(p.x - l[0], p.y - l[1]) < tol) return { n, first: false, x: l[0], y: l[1] };
+      if (Math.hypot(p.x - f[0], p.y - f[1]) < tol) return { n, first: true, x: f[0], y: f[1] };
+    }
+    return null;
+  }
+  function pathSpotAt(p, tol) {          // a point on the line of a vector path under p, if any
+    for (let k = S.nodes.length - 1; k >= 0; k--) {
+      const n = S.nodes[k]; if (n.type !== 'path' || n.hidden || n.locked || (PEN && PEN.id === n.id)) continue;
+      const A = pathWorld(n), q = nearestOnPath(A, n.closed, p);
+      if (q && q.d < tol + n.sw / 2) { const [a, b] = segments(A, n.closed)[q.seg]; return { n, seg: q.seg, t: q.t, x: bez(a[0], a[4], b[2], b[0], q.t), y: bez(a[1], a[5], b[3], b[1], q.t) }; }
+    }
+    return null;
+  }
+  function penDown(e, p) {
+    const id = e.pointerId, tol = (e.pointerType === 'touch' ? 24 : 12) / S.cam.z;
+    let n = PEN && byId(PEN.id), A = n ? pathWorld(n) : null;
+    if (PEN && !n) PEN = null;
+    if (n) {
+      const f = A[0], l = A[A.length - 1];
+      if (A.length >= 3 && Math.hypot(p.x - f[0], p.y - f[1]) < tol) {      // tap the first point: close the shape
+        checkpoint(); n.closed = true; if (!n.fill) n.fill = n.color; setPathWorld(n, A);
+        G = { kind: 'penDrag', id, i: 0, start: p, moved: false, closing: true }; return;
+      }
+      if (Math.hypot(p.x - l[0], p.y - l[1]) < tol) { G = { kind: 'penEnd', id }; return; }   // tap the last point: finish
+    } else {
+      const q = openEndAt(p, tol);
+      if (q) {                            // tap the end of an open line: keep drawing from it
+        checkpoint(); PEN = { id: q.n.id };
+        if (q.first) setPathWorld(q.n, reverseAnchors(pathWorld(q.n)));
+        S.sel = new Set([q.n.id]); G = { kind: 'penNoop', id }; save(); return;
+      }
+      const sp = pathSpotAt(p, tol);
+      if (sp) {                           // tap on a line: add a point there, then edit it
+        checkpoint(); const A2 = pathWorld(sp.n), i = splitAt(A2, sp.seg, sp.t); setPathWorld(sp.n, A2);
+        setTool('select'); S.sel = new Set([sp.n.id]); enterPoints(sp.n); PE.i = i; PE.t = e.timeStamp;
+        G = { kind: 'peAnchor', id, start: p, A0: pathWorld(sp.n).map((q) => q.slice()), moved: false, noCheckpoint: true };
+        save(); return;
+      }
+    }
+    checkpoint();
+    if (!n) {
+      n = { id: nid(), type: 'path', closed: false, color: S.color, sw: Math.max(1, Math.round(6 / Math.sqrt(S.cam.z)) / 2), fill: null, name: 'Path' };
+      S.nodes.push(n); PEN = { id: n.id }; A = [];
+    }
+    A.push([p.x, p.y, p.x, p.y, p.x, p.y, 1]); setPathWorld(n, A);
+    S.sel = new Set([n.id]);
+    G = { kind: 'penDrag', id, i: A.length - 1, start: p, moved: false };
+  }
+  function finishPen() {
+    if (!PEN) return;
+    const n = byId(PEN.id); PEN = null;
+    if (n && n.a.length < 2) S.nodes = S.nodes.filter((m) => m !== n);
+    else if (n) { S.sel = new Set([n.id]); if (n.closed) tipOnce('penclosed', 'Shape closed. Tap Edit points to fine-tune, or keep tapping to start a new one.'); }
+    changed();
+  }
+  function penUndoPoint() {
+    const n = byId(PEN && PEN.id); if (!n) return;
+    checkpoint();
+    const A = pathWorld(n); A.pop();
+    if (!A.length) { S.nodes = S.nodes.filter((m) => m !== n); PEN = null; } else setPathWorld(n, A);
+    changed();
+  }
+  function penClose() {
+    const n = byId(PEN && PEN.id); if (!n || n.a.length < 3) return;
+    checkpoint(); n.closed = true; if (!n.fill) n.fill = n.color; setPathWorld(n, pathWorld(n)); finishPen();
+  }
+
+  // ---------- Fewer points: remove the points a shape doesn't need ----------
+  function mergeError(p, a, q) {      // replace p→a→q with one curve p→q; returns [error, new p.out, new q.in]
+    const len = (u, v) => { let d = 0, x = u[0], y = u[1]; for (let j = 1; j <= 8; j++) { const t = j / 8, X = bez(u[0], u[4], v[2], v[0], t), Y = bez(u[1], u[5], v[3], v[1], t); d += Math.hypot(X - x, Y - y); x = X; y = Y; } return d || 1e-6; };
+    const l1 = len(p, a), l2 = len(a, q), T = l1 + l2;
+    const po = [p[0] + (p[4] - p[0]) * T / l1, p[1] + (p[5] - p[1]) * T / l1], qi = [q[0] + (q[2] - q[0]) * T / l2, q[1] + (q[3] - q[1]) * T / l2];
+    const C = []; for (let j = 0; j <= 48; j++) { const t = j / 48; C.push([bez(p[0], po[0], qi[0], q[0], t), bez(p[1], po[1], qi[1], q[1], t)]); }
+    let err = 0;
+    for (const [u, v] of [[p, a], [a, q]]) for (let j = 1; j < 12; j++) {
+      const t = j / 12, x = bez(u[0], u[4], v[2], v[0], t), y = bez(u[1], u[5], v[3], v[1], t);
+      let m = Infinity; for (let k = 1; k < C.length; k++) m = Math.min(m, segDist(x, y, C[k - 1][0], C[k - 1][1], C[k][0], C[k][1]));
+      err = Math.max(err, m);
+    }
+    const ax = a[0], ay = a[1]; let ma = Infinity; for (let k = 1; k < C.length; k++) ma = Math.min(ma, segDist(ax, ay, C[k - 1][0], C[k - 1][1], C[k][0], C[k][1]));
+    return [Math.max(err, ma), po, qi];
+  }
+  function fewerPoints() {
+    const n = byId(PE && PE.id); if (!n) return;
+    const pd = peData(n), A = pd.A.map((a) => a.slice()), closed = pd.closed, min = closed ? 3 : 2, before = A.length;
+    if (A.length <= min) { toast('This line already has as few points as it can.', null, null, 2500); return; }
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity; for (const a of A) { x0 = Math.min(x0, a[0]); x1 = Math.max(x1, a[0]); y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[1]); }
+    PE.simp = (PE.simp || 0) + 1;
+    const tol = Math.max(0.5, Math.hypot(x1 - x0, y1 - y0) * 0.004 * 2 ** PE.simp);
+    while (A.length > min) {
+      let bi = -1, be = Infinity, bp = null;
+      for (let i = 0; i < A.length; i++) {
+        if (!closed && (i === 0 || i === A.length - 1)) continue;
+        const m = A.length, r = mergeError(A[(i - 1 + m) % m], A[i], A[(i + 1) % m]);
+        if (r[0] < be) { be = r[0]; bi = i; bp = r; }
+      }
+      if (bi < 0 || be > tol) break;
+      const m = A.length, p = A[(bi - 1 + m) % m], q = A[(bi + 1) % m];
+      p[4] = bp[1][0]; p[5] = bp[1][1]; q[2] = bp[2][0]; q[3] = bp[2][1];
+      A.splice(bi, 1);
+    }
+    if (A.length === before) { PE.simp = Math.min(PE.simp + 1, 6); toast('No points could go without changing the shape. Tap again to allow a little change.', null, null, 3000); return; }
+    checkpoint(); PE.i = null; peStore(n, A); changed();
+    toast(`Fewer points: ${before} → ${A.length}. Tap again for even fewer.`, 'Undo', undo, 3500);
+  }
+
   function startTool(e, p) {
     const id = e.pointerId, z = S.cam.z;
     switch (S.tool) {
@@ -1814,6 +1965,7 @@ body.tab-logo .design-only { display: none !important; }
       }
       case 'shape': S.sel.clear(); G = { kind: 'shape', id, k: S.shapeKind, x0: p.x, y0: p.y, x1: p.x, y1: p.y, shift: e.shiftKey, dragged: false }; break;
       case 'erase': checkpoint(); G = { kind: 'erase', id, any: false }; eraseAt(p); break;
+      case 'pen': penDown(e, p); break;
       case 'frame': G = { kind: 'frame', id, x0: p.x, y0: p.y, x1: p.x, y1: p.y }; break;
       case 'text': G = { kind: 'text', id, p }; break;
       case 'select': {
@@ -1874,11 +2026,13 @@ body.tab-logo .design-only { display: none !important; }
     if (!G && e.buttons === 0 && e.pointerType !== 'touch') {
       if (e.pointerType === 'pen' && !S.pencil) enablePencil();
       if (PE) {
-        const n = byId(PE.id), tol = 12 / S.cam.z; let hi = null;
+        const n = byId(PE.id), tol = 12 / S.cam.z; let hi = null, add = null;
         const pd = n && peData(n); if (pd) pd.A.forEach((q, i) => { if (Math.hypot(p.x - q[0], p.y - q[1]) < tol) hi = i; });
-        if (hi !== S.peHover) { S.peHover = hi; requestRender(); }
+        if (pd && hi == null) { const s = nearestOnPath(pd.A, pd.closed, p); if (s && s.d < tol + (n.sw || 0) / 2) { const [a, b] = segments(pd.A, pd.closed)[s.seg]; add = [bez(a[0], a[4], b[2], b[0], s.t), bez(a[1], a[5], b[3], b[1], s.t)]; } }
+        if (hi !== S.peHover || String(add) !== String(S.peAdd)) { S.peHover = hi; S.peAdd = add; requestRender(); }
         return;
       }
+      if (S.tool === 'pen') { S.penHover = p; requestRender(); return; }
       // Hover: Pencil (on supported iPads) and mouse preview what a tap will pick.
       const hv = S.tool === 'select' || (e.pointerType === 'pen' && S.tool !== 'draw' && S.tool !== 'erase') ? hit(p.x, p.y) : null;
       const hid = hv ? hv.id : null;
@@ -1922,6 +2076,13 @@ body.tab-logo .design-only { display: none !important; }
         const n = G.n, avg = ((p.x - n.x) + (p.y - n.y)) / 2;
         n.r = Math.round(Math.max(0, Math.min(avg - RADIUS_GAP / z, Math.min(n.w, n.h) / 2)));
         break;
+      }
+      case 'penDrag': {
+        const n = byId(PEN && PEN.id); if (!n) break;
+        const A = pathWorld(n), a = A[G.i]; if (!a) break;
+        if (!G.moved) { if (Math.hypot(p.x - G.start.x, p.y - G.start.y) * z < 4) return; G.moved = true; }
+        a[6] = 2; a[4] = p.x; a[5] = p.y; a[2] = 2 * a[0] - p.x; a[3] = 2 * a[1] - p.y;
+        setPathWorld(n, A); break;
       }
       case 'peAnchor': {
         const n = byId(PE && PE.id); if (!n) break;
@@ -2012,6 +2173,8 @@ body.tab-logo .design-only { display: none !important; }
         else if (g.tapCandidate && !cancelled) tapPick(p, e.timeStamp, e.clientX, e.clientY);
         break;
       case 'resize': case 'lineEnd': case 'radius': case 'peAnchor': case 'peHandle': if (g.moved) save(); break;
+      case 'penDrag': if (g.closing) finishPen(); else save(); break;
+      case 'penEnd': finishPen(); break;
       case 'marquee': {
         const r = rectOf(g.x0, g.y0, g.x1, g.y1);
         if (r.w * z > 4 || r.h * z > 4) for (const n of S.nodes) if (!n.hidden && !n.locked && n.x >= r.x && n.y >= r.y && n.x + n.w <= r.x + r.w && n.y + n.h <= r.y + r.h) S.sel.add(n.id);
@@ -2332,8 +2495,12 @@ body.tab-logo .design-only { display: none !important; }
   }
   function setTool(t) {
     if (PE && t !== 'select') PE = null;
+    if (PEN && t !== 'pen') finishPen();
+    cv.style.cursor = t === 'pen' ? 'crosshair' : '';
+    S.penHover = null;
+    if (t === 'pen') tipOnce('pen', 'Pen: tap to place corner points, press and drag for curves. Tap the first point to close the shape.', 6500);
     if (t !== 'draw') { hideSuggest(); recent = []; }
-    S.tool = t; if (!['select', 'draw', 'shape'].includes(t)) S.sel.clear(); S.hover = null; S.hoverId = null; updateUI(); requestRender();
+    S.tool = t; if (!['select', 'draw', 'shape', 'pen'].includes(t)) S.sel.clear(); S.hover = null; S.hoverId = null; updateUI(); requestRender();
   }
 
   window.addEventListener('keydown', (e) => {
@@ -2357,6 +2524,8 @@ body.tab-logo .design-only { display: none !important; }
     if (mod) return;
     const arrows = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] };
     if (arrows[k] && S.sel.size) { e.preventDefault(); const s = e.shiftKey ? 10 : 1; nudge(arrows[k][0] * s, arrows[k][1] * s); return; }
+    if (PEN && (k === 'backspace' || k === 'delete')) { e.preventDefault(); penUndoPoint(); return; }
+    if (PEN && (k === 'escape' || k === 'enter')) { finishPen(); return; }
     if (PE && (k === 'backspace' || k === 'delete')) { e.preventDefault(); if (PE.i != null) deletePoint(); return; }
     if (PE && (k === 'escape' || k === 'enter')) { exitPoints(); return; }
     if (k === 'backspace' || k === 'delete') { e.preventDefault(); del(); return; }
@@ -2372,7 +2541,7 @@ body.tab-logo .design-only { display: none !important; }
     if (k === 'l' && e.shiftKey) { pickShape('arrow'); return; }
     const shapeKey = { r: 'rect', o: 'ellipse', l: 'line' }[k];
     if (shapeKey) { pickShape(shapeKey); return; }
-    const map = { v: 'select', p: 'draw', d: 'draw', t: 'text', f: 'frame', e: 'erase' };
+    const map = { v: 'select', p: 'draw', d: 'draw', n: 'pen', t: 'text', f: 'frame', e: 'erase' };
     if (map[k]) setTool(map[k]);
   });
   window.addEventListener('keyup', (e) => { if (e.key === ' ') { spaceDown = false; cv.classList.remove('space'); } });
@@ -2872,6 +3041,14 @@ body.tab-logo .design-only { display: none !important; }
       const b = h('button', { class: 'btn ' + (text ? 'label ' : '') + extra, title: label, 'aria-label': label, html: svg(d) + (text ? `<span>${text}</span>` : '') });
       b.addEventListener('click', (e) => { e.stopPropagation(); fn(b); }); frag.append(b); return b;
     };
+    if (PEN && byId(PEN.id)) {
+      const n = byId(PEN.id);
+      frag.append(h('span', { class: 'btn label', style: 'cursor:default' }, `Pen · ${n.a.length} ${n.a.length === 1 ? 'point' : 'points'}`), h('span', { class: 'sep' }));
+      btn('Undo point: remove the last point', '<path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>', penUndoPoint, '', 'Undo point');
+      btn('Close shape: join the last point to the first', '<circle cx="12" cy="12" r="7"/>', penClose, '', 'Close shape').disabled = n.a.length < 3;
+      btn('Done: finish this line', '<path d="M5 12.5l4.5 4.5L19 7"/>', finishPen, '', 'Done');
+      ctxBar.replaceChildren(frag); return;
+    }
     if (PE) {
       const n = byId(PE.id), pd = n && peData(n), A = pd ? pd.A : [], a = PE.i != null ? A[PE.i] : null;
       frag.append(h('span', { class: 'btn label', style: 'cursor:default' }, 'Editing points'), h('span', { class: 'sep' }));
@@ -2883,6 +3060,7 @@ body.tab-logo .design-only { display: none !important; }
         frag.append(h('span', { class: 'sep' }));
         btn('Delete point', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', deletePoint, 'danger', 'Delete point').disabled = A.length <= (n.type === 'vec' ? 3 : 2);
       }
+      btn('Fewer points: remove the points the shape doesn\u2019t need', '<path d="M4 17c4-10 12-10 16 0"/><circle cx="4" cy="17" r="1.8"/><circle cx="20" cy="17" r="1.8"/><path d="M10 4h4"/>', fewerPoints, '', 'Fewer points').disabled = A.length <= (pd && pd.closed ? 3 : 2);
       if (n && n.type === 'path') btn(n.closed ? 'Open path' : 'Close path', n.closed ? '<path d="M5 17a7 7 0 1 1 14 0"/>' : '<circle cx="12" cy="12" r="7"/>', toggleClosed, '', n.closed ? 'Open path' : 'Close path');
       btn('Done editing points', '<path d="M5 12.5l4.5 4.5L19 7"/>', exitPoints, '', 'Done');
       ctxBar.replaceChildren(frag); return;
@@ -2956,7 +3134,8 @@ body.tab-logo .design-only { display: none !important; }
   let lastSelKey = '';
   function updateUI() {
     for (const id of [...S.sel]) { const n = byId(id); if (!n || n.hidden) S.sel.delete(id); }
-    if (PE && (!byId(PE.id) || !S.sel.has(PE.id) || !peData(byId(PE.id)))) { PE = null; S.peHover = null; }
+    if (PE && (!byId(PE.id) || !S.sel.has(PE.id) || !peData(byId(PE.id)))) { PE = null; S.peHover = null; S.peAdd = null; }
+    if (PEN && !byId(PEN.id)) PEN = null;
     dock.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === S.tool)));
     $('colorDot').style.background = S.color;
     $('autoShape').setAttribute('aria-checked', String(S.autoShape));
@@ -2964,10 +3143,10 @@ body.tab-logo .design-only { display: none !important; }
     $('undoBtn').disabled = !past.length; $('redoBtn').disabled = !future.length;
     $('pencilChip').hidden = !S.pencil;
     $('pencilPop').querySelectorAll('[data-finger]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.finger === S.finger)));
-    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.locked}`).join(',') + (PE ? 'pe' : '');
+    const key = [...S.sel].join(',') + '|' + selected().map((n) => `${n.type}${colorOf(n)}${n.locked}`).join(',') + (PE ? 'pe' : '') + (PEN ? 'pen' : '');
     if (key !== lastSelKey) { lastSelKey = key; if (S.sel.size) buildContextBar(); }
     if (!S.sel.size && openSel) closePops();
-    if (PE) buildContextBar();
+    if (PE || PEN) buildContextBar();
     updateZoomLabel(); buildLayers();
   }
 
@@ -3002,7 +3181,7 @@ body.tab-logo .design-only { display: none !important; }
   function switchTab(t) {
     if (t === S.tab) return;
     if (editing) commitText();
-    PE = null; closePops(); hideSuggest(); recent = [];
+    finishPen(); PE = null; closePops(); hideSuggest(); recent = [];
     flush();
     docs[S.tab] = { nodes: S.nodes, cam: { ...S.cam }, past: past.splice(0), future: future.splice(0), name: $('docName').textContent };
     S.tab = t; store.set(t, 'chitrakar.tab');

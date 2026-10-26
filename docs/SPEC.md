@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.6** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.7** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -379,7 +379,9 @@ centre line of the stroke), keeping its colour and average thickness:
 | Bend a curve | Drag a handle; on smooth points the opposite handle mirrors it |
 | Point type | **Corner** (sharp, no handles) · **Smooth** (handles stay in line, each keeps its own length) · **Symmetric** (handles mirror in angle and length) · **Free** (each handle moves on its own) — from the point bar |
 | Corner ↔ smooth | Double-tap a point |
-| Add a point | Tap on the line between two points |
+| Add a point | Tap on the line between two points (with a mouse or a hovering Pencil, a **+** marks the spot first) |
+| Fewer points | **Fewer points** removes the points the shape doesn't need; tap again to simplify further |
+| Add more points | **Pen** tool: tap the end point of an open line to keep drawing from it |
 | Delete a point | Delete point button, or the Delete key |
 | Close or open the path | Close path / Open path button |
 | Finish | **Done**, tap empty canvas, or Esc |
@@ -387,7 +389,7 @@ centre line of the stroke), keeping its colour and average thickness:
 **Later:** point editing on traced artwork, centre-line tracing of a whole
 sketch into strokes, **Live Paint** (tap a closed area of a traced drawing to
 fill it), tracing straight from the camera, pressure-preserving lines, boolean
-operations and a Pen tool.
+operations.
 
 ### 3.14 Visual design system (app chrome)
 
@@ -537,7 +539,7 @@ never gets mixed up with UI screens. The tab is also reachable from the
       │ ┄┄┄┄┄╋┄┄┄┄┄  │                             │ app icon      │
       │   ┊   ◯   ┊   │                             │ [Copy SVG]    │
       └───────────────┘                             └──────────────┘
- [Select  Draw  Shapes  Text  Erase | Mirror  Grid  + Artboard | Color]
+ [Select  Draw  Pen  Shapes  Text  Erase | Mirror  Grid  + Artboard | Color]
 ```
 
 | Part | Behaviour |
@@ -548,6 +550,28 @@ never gets mixed up with UI screens. The tab is also reachable from the
 | **Make it a vector** | The one-tap flow from §3.20 works as usual |
 | **Preview** | A panel that shows the logo at 128, 64, 32 and 16 px on light and dark, plus as an app icon, updating as you work; **Copy SVG** of the whole artboard; **Save to My components** |
 | **Everything else** | Shapes, text, Vectorize, Corners, Style, Effects, Arrange, Layers and point editing all work as in the Design tab |
+
+### 3.22 Pen tool: place your own points
+
+Traced and vectorized shapes start with the points an algorithm chose. The
+**Pen** lets you place every point yourself, one at a time, as in Illustrator —
+but with fewer rules to learn.
+
+| Do this | You get |
+|---|---|
+| Tap | A **corner** point; the line follows straight from the last point |
+| Press and drag | A **smooth** point; dragging pulls out its curve handles (symmetric) |
+| Tap the first point | The shape **closes** and fills with the current colour |
+| Tap the last point, **Done**, Enter, Esc or another tool | The line is finished and stays open |
+| Backspace or **Undo point** | Removes the last point (⌘Z also works point by point) |
+| Tap the end of an existing open line | Continues that line |
+| Tap anywhere on an existing line | Adds a point there and switches to editing it (drag right away to reshape); a **+** shows the spot first |
+
+While drawing, a dashed preview shows where the next segment will go (mouse and
+hovering Pencil), and the first point grows a ring when a tap would close the
+shape. The selection bar shows **Undo point · Close shape · Done**. Finished
+paths are ordinary vector paths: Edit points, point types, Style and Effects all
+apply. Shortcut: **N**.
 
 ---
 
@@ -584,7 +608,7 @@ All input uses **Pointer Events**; `pointerType` tells `pen`, `touch` and
 
 | Keys | Action |
 |---|---|
-| V, P, R, O, L, ⇧L, T, F, E | Select, Draw, Rectangle, Ellipse, Line, Arrow, Text, Frame, Erase |
+| V, P, N, R, O, L, ⇧L, T, F, E | Select, Draw, Pen, Rectangle, Ellipse, Line, Arrow, Text, Frame, Erase |
 | I | Insert library |
 | ⌘Z, ⇧⌘Z / ⌘Y | Undo, redo |
 | ⌘C, ⌘X, ⌘V, ⌘D | Copy, cut, paste, duplicate |
