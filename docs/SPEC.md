@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.4** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.5** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -193,6 +193,7 @@ Erase tool while held. Android and Windows tablets are a secondary target (§2).
 | Bring something forward | Tap → Arrange → Forward (3 taps), or ⌘] |
 | Round a card's corners | Tap → drag the corner handle; or Corners → Medium |
 | Clean up a sketched icon | Tap the drawing → Vectorize → Clean lines → Edit points → drag points → Done |
+| Make a logo | New → Logo → sketch → Next ×4 (Shape, Refine, Colour, Finish) → Copy SVG (§3.20) |
 | Turn a robot sketch into vector art | Select all its strokes (marquee) → Vectorize → Sketch → adjust Detail → Done |
 | Trace a photo or scanned drawing | Insert → Image → Vectorize → Poster |
 | Zoom with a mouse | Turn the wheel over the spot you want to zoom into |
@@ -474,6 +475,53 @@ Each arrives with a one-tap form first and detail second:
 - **Prototyping:** tap a button, then tap the destination frame.
 - **Shared styles and colour tokens**, version history, share links, comments.
 - **Rotation**, with a two-finger twist on the selected item.
+
+### 3.20 Logo flow
+
+A guided path from a hand-drawn idea to a finished, scalable logo. It is built
+for the Pencil and feels like Instagram's editor: one step at a time, a few big
+tools per step, results that update as you drag. Nothing is locked in. The
+regular dock, selection bar and panels keep working inside the flow, and
+**Exit** returns to the normal app with the logo frame intact.
+
+**Start:** New → **Logo** (a 512 × 512 frame with a construction grid), or
+select an existing logo frame → **Logo flow**.
+
+```
+ [✕]  ① Sketch  ② Shape  ③ Refine  ④ Colour  ⑤ Finish   [Back] [Next →]
+```
+
+| Step | What you do | Tools on screen |
+|---|---|---|
+| **① Sketch** | Draw the idea with the Pencil. Rough circles, boxes and lines snap clean as usual | Draw, Erase; **Symmetry**: Off / Mirror ↔ / Mirror ↕ / 4-way, mirrored live around the frame centre; construction **Grid** (centre lines and circles) |
+| **② Shape** | The whole sketch becomes **one clean, solid shape**: overlapping strokes merge, the pencil wobble disappears | **Thickness** (thinner ↔ bolder) and **Smoothness** sliders, updating live; **Show sketch underneath** (faded, locked) |
+| **③ Refine** | Perfect it | **Edit points** (double-tap any curve of the shape), **Simplify** (fewer, cleaner points), **Shapes** (add perfect circles, squares, stars), **Combine**: Add, Subtract, Intersect, Exclude |
+| **④ Colour** | Try colours and backgrounds | Logo **palettes** (one tap recolours every part), **background** chips: White, Black, Paper, Brand, Transparent |
+| **⑤ Finish** | Check and take it with you | **Size previews** at 128, 64, 32 and 16 px on light and dark; **Copy SVG**; **Save to My components** |
+
+**How "Shape" works:** the sketch is rendered at high resolution (up to
+1400 px), lightly blurred so strokes fuse, thresholded (Thickness moves the
+threshold), traced into outlines with holes, then simplified and fitted with
+Bézier curves (Smoothness sets the tolerance and the corner angle). The result
+is a single compound shape, so a letter "O" stays an O with a hole.
+
+**How "Combine" works:** each selected item is rendered into a mask on a shared
+high-resolution grid, the masks are combined (union, bottom minus the rest,
+intersection, or exclusive-or), and the result is traced back into one clean
+shape that takes the bottom item's colour. Works on any mix of drawings,
+shapes, text, icons and traced art.
+
+**Editing points on traced shapes:** the same point editor as vector lines
+(§3.13). Double-tap a curve to edit the outline you tapped; tap another outline
+to switch to it.
+
+**Symmetry everywhere:** the Symmetry setting also lives in the Color menu, so
+mirrored drawing works in any frame outside the flow too.
+
+**Later:** Pen tool, live boolean groups (non-destructive), golden-ratio and
+custom grids, snap to grid and guides, a logo-specific font picker for
+wordmarks, export as PNG / PDF and icon sets, brand-kit page (logo, colours,
+clear space, minimum size).
 
 ---
 
