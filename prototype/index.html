@@ -94,11 +94,12 @@ svg.s { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-widt
 
 /* Popovers */
 .pop { position: fixed; z-index: 8; padding: 14px; display: flex; flex-direction: column; gap: 12px; min-width: 220px; max-width: calc(100vw - 32px); max-height: calc(100% - 120px); overflow-y: auto; }
-.pop.wide { width: 340px; }
+.pop { box-sizing: border-box; }
+.pop.wide { width: 360px; }
 .pop h3 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
 .pop h4 { margin: 4px 0 0; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg-2); }
 .pop p.hint { margin: 0; font-size: 12px; color: var(--fg-2); max-width: 300px; }
-#viewPop { width: 340px; }
+#viewPop { width: 360px; }
 .zoomrow { display: grid; grid-template-columns: 56px minmax(0, 1fr) 56px; align-items: center; gap: 8px; }
 .zoomrow button { height: 52px; border-radius: 12px; background: var(--chrome-2); font-size: 24px; }
 .zoomrow output { text-align: center; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
@@ -212,6 +213,11 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 #ctx .sw i { width: 24px; height: 24px; }
 #ctx .btn { min-width: 48px; height: 48px; padding: 0 10px; }
 #ctx .danger { color: var(--danger); }
+
+/* "Make it a vector" suggestion beside a fresh drawing */
+#suggest { position: fixed; z-index: 6; height: 48px; padding: 0 18px 0 14px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px;
+  background: var(--accent); color: var(--accent-fg); font-size: 15px; font-weight: 600; box-shadow: 0 2px 4px var(--shadow), 0 8px 20px var(--shadow); white-space: nowrap; }
+#suggest:active { transform: scale(0.97); }
 
 /* Toast */
 #toast {
@@ -377,6 +383,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 </aside>
 
 <div id="ctx" class="bar" hidden></div>
+<button id="suggest" hidden>
+  <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></svg>Make it a vector
+</button>
 <div id="toast" class="bar" hidden role="status"><span id="toastMsg"></span><button id="toastAct" hidden></button></div>
 <textarea id="editor" hidden spellcheck="false" aria-label="Edit text"></textarea>
 
@@ -609,13 +618,15 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       ctx.arc(S.hover.x, S.hover.y, S.tool === 'erase' ? 10 / z : 3, 0, Math.PI * 2);
       ctx.strokeStyle = S.tool === 'erase' ? T.fg2 : S.color; ctx.lineWidth = 1.5 / z; ctx.stroke();
     }
-    placeContextBar();
+    placeContextBar(); placeSuggest();
   }
 
   function drawPointEditor(z) {
-    const n = byId(PE.id); if (!n) return;
-    const A = pathWorld(n), r = 6 / z;
-    ctx.strokeStyle = T.accent; ctx.lineWidth = 1 / z; tracePath(A, n.closed); ctx.stroke();
+    const n = byId(PE.id), pd = n && peData(n); if (!pd) return;
+    const A = pd.A, r = 6 / z;
+    ctx.strokeStyle = T.accent; ctx.lineWidth = 1 / z;
+    if (n.type === 'vec') { ctx.globalAlpha = 0.45; n.layers.forEach((L, li) => L.rings.forEach((_, ri) => { tracePath(vecRingWorld(n, li, ri), true); ctx.stroke(); })); ctx.globalAlpha = 1; ctx.lineWidth = 1.5 / z; }
+    tracePath(A, pd.closed); ctx.stroke();
     const a = PE.i != null ? A[PE.i] : null;
     if (a && !a[6]) {
       ctx.beginPath(); ctx.moveTo(a[2], a[3]); ctx.lineTo(a[0], a[1]); ctx.lineTo(a[4], a[5]); ctx.stroke();
@@ -1238,7 +1249,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
 
   cv.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    closePops();
+    closePops(); if (!$('suggest').hidden) $('suggest').hidden = true;
     if (editing) commitText();
     if (e.pointerType === 'pen' && !S.pencil) enablePencil();
     const p = toWorld(e.clientX, e.clientY);
@@ -1273,6 +1284,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   // Rasterize → separate tones (Otsu or k-means) → stack colours light to dark → trace pixel-edge outlines
   // → drop specks → soften the staircase → simplify → corners + smooth Bézier curves → compound shapes per colour.
   const TRACE = {
+    logoshape: { mode: 'bw', thick: 0, smooth: 50, noise: 30, blur: 2 },
     lineart: { mode: 'bw', threshold: 0, detail: 60, noise: 8, blur: 0 },
     sketch: { mode: 'bw', threshold: 0, detail: 40, noise: 16, blur: 1 },
     logo: { mode: 'color', colors: 3, detail: 55, noise: 12 },
@@ -1365,10 +1377,30 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         if (any) masks.push({ fill: hex(...C[L]), m });
       }
     }
-    const det = o.detail / 100, eps = 2.6 - 2.1 * det, corner = 1.5 - 0.7 * det;
+    const det = o.detail / 100, eps = o.eps || 2.6 - 2.1 * det, corner = o.corner || 1.5 - 0.7 * det;
     const layers = [];
-    for (const { fill, m } of masks) { const rings = traceMask(m, w, h, o.noise, eps, corner); if (rings.length) layers.push({ fill, rings }); }
+    for (const { fill, m } of masks) {
+      let rings = traceMask(m, w, h, o.noise, eps, corner, o.presmooth || 0);
+      if (o.holeFrac && rings.length > 1) {     // fill slivers between overlapping strokes; real holes (the inside of an O) stay
+        const area = (A) => { let a = 0; for (let i = 0; i < A.length; i++) { const p = A[i], q = A[(i + 1) % A.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; };
+        const areas = rings.map(area), big = areas.reduce((b, a) => (Math.abs(a) > Math.abs(b) ? a : b), 0);
+        rings = rings.filter((_, i) => Math.sign(areas[i]) === Math.sign(big) || Math.abs(areas[i]) > o.holeFrac * Math.abs(big));
+      }
+      if (rings.length) layers.push({ fill, rings });
+    }
     return layers;
+  }
+  // Circular moving average over a closed outline (radius in points; outline points are about 1 px apart).
+  function smoothRing(P, r) {
+    const n = P.length, out = new Array(n); r = Math.round(r);
+    let sx = 0, sy = 0;
+    for (let k = -r; k <= r; k++) { const q = P[(k + n) % n]; sx += q[0]; sy += q[1]; }
+    for (let i = 0; i < n; i++) {
+      out[i] = [sx / (2 * r + 1), sy / (2 * r + 1)];
+      const add = P[(i + r + 1) % n], sub = P[(i - r + n) % n];
+      sx += add[0] - sub[0]; sy += add[1] - sub[1];
+    }
+    return out;
   }
   function rdpIter(P, eps) {
     const n = P.length; if (n < 3) return P.slice();
@@ -1388,7 +1420,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     return [...a.slice(0, -1), ...b.slice(0, -1)];
   }
   // Follows pixel edges with the shape on the right, so outer edges and holes both come out as closed rings.
-  function traceMask(m, w, h, minArea, eps, cornerA) {
+  function traceMask(m, w, h, minArea, eps, cornerA, smoothR) {
     const W1 = w + 1, out = new Map();
     const add = (a, b) => { const l = out.get(a); if (l) l.push(b); else out.set(a, [b]); };
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
@@ -1415,7 +1447,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         const P0 = loop.map((v) => [v % W1, (v / W1) | 0]);
         let area = 0; for (let i = 0; i < P0.length; i++) { const a = P0[i], b = P0[(i + 1) % P0.length]; area += a[0] * b[1] - b[0] * a[1]; }
         if (Math.abs(area) / 2 < Math.max(1, minArea)) continue;
-        const P = P0.map((a, i) => { const b = P0[(i + 1) % P0.length]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; });   // soften the pixel staircase
+        let P = P0.map((a, i) => { const b = P0[(i + 1) % P0.length]; return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]; });   // soften the pixel staircase
+        if (smoothR >= 1 && P.length > 4 * smoothR) P = smoothRing(smoothRing(P, smoothR), smoothR);   // iron out hand wobble
         const Q = rdpClosed(P, eps); if (Q.length < 3) continue;
         const An = Q.map(([x, y]) => [x, y, x, y, x, y, 0]), n = An.length;
         for (let i = 0; i < n; i++) {
@@ -1457,14 +1490,21 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       TR = { srcIds: src.map((n) => n.id), src: clone(src), resultId: null, keep: false, opts: null };
     }
     TR.preset = key; TR.opts = { ...TRACE[key], ignoreBg: TR.opts ? TR.opts.ignoreBg : true };
+    if (!TR.fill) { const c = TR.src.map(colorOf).find((x) => x && x !== WH && x !== SHAPE_FILL); TR.fill = c || INK; }
     runTrace(); refreshSelPop();
   }
   function retrace(now) { if (!TR) return; clearTimeout(TR.timer); TR.timer = setTimeout(runTrace, now ? 0 : 180); }
   function runTrace() {
     if (!TR) return;
     const t0 = performance.now();
-    const ras = rasterize(TR.src, TR.preset === 'detailed' ? 900 : 700);
-    const layers = traceCanvas(ras.c, TR.opts);
+    const logo = TR.preset === 'logoshape';
+    const ras = rasterize(TR.src, logo ? 1400 : TR.preset === 'detailed' ? 900 : 700);
+    // Logo shapes: Smoothness is measured on the drawing (in points), not on the high-resolution raster.
+    const sm = logo ? TR.opts.smooth / 100 : 0;
+    const o = logo ? { ...TR.opts, threshold: Math.max(20, Math.min(250, 128 + TR.opts.thick * 9)), blur: Math.max(2, Math.round(1.5 * ras.k)),
+      holeFrac: 0.04, presmooth: (0.5 + 3.5 * sm) * ras.k, eps: (0.6 + 4.4 * sm) * ras.k, corner: 0.85 + 0.75 * sm, noise: TR.opts.noise * ras.k * ras.k / 4 } : TR.opts;
+    const layers = traceCanvas(ras.c, o);
+    if (logo) layers.forEach((L) => { L.fill = TR.fill; });
     if (!layers.length) { toast('Nothing to trace with these settings. Try a different Threshold or ignore fewer specks.'); return; }
     const v = makeVec(layers, ras);
     if (TR.resultId) {
@@ -1492,20 +1532,31 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const chip = (key, label, sub) => h('button', { class: 'vchip' + (TR && TR.preset === key ? ' on' : ''), onclick: () => startTrace(key) }, h('b', {}, label), h('small', {}, sub));
     const out = [h('h3', {}, 'Vectorize'),
       h('p', { class: 'hint' }, TR && TR.resultId ? 'Adjust and watch it update. Undo brings back the original.' : 'Turn drawings or images into clean vector artwork, like Image Trace. Pick a style:'),
+      TR && TR.preset === 'logoshape' && !TR.styles ? h('div', { class: 'row' }, h('b', {}, 'Logo shape'),
+        h('button', { class: 'chipb', onclick: () => { TR.styles = true; refreshSelPop(); } }, 'Other styles')) :
       h('div', { class: 'vgrid' },
-        chip('lineart', 'Line art', '1 colour'), chip('sketch', 'Sketch', 'Pencil drawings'), chip('logo', 'Logo', '3 colours'),
+        chip('logoshape', 'Logo shape', 'One clean shape'), chip('lineart', 'Line art', '1 colour'), chip('sketch', 'Sketch', 'Pencil drawings'), chip('logo', 'Flat art', '3 colours'),
         chip('poster', 'Poster', '6 colours'), chip('detailed', 'Detailed', '16 colours'),
         allStrokes && !(TR && TR.resultId) ? h('button', { class: 'vchip', onclick: () => { closePops(); vectorizeSel(); } }, h('b', {}, 'Clean lines'), h('small', {}, 'Editable strokes')) : null)];
     if (TR && TR.resultId) {
       const o = TR.opts;
-      if (o.mode === 'color') out.push(sliderRow('Colours', 2, 16, 1, o.colors, String, (v) => { o.colors = v; retrace(); }));
-      else out.push(sliderRow('Threshold', 0, 254, 1, o.threshold, (v) => (v ? String(v) : 'Auto'), (v) => { o.threshold = v; retrace(); }));
-      out.push(sliderRow('Detail', 0, 100, 1, o.detail, String, (v) => { o.detail = v; retrace(); }),
-        sliderRow('Ignore specks', 0, 200, 1, o.noise, String, (v) => { o.noise = v; retrace(); }));
+      if (TR.preset === 'logoshape') {
+        out.push(sliderRow('Thickness', -10, 10, 1, o.thick, (v) => (v > 0 ? '+' + v : String(v)), (v) => { o.thick = v; retrace(); }),
+          sliderRow('Smoothness', 0, 100, 1, o.smooth, String, (v) => { o.smooth = v; retrace(); }),
+          h('h4', {}, 'Colour'),
+          h('div', { class: 'swatches' }, swatchButtons(TR.fill, (c) => { checkpoint(); TR.fill = c; const v = byId(TR.resultId); if (v) v.layers.forEach((L) => { L.fill = c; }); changed(); refreshSelPop(); })));
+      } else {
+        if (o.mode === 'color') out.push(sliderRow('Colours', 2, 16, 1, o.colors, String, (v) => { o.colors = v; retrace(); }));
+        else out.push(sliderRow('Threshold', 0, 254, 1, o.threshold, (v) => (v ? String(v) : 'Auto'), (v) => { o.threshold = v; retrace(); }));
+        out.push(sliderRow('Detail', 0, 100, 1, o.detail, String, (v) => { o.detail = v; retrace(); }),
+          sliderRow('Ignore specks', 0, 200, 1, o.noise, String, (v) => { o.noise = v; retrace(); }));
+      }
       if (o.mode === 'color') out.push(toggleRow('Ignore white background', o.ignoreBg, (on) => { o.ignoreBg = on; runTrace(); }));
       out.push(toggleRow('Keep original, hidden underneath', TR.keep, (on) => { TR.keep = on; applyKeep(); }));
       out.push(h('p', { class: 'hint', id: 'traceInfo' }, TR.info || ''),
-        h('div', { class: 'row' }, h('span'), h('button', { class: 'chipb primary', onclick: () => closePops() }, 'Done')));
+        h('div', { class: 'row' },
+          h('button', { class: 'chipb', onclick: () => { const v = byId(TR.resultId); closePops(); if (v) enterPoints(v); } }, 'Edit points'),
+          h('button', { class: 'chipb primary', onclick: () => closePops() }, 'Done')));
     }
     return out;
   }
@@ -1517,12 +1568,76 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     toast(`Separated into ${parts.length} items, one per colour.`, 'Undo', undo, 4000);
   }
 
+  // ---------- "Make it a vector": offered right after you draw ----------
+  let recent = [], suggestTimer = 0;
+  const SUGGESTABLE = new Set(['stroke', 'path', 'rect', 'ellipse', 'line', 'triangle', 'polygon', 'star']);
+  const recentNodes = () => recent.map(byId).filter((n) => n && !n.hidden && SUGGESTABLE.has(n.type));
+  function noteDrawn(n) { recent.push(n.id); hideSuggest(); clearTimeout(suggestTimer); suggestTimer = setTimeout(showSuggest, 1100); }
+  function hideSuggest() { clearTimeout(suggestTimer); $('suggest').hidden = true; }
+  function showSuggest() {
+    const ns = recentNodes();
+    if (!ns.some((n) => n.type === 'stroke') || G || S.tool !== 'draw' || editing) return;
+    const u = union(ns);
+    if (ns.length < 2 && Math.max(u.w, u.h) * S.cam.z < 120) return;
+    $('suggest').hidden = false; placeSuggest();
+  }
+  function placeSuggest() {
+    const el = $('suggest'); if (el.hidden) return;
+    const ns = recentNodes(); if (!ns.length) { el.hidden = true; return; }
+    const u = union(ns), a = toScreen(u.x, u.y), b = toScreen(u.x + u.w, u.y + u.h), r = el.getBoundingClientRect();
+    let top = a.y - r.height - 14; if (top < 76) top = Math.min(H - 170, b.y + 14);
+    el.style.left = Math.min(Math.max(16, (a.x + b.x) / 2 - r.width / 2), W - r.width - 16) + 'px';
+    el.style.top = Math.max(76, top) + 'px';
+  }
+  $('suggest').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const ns = recentNodes(); hideSuggest(); if (!ns.length) return;
+    S.sel = new Set(ns.map((n) => n.id)); recent = [];
+    updateUI(); placeContextBar();
+    const b = ctxBar.querySelector('button[aria-label^="Vectorize"]') || ctxBar;
+    openSelPop('vectorPop', b, buildVectorize);
+    startTrace('logoshape');
+  });
+
   // ---------- Edit points ----------
   let PE = null;               // { id, i, t } while editing a vector's points
-  function enterPoints(n) {
-    if (!n || n.type !== 'path') return;
+  // Point data for the item being edited: a vector line, or one outline of traced artwork.
+  function vecRingWorld(n, li, ri) {
+    const sx = n.w / n.pw, sy = n.h / n.ph;
+    return n.layers[li].rings[ri].map(([x, y, ix, iy, ox, oy, c]) => [n.x + x * sx, n.y + y * sy, n.x + ix * sx, n.y + iy * sy, n.x + ox * sx, n.y + oy * sy, c]);
+  }
+  function peData(n) {
+    if (n.type === 'vec') return n.layers[PE.li] && n.layers[PE.li].rings[PE.ri] ? { A: vecRingWorld(n, PE.li, PE.ri), closed: true } : null;
+    return { A: pathWorld(n), closed: n.closed };
+  }
+  function rebaseVec(n) {
+    const sx = n.w / n.pw, sy = n.h / n.ph; let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const L of n.layers) for (const r of L.rings) for (const a of r) { x0 = Math.min(x0, a[0]); x1 = Math.max(x1, a[0]); y0 = Math.min(y0, a[1]); y1 = Math.max(y1, a[1]); }
+    if (!isFinite(x0)) return;
+    for (const L of n.layers) { for (const r of L.rings) for (const a of r) for (const j of [0, 2, 4]) { a[j] -= x0; a[j + 1] -= y0; } vecCache.delete(L); }
+    n.x += x0 * sx; n.y += y0 * sy; n.pw = Math.max(1, x1 - x0); n.ph = Math.max(1, y1 - y0); n.w = n.pw * sx; n.h = n.ph * sy;
+  }
+  function peStore(n, A) {
+    if (n.type !== 'vec') { setPathWorld(n, A); return; }
+    const sx = n.w / n.pw, sy = n.h / n.ph, L = n.layers[PE.li];
+    L.rings[PE.ri] = A.map(([x, y, ix, iy, ox, oy, c]) => [(x - n.x) / sx, (y - n.y) / sy, (ix - n.x) / sx, (iy - n.y) / sy, (ox - n.x) / sx, (oy - n.y) / sy, c]);
+    vecCache.delete(L); rebaseVec(n);
+  }
+  function ringAt(n, p) {
+    let best = null;
+    n.layers.forEach((L, li) => L.rings.forEach((_, ri) => { const q = nearestOnPath(vecRingWorld(n, li, ri), true, p); if (q && (!best || q.d < best.d)) best = { li, ri, d: q.d }; }));
+    return best;
+  }
+  function enterPoints(n, p) {
+    if (!n || (n.type !== 'path' && n.type !== 'vec')) return;
     closePops(); setTool('select');
-    PE = { id: n.id, i: null, t: 0 }; S.sel = new Set([n.id]);
+    PE = { id: n.id, i: null, t: 0, li: 0, ri: 0 };
+    if (n.type === 'vec') {
+      const at = p && ringAt(n, p);
+      if (at) { PE.li = at.li; PE.ri = at.ri; }
+      else { let most = -1; n.layers.forEach((L, li) => L.rings.forEach((r, ri) => { if (r.length > most) { most = r.length; PE.li = li; PE.ri = ri; } })); }
+    }
+    S.sel = new Set([n.id]);
     updateUI(); requestRender();
     tipOnce('points', 'Drag points to reshape. Tap the line to add a point. Double-tap a point to switch between corner and smooth.', 6500);
   }
@@ -1544,8 +1659,8 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     return i + 1;
   }
   function peDown(e, p) {
-    const n = byId(PE.id); if (!n) { exitPoints(); return; }
-    const A = pathWorld(n), tol = (e.pointerType === 'touch' ? 24 : 12) / S.cam.z, id = e.pointerId;
+    const n = byId(PE.id), pd = n && peData(n); if (!pd) { exitPoints(); return; }
+    const A = pd.A, tol = (e.pointerType === 'touch' ? 24 : 12) / S.cam.z, id = e.pointerId;
     const near = (x, y) => Math.hypot(p.x - x, p.y - y) < tol;
     const a = PE.i != null ? A[PE.i] : null;
     if (a && !a[6]) {
@@ -1560,27 +1675,31 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       G = { kind: 'peAnchor', id, start: p, A0: A.map((q) => q.slice()), moved: false };
       return;
     }
-    const hitSeg = nearestOnPath(A, n.closed, p);
-    if (hitSeg && hitSeg.d < tol + n.sw / 2) {
+    const hitSeg = nearestOnPath(A, pd.closed, p);
+    if (hitSeg && hitSeg.d < tol + (n.sw || 0) / 2) {
       checkpoint();
-      PE.i = splitAt(A, hitSeg.seg, hitSeg.t); PE.t = e.timeStamp; setPathWorld(n, A);
-      G = { kind: 'peAnchor', id, start: p, A0: pathWorld(n).map((q) => q.slice()), moved: false, noCheckpoint: true };
+      PE.i = splitAt(A, hitSeg.seg, hitSeg.t); PE.t = e.timeStamp; peStore(n, A);
+      G = { kind: 'peAnchor', id, start: p, A0: peData(n).A.map((q) => q.slice()), moved: false, noCheckpoint: true };
       save(); return;
+    }
+    if (n.type === 'vec') {             // tapped another outline of the same artwork: switch to it
+      const at = ringAt(n, p);
+      if (at && at.d < tol) { PE.li = at.li; PE.ri = at.ri; PE.i = null; return; }
     }
     exitPoints();
   }
   function toggleCorner() {
     const n = byId(PE && PE.id); if (!n || PE.i == null) return;
-    checkpoint(); const A = pathWorld(n); A[PE.i][6] = A[PE.i][6] ? 0 : 1; smoothHandles(A, n.closed, [PE.i]); setPathWorld(n, A); changed();
+    checkpoint(); const pd = peData(n), A = pd.A; A[PE.i][6] = A[PE.i][6] ? 0 : 1; smoothHandles(A, pd.closed, [PE.i]); peStore(n, A); changed();
   }
   function deletePoint() {
     const n = byId(PE && PE.id); if (!n || PE.i == null) return;
-    const A = pathWorld(n); if (A.length <= 2) return;
+    const A = peData(n).A; if (A.length <= (n.type === 'vec' ? 3 : 2)) return;
     checkpoint(); A.splice(PE.i, 1); if (n.closed && A.length < 3) n.closed = false;
-    PE.i = null; setPathWorld(n, A); changed();
+    PE.i = null; peStore(n, A); changed();
   }
   function toggleClosed() {
-    const n = byId(PE && PE.id); if (!n) return;
+    const n = byId(PE && PE.id); if (!n || n.type !== 'path') return;
     checkpoint(); n.closed = !n.closed;
     const A = pathWorld(n); smoothHandles(A, n.closed, [0, A.length - 1]); setPathWorld(n, A); changed();
   }
@@ -1670,7 +1789,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       if (e.pointerType === 'pen' && !S.pencil) enablePencil();
       if (PE) {
         const n = byId(PE.id), tol = 12 / S.cam.z; let hi = null;
-        if (n) pathWorld(n).forEach((q, i) => { if (Math.hypot(p.x - q[0], p.y - q[1]) < tol) hi = i; });
+        const pd = n && peData(n); if (pd) pd.A.forEach((q, i) => { if (Math.hypot(p.x - q[0], p.y - q[1]) < tol) hi = i; });
         if (hi !== S.peHover) { S.peHover = hi; requestRender(); }
         return;
       }
@@ -1724,18 +1843,18 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         if (!G.moved) { if (Math.hypot(dx, dy) * z < 3) return; G.moved = true; if (!G.noCheckpoint) checkpoint(); }
         const A = G.A0.map((a) => a.slice()), a = A[PE.i];
         for (const k of [0, 2, 4]) { a[k] += dx; a[k + 1] += dy; }
-        setPathWorld(n, A); break;
+        peStore(n, A); break;
       }
       case 'peHandle': {
         const n = byId(PE && PE.id); if (!n) break;
         if (!G.moved) { G.moved = true; checkpoint(); }
-        const A = pathWorld(n), a = A[PE.i], [hk, ok] = G.which === 'out' ? [4, 2] : [2, 4];
+        const A = peData(n).A, a = A[PE.i], [hk, ok] = G.which === 'out' ? [4, 2] : [2, 4];
         a[hk] = p.x; a[hk + 1] = p.y;
         if (!a[6]) {   // smooth point: the opposite handle mirrors, keeping its length
           const lo = Math.hypot(a[ok] - a[0], a[ok + 1] - a[1]), lh = Math.hypot(p.x - a[0], p.y - a[1]) || 1;
           a[ok] = a[0] - (p.x - a[0]) * lo / lh; a[ok + 1] = a[1] - (p.y - a[1]) * lo / lh;
         }
-        setPathWorld(n, A); break;
+        peStore(n, A); break;
       }
       case 'lineEnd': {
         if (!G.moved) { G.moved = true; checkpoint(); }
@@ -1826,9 +1945,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const quick = t - lastTap.t < 400, near = Math.hypot(sx - lastTap.sx, sy - lastTap.sy) < 24;
     if (!hits.length) { if (S.sel.size) S.sel.clear(); else if (S.tool === 'text') createText(p); lastTap = { id: null, t, sx, sy }; return; }
     const prev = lastTap.id && near && S.sel.has(lastTap.id) ? hits.find((n) => n.id === lastTap.id) : null;
-    if (prev && quick && (prev.type === 'text' || prev.type === 'group' || prev.type === 'path')) {
+    if (prev && quick && ['text', 'group', 'path', 'vec'].includes(prev.type)) {
       lastTap = { id: null, t: 0, sx: -99, sy: -99 };
-      if (prev.type === 'text') editText(prev); else if (prev.type === 'path') enterPoints(prev); else enterGroup(prev, p);
+      if (prev.type === 'text') editText(prev); else if (prev.type === 'path' || prev.type === 'vec') enterPoints(prev, p); else enterGroup(prev, p);
       return;
     }
     let pick = hits[0];
@@ -1865,6 +1984,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
         if (i >= 0) { checkpoint(); S.nodes[i] = stroke; changed(); }
       });
     } else S.nodes.push(S.autoVector ? vectorize(stroke).n : stroke);
+    noteDrawn(S.nodes[S.nodes.length - 1]);
     save();
   }
 
@@ -2113,6 +2233,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   }
   function setTool(t) {
     if (PE && t !== 'select') PE = null;
+    if (t !== 'draw') { hideSuggest(); recent = []; }
     S.tool = t; if (!['select', 'draw', 'shape'].includes(t)) S.sel.clear(); S.hover = null; S.hoverId = null; updateUI(); requestRender();
   }
 
@@ -2144,7 +2265,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     if (k === 'enter' && S.sel.size === 1) {
       const n = selected()[0];
       if (n.type === 'text') editText(n);
-      else if (n.type === 'path') enterPoints(n);
+      else if (n.type === 'path' || n.type === 'vec') enterPoints(n);
       else if (n.type === 'group') { const map = ungroupNodes([n]); S.sel = new Set([...map.values()].map((m) => m.id)); changed(); }
       return;
     }
@@ -2231,6 +2352,24 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   function position(pop, anchor, pref) {
     pop.classList.toggle('sheet', W < 600 && pop.classList.contains('wide'));
     if (pop.classList.contains('sheet')) return;
+    if (pref === 'side' && S.sel.size) {     // beside the selection, so the result stays in view while you adjust it
+      pop.style.maxHeight = '';
+      const u = union(selected()), a = toScreen(u.x, u.y), b = toScreen(u.x + u.w, u.y + u.h), r = pop.getBoundingClientRect();
+      const right = W - panelW() - b.x - 24, left = a.x - 24, room = H - 76 - 100;
+      if (right >= r.width || left >= r.width) {
+        let hgt = Math.min(r.height, room), top = Math.min(Math.max(76, (a.y + b.y) / 2 - hgt / 2), H - 100 - hgt);
+        const lx = right >= r.width ? b.x + 16 : a.x - 16 - r.width;
+        if (!ctxBar.hidden) {                // keep clear of the selection bar too
+          const c = ctxBar.getBoundingClientRect();
+          if (lx < c.right && lx + r.width > c.left && top < c.bottom + 10 && top + hgt > c.top - 10) {
+            if (c.top < (a.y + b.y) / 2) { top = c.bottom + 10; hgt = Math.min(hgt, H - 100 - top); } else { hgt = Math.min(hgt, c.top - 10 - top); }
+          }
+        }
+        pop.style.maxHeight = Math.max(160, hgt) + 'px'; pop.style.left = lx + 'px'; pop.style.top = top + 'px';
+        return;
+      }
+      pref = 'auto';
+    }
     // Open on the side with more room and never cover the button that opened it; scroll inside if needed.
     pop.style.maxHeight = '';
     const a = anchor.getBoundingClientRect(), r = pop.getBoundingClientRect();
@@ -2252,9 +2391,9 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   }
   function openSelPop(id, anchor, build) {
     const was = openSel && openSel.id === id; closePops(); if (was) return;
-    openSel = { id, label: anchor.getAttribute('aria-label'), build };
+    openSel = { id, label: anchor.getAttribute('aria-label'), build, pref: id === 'vectorPop' ? 'side' : 'auto' };
     hideToast();
-    const pop = $(id); pop.replaceChildren(...build()); pop.hidden = false; position(pop, anchor, 'auto');
+    const pop = $(id); pop.replaceChildren(...build()); pop.hidden = false; position(pop, anchor, openSel.pref);
     anchor.setAttribute('aria-expanded', 'true');
   }
   function refreshSelPop() {
@@ -2263,7 +2402,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     const pop = $(openSel.id), st = pop.scrollTop, h0 = pop.scrollHeight; pop.replaceChildren(...openSel.build());
     const b = [...ctxBar.querySelectorAll('button')].find((x) => x.getAttribute('aria-label') === openSel.label);
     if (b) b.setAttribute('aria-expanded', 'true');
-    if (pop.scrollHeight !== h0) { placeContextBar(); position(pop, b || ctxBar, 'auto'); }   // grew or shrank: keep clear of the bar
+    if (pop.scrollHeight !== h0) { placeContextBar(); position(pop, b || ctxBar, openSel.pref); }   // grew or shrank: keep clear of the bar
     pop.scrollTop = st;
   }
   function pickToolColor(c) { S.color = c; save(); updateUI(); $('toolSwatches').replaceChildren(...swatchButtons(S.color, pickToolColor)); }
@@ -2634,13 +2773,13 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
       b.addEventListener('click', (e) => { e.stopPropagation(); fn(b); }); frag.append(b); return b;
     };
     if (PE) {
-      const n = byId(PE.id), A = n ? pathWorld(n) : [], a = PE.i != null ? A[PE.i] : null;
+      const n = byId(PE.id), pd = n && peData(n), A = pd ? pd.A : [], a = PE.i != null ? A[PE.i] : null;
       frag.append(h('span', { class: 'btn label', style: 'cursor:default' }, 'Editing points'), h('span', { class: 'sep' }));
       if (a) {
         btn(a[6] ? 'Make the point smooth' : 'Make the point a corner', a[6] ? '<path d="M4 18c4-12 12-12 16 0"/>' : '<path d="M4 18 12 6l8 12"/>', toggleCorner, '', a[6] ? 'Smooth' : 'Corner');
-        btn('Delete point', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', deletePoint, 'danger', 'Delete point').disabled = A.length <= 2;
+        btn('Delete point', '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>', deletePoint, 'danger', 'Delete point').disabled = A.length <= (n.type === 'vec' ? 3 : 2);
       }
-      if (n) btn(n.closed ? 'Open path' : 'Close path', n.closed ? '<path d="M5 17a7 7 0 1 1 14 0"/>' : '<circle cx="12" cy="12" r="7"/>', toggleClosed, '', n.closed ? 'Open path' : 'Close path');
+      if (n && n.type === 'path') btn(n.closed ? 'Open path' : 'Close path', n.closed ? '<path d="M5 17a7 7 0 1 1 14 0"/>' : '<circle cx="12" cy="12" r="7"/>', toggleClosed, '', n.closed ? 'Open path' : 'Close path');
       btn('Done editing points', '<path d="M5 12.5l4.5 4.5L19 7"/>', exitPoints, '', 'Done');
       ctxBar.replaceChildren(frag); return;
     }
@@ -2658,6 +2797,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     if (items.length && !items.every((n) => n.type === 'vec' || n.type === 'path'))
       btn('Vectorize: trace drawings and images into vector art', '<path d="M4.5 18.5c3-9 11-3 15-13"/><rect x="2.5" y="16.5" width="4" height="4" rx="1"/><rect x="17.5" y="3.5" width="4" height="4" rx="1"/>', (b) => openSelPop('vectorPop', b, buildVectorize), '', 'Vectorize');
     if (items.length === 1 && items[0].type === 'vec') {
+      btn('Edit points', '<path d="M4.5 18.5c3-9 11-3 15-13"/><circle cx="4.5" cy="18.5" r="2"/><circle cx="12" cy="10" r="2"/><circle cx="19.5" cy="5.5" r="2"/>', () => enterPoints(items[0]), '', 'Edit points');
       if (items[0].layers.length > 1) btn('Separate colours into their own items', '<rect x="3.5" y="3.5" width="8" height="8" rx="4"/><rect x="12.5" y="12.5" width="8" height="8" rx="1.5"/>', separateColours, '', 'Separate');
       btn('Copy SVG', '<path d="M8 7 3 12l5 5M16 7l5 5-5 5"/>', copySVG, '', 'SVG');
     }
@@ -2689,6 +2829,13 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
     if (top + r.height > H - 96) top = Math.max(76, H - 96 - r.height);
     left = Math.min(Math.max(16, left), Math.max(16, right - r.width - 16));
     ctxBar.style.left = left + 'px'; ctxBar.style.top = top + 'px';
+    if (openSel) {                       // the bar moved: an open panel steps out of its way
+      const pop = $(openSel.id);
+      if (!pop.hidden && !pop.classList.contains('sheet')) {
+        const p1 = pop.getBoundingClientRect(), c = ctxBar.getBoundingClientRect();
+        if (p1.left < c.right && p1.right > c.left && p1.top < c.bottom && p1.bottom > c.top) position(pop, ctxBar, openSel.pref);
+      }
+    }
   }
 
   // Toast
@@ -2705,7 +2852,7 @@ input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; border-radius
   let lastSelKey = '';
   function updateUI() {
     for (const id of [...S.sel]) { const n = byId(id); if (!n || n.hidden) S.sel.delete(id); }
-    if (PE && (!byId(PE.id) || !S.sel.has(PE.id))) { PE = null; S.peHover = null; }
+    if (PE && (!byId(PE.id) || !S.sel.has(PE.id) || !peData(byId(PE.id)))) { PE = null; S.peHover = null; }
     dock.querySelectorAll('[data-tool]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.tool === S.tool)));
     $('colorDot').style.background = S.color;
     $('autoShape').setAttribute('aria-checked', String(S.autoShape));
