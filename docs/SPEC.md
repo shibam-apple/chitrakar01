@@ -1,6 +1,6 @@
 # Chitrakar — Product & Technical Specification
 
-Status: **Draft v0.5** · Owner: @shibam-apple · Last updated: 2026-10-26
+Status: **Draft v0.6** · Owner: @shibam-apple · Last updated: 2026-10-26
 
 ---
 
@@ -193,7 +193,7 @@ Erase tool while held. Android and Windows tablets are a secondary target (§2).
 | Bring something forward | Tap → Arrange → Forward (3 taps), or ⌘] |
 | Round a card's corners | Tap → drag the corner handle; or Corners → Medium |
 | Clean up a sketched icon | Tap the drawing → Vectorize → Clean lines → Edit points → drag points → Done |
-| Make a logo | Draw it → pause → tap **Make it a vector** → adjust Thickness / Smoothness → Done (§3.20) |
+| Make a logo | Logo tab → draw it (Mirror on for symmetric marks) → pause → tap **Make it a vector** → adjust → Preview → Copy SVG (§3.20, §3.21) |
 | Turn a robot sketch into vector art | Select all its strokes (marquee) → Vectorize → Sketch → adjust Detail → Done |
 | Trace a photo or scanned drawing | Insert → Image → Vectorize → Poster |
 | Zoom with a mouse | Turn the wheel over the spot you want to zoom into |
@@ -377,7 +377,8 @@ centre line of the stroke), keeping its colour and average thickness:
 | Move a point | Drag it (24 pt touch target) |
 | Select a point | Tap it; its curve handles appear |
 | Bend a curve | Drag a handle; on smooth points the opposite handle mirrors it |
-| Corner ↔ smooth | Double-tap a point, or the Corner / Smooth button |
+| Point type | **Corner** (sharp, no handles) · **Smooth** (handles stay in line, each keeps its own length) · **Symmetric** (handles mirror in angle and length) · **Free** (each handle moves on its own) — from the point bar |
+| Corner ↔ smooth | Double-tap a point |
 | Add a point | Tap on the line between two points |
 | Delete a point | Delete point button, or the Delete key |
 | Close or open the path | Close path / Open path button |
@@ -520,6 +521,33 @@ it.
 **Later:** mirror drawing (symmetry) for logos, Combine shapes (add, subtract,
 intersect), Pen tool, logo grid, size previews (16–128 px) and export as
 PNG / PDF / icon sets.
+
+### 3.21 Logo tab
+
+Logos get their own workspace, one tap away in the top bar: **Design | Logo**.
+Each tab keeps its own document, zoom and undo history, so a logo in progress
+never gets mixed up with UI screens. The tab is also reachable from the
+**New** menu ("Logo design").
+
+```
+[▦ Chitrakar] [ Design | Logo ]        [↶ ↷]        [Preview] [Layers] [72%]
+                                                    ┌──────────────┐
+      ┌───────────────┐                             │ ■ 128  ■ 64   │
+      │   ┊   ◯   ┊   │   ← construction grid       │ ■ 32   ▪ 16   │
+      │ ┄┄┄┄┄╋┄┄┄┄┄  │                             │ app icon      │
+      │   ┊   ◯   ┊   │                             │ [Copy SVG]    │
+      └───────────────┘                             └──────────────┘
+ [Select  Draw  Shapes  Text  Erase | Mirror  Grid  + Artboard | Color]
+```
+
+| Part | Behaviour |
+|---|---|
+| **Artboards** | 512 × 512 squares with a construction grid (centre lines, two circles, safe margin). **+ Artboard** adds a copy of the current one beside it, for trying variations side by side |
+| **Mirror** | Off → Mirror (left/right) → 4-way. Strokes are mirrored live around the artboard centre, so symmetric marks are easy with the Pencil |
+| **Grid** | Shows or hides the construction grid (never exported) |
+| **Make it a vector** | The one-tap flow from §3.20 works as usual |
+| **Preview** | A panel that shows the logo at 128, 64, 32 and 16 px on light and dark, plus as an app icon, updating as you work; **Copy SVG** of the whole artboard; **Save to My components** |
+| **Everything else** | Shapes, text, Vectorize, Corners, Style, Effects, Arrange, Layers and point editing all work as in the Design tab |
 
 ---
 
